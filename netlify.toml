@@ -18,11 +18,32 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "upgrade-insecure-requests"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 
 [[headers]]
   for = "/admin/*"
   [headers.values]
     X-Robots-Tag = "noindex"
+
+# Force HTTPS — redirect all HTTP traffic to HTTPS
+[[redirects]]
+  from = "http://reliadb.com/*"
+  to = "https://reliadb.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.reliadb.com/*"
+  to = "https://reliadb.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.reliadb.com/*"
+  to = "https://reliadb.com/:splat"
+  status = 301
+  force = true
 
 # Redirect trailing slashes (optional, cleaner URLs)
 [[redirects]]
