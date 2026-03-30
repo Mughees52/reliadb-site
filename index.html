@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231A5276'/><text y='.9em' font-size='70' x='12' fill='white' font-weight='800'>R</text></svg>">
 </head>
 <body>
@@ -22,16 +21,7 @@
       <span class="nav-logo-text">Relia<span>DB</span></span>
     </a>
     <ul class="nav-links" id="navLinks">
-      <li class="nav-dropdown">
-        <a href="services.html" class="dropdown-toggle">Services</a>
-        <ul class="dropdown-menu" aria-label="Services submenu">
-          <li><a href="services.html#audit">Database Health Audit</a></li>
-          <li><a href="services.html#support">Monthly Support</a></li>
-          <li><a href="services.html#emergency">Emergency Response</a></li>
-          <li><a href="services.html#addons">Projects</a></li>
-          <li><a href="services.html#sla">Support &amp; SLA</a></li>
-        </ul>
-      </li>
+      <li><a href="services.html">Services</a></li>
       <li><a href="results.html">Results</a></li>
       <li><a href="about.html">About</a></li>
       <li><a href="blog/index.html">Blog</a></li>
@@ -161,7 +151,8 @@
     </div>
     <div class="services-grid">
       <div class="service-card">
-        <a href="contact.html" class="service-price">Request pricing</a>
+        <div class="service-icon">🔍</div>
+        <span class="service-price">From $1,500</span>
         <h3>Database Health Audit</h3>
         <p>A thorough review of your setup: performance, security, backups, replication, and architecture.</p>
         <ul>
@@ -172,7 +163,8 @@
         </ul>
       </div>
       <div class="service-card">
-        <a href="contact.html" class="service-price">Request pricing</a>
+        <div class="service-icon">🛡️</div>
+        <span class="service-price">From $2,000/month</span>
         <h3>Monthly DBA Support</h3>
         <p>A dedicated monthly retainer — your expert on call without the full-time hire cost.</p>
         <ul>
@@ -183,7 +175,8 @@
         </ul>
       </div>
       <div class="service-card">
-        <a href="contact.html" class="service-price">Request pricing</a>
+        <div class="service-icon">⚡</div>
+        <span class="service-price">$300–$500/hour</span>
         <h3>Emergency Response</h3>
         <p>Production database down or degraded? I'm available for urgent, same-day response.</p>
         <ul>
@@ -194,7 +187,8 @@
         </ul>
       </div>
       <div class="service-card">
-        <a href="contact.html" class="service-price">Request pricing</a>
+        <div class="service-icon">🚀</div>
+        <span class="service-price">From $5,000</span>
         <h3>Migration Projects</h3>
         <p>Oracle → PostgreSQL, MySQL → RDS, on-premise → cloud. Safe, tested, no-surprise migrations.</p>
         <ul>
@@ -205,7 +199,8 @@
         </ul>
       </div>
       <div class="service-card">
-        <a href="contact.html" class="service-price">Request pricing</a>
+        <div class="service-icon">🏗️</div>
+        <span class="service-price">$250–$400/hour</span>
         <h3>Architecture Consulting</h3>
         <p>Designing your database layer for a new product or scaling initiative? Get expert input before you build.</p>
         <ul>
@@ -257,7 +252,7 @@
     <h2>Not sure if you need a DBA?</h2>
     <p>Book a free 30-minute call. I'll tell you honestly whether your database setup is healthy — and what to prioritise if it's not.</p>
     <a href="contact.html" class="btn btn-primary btn-lg">Book Your Free Assessment →</a>
-    <p class="cta-note">International coverage across EU and US business hours · Pakistan-based delivery (UTC+5) · Response within 2 hours</p>
+    <p class="cta-note">Covers EU and US business hours · Based in Pakistan (UTC+5) · Response within 2 hours</p>
   </div>
 </section>
 
@@ -297,7 +292,7 @@
           <li><a href="mailto:hello@reliadb.com">hello@reliadb.com</a></li>
           <li><a href="mailto:urgent@reliadb.com">urgent@reliadb.com</a></li>
           <li><a href="contact.html">Book a call</a></li>
-          <li><span style="color:rgba(255,255,255,.4);font-size:.85rem">Pakistan-based team · UTC+5</span></li>
+          <li><span style="color:rgba(255,255,255,.4);font-size:.85rem">UTC+5 · Pakistan</span></li>
         </ul>
       </div>
     </div>
@@ -312,11 +307,13 @@
 </footer>
 
 <script src="js/main.js"></script>
+<!-- Netlify Identity Widget — required for the blog admin panel at /admin -->
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <script>
   if (window.netlifyIdentity) {
-    window.netlifyIdentity.on("init", function(user) {
+    window.netlifyIdentity.on("init", user => {
       if (!user) {
-        window.netlifyIdentity.on("login", function() {
+        window.netlifyIdentity.on("login", () => {
           document.location.href = "/admin/";
         });
       }

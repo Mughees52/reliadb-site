@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ReliaDB Blog Admin</title>
-  <!-- Decap CMS — browser-based blog editor -->
-  <!-- Required for Netlify Identity + Git Gateway auth -->
+  <!-- Netlify Identity Widget — must load BEFORE Decap CMS -->
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <script src="https://unpkg.com/decap-cms@3.4.3/dist/decap-cms.js"></script>
+  <!-- Decap CMS — browser-based blog editor -->
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </head>
 <body>
   <!-- Decap CMS mounts here automatically via the script above -->
