@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
+  <meta name="description" content="Practical guides, case studies, and deep-dives on PostgreSQL performance, MySQL optimisation, AWS RDS, high availability, and database best practices." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .blog-hero {
+      background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
+      padding: 140px 0 80px;
+      text-align: center;
+      color: #fff;
+    }
+    .blog-hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; }
+    .blog-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
+
+    .blog-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 64px 24px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 56px;
+      align-items: start;
+    }
+
+    /* Category filters */
+    .blog-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 36px;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1.5px solid #dde;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: #1A5276;
+      border-color: #1A5276;
+      color: #fff;
+    }
+
+    /* Post list */
+    .post-list { display: flex; flex-direction: column; gap: 32px; }
+
+    .post-card-h {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 28px 32px;
+      transition: box-shadow 0.2s, transform 0.15s;
+      text-decoration: none;
+      display: block;
+    }
+    .post-card-h:hover {
+      box-shadow: 0 8px 32px rgba(26,82,118,0.1);
+      transform: translateY(-2px);
+    }
+    .post-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .post-cat {
+      background: #EAF2F8;
+      color: #1A5276;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+    .post-date { font-size: 0.82rem; color: #999; }
+    .post-read-time { font-size: 0.82rem; color: #999; }
+    .post-card-h h2 {
+      font-size: 1.2rem;
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+    .post-card-h p { font-size: 0.93rem; color: #666; line-height: 1.7; margin: 0; }
+    .post-read-more {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #2980B9;
+      margin-top: 14px;
+    }
+
+    /* Featured post */
+    .post-featured {
+      background: #1A5276;
+      color: #fff;
+    }
+    .post-featured .post-cat { background: rgba(255,255,255,0.2); color: #fff; }
+    .post-featured .post-date, .post-featured .post-read-time { color: rgba(255,255,255,0.65); }
+    .post-featured h2 { color: #fff; font-size: 1.4rem; }
+    .post-featured p { color: rgba(255,255,255,0.82); }
+    .post-featured .post-read-more { color: #E67E22; }
+
+    /* Sidebar */
+    .blog-sidebar { position: sticky; top: 90px; }
+
+    .sidebar-widget {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .sidebar-widget h3 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #EAF2F8;
+    }
+
+    .sidebar-links { list-style: none; padding: 0; margin: 0; }
+    .sidebar-links li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .sidebar-links li:last-child { border-bottom: none; }
+    .sidebar-links a { font-size: 0.9rem; color: #444; text-decoration: none; line-height: 1.4; }
+    .sidebar-links a:hover { color: #1A5276; }
+
+    .sidebar-cta {
+      background: #1A5276;
+      color: #fff;
+      border-radius: 12px;
+      padding: 28px 24px;
+      text-align: center;
+      border: none;
+    }
+    .sidebar-cta h3 { color: #fff; border-bottom-color: rgba(255,255,255,0.2); }
+    .sidebar-cta p { font-size: 0.88rem; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 16px; }
+    .sidebar-cta .btn { background: #E67E22; border-color: #E67E22; font-size: 0.88rem; padding: 10px 18px; }
+
+    .newsletter-form input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #dde;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-family: inherit;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+    .newsletter-form button {
+      width: 100%;
+      padding: 10px;
+      background: #2980B9;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .newsletter-form button:hover { background: #1A5276; }
+
+    @media (max-width: 880px) {
+      .blog-main { grid-template-columns: 1fr; }
+      .blog-sidebar { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo">
+        <span class="logo-icon">R</span>
+        <span class="logo-text">ReliaDB</span>
+      </a>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../services.html">Services</a></li>
+        <li><a href="../results.html">Results</a></li>
+        <li><a href="index.html" class="active">Blog</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../contact.html" class="nav-cta">Book Free Assessment</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="blog-hero">
+    <div class="container">
+      <h1>The ReliaDB Blog</h1>
+      <p>Practical guides on PostgreSQL performance, MySQL optimisation, AWS RDS cost savings, high availability, and everything in between — written by a working DBA, for engineers who run real databases.</p>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <div class="blog-main">
+    <!-- POST LIST -->
+    <main>
+      <div class="blog-filters">
+        <a href="#" class="filter-btn active">All Posts</a>
+        <a href="#" class="filter-btn">PostgreSQL</a>
+        <a href="#" class="filter-btn">MySQL</a>
+        <a href="#" class="filter-btn">AWS RDS</a>
+        <a href="#" class="filter-btn">Performance</a>
+        <a href="#" class="filter-btn">High Availability</a>
+        <a href="#" class="filter-btn">Migrations</a>
+        <a href="#" class="filter-btn">Cost Optimisation</a>
+      </div>
+
+      <div class="post-list">
+
+        <!-- FEATURED POST -->
+        <a href="postgresql-running-slow-diagnostic-guide.html" class="post-card-h post-featured">
+          <div class="post-meta">
+            <span class="post-cat">PostgreSQL &middot; Performance</span>
+            <span class="post-date">March 2024</span>
+            <span class="post-read-time">12 min read</span>
+          </div>
+          <h2>PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide</h2>
+          <p>Your PostgreSQL database is slow and you don't know why. This guide walks you through a systematic diagnosis process — from checking active queries and slow query logs to reading EXPLAIN output and identifying the most common culprits: missing indexes, bloat, and misconfigured autovacuum.</p>
+          <span class="post-read-more">Read full guide &rarr;</span>
+        </a>
+
+        <a href="postgresql-high-cpu-usage-causes-fixes.html" class="post-card-h">
+          <div class="post-meta">
+            <span class="post-cat">PostgreSQL &middot; Performance</span>
+            <span class="post-date">March 2024</span>
+            <span class="post-read-time">8 min read</span>
+          </div>
+          <h2>PostgreSQL High CPU Usage: Common Causes and How to Fix Them</h2>
+          <p>High CPU on your PostgreSQL server almost always points to one of a handful of root causes — most of which are fixable without a hardware upgrade. Learn how to identify whether the culprit is missing indexes, autovacuum storms, connection overload, or poorly-written queries.</p>
+          <span class="post-read-more">Read article &rarr;</span>
+        </a>
+
+        <a href="aws-rds-cost-optimisation.html" class="post-card-h">
+          <div class="post-meta">
+            <span class="post-cat">AWS RDS &middot; Cost Optimisation</span>
+            <span class="post-date">February 2024</span>
+            <span class="post-read-time">10 min read</span>
+          </div>
+          <h2>How to Reduce AWS RDS Costs Without Sacrificing Performance</h2>
+          <p>Most companies on AWS RDS are overpaying — often significantly. This guide covers right-sizing instances, switching from io1 to gp3 storage, decommissioning unused read replicas, reserved instance pricing, and the query optimisations that let you run on smaller hardware.</p>
+          <span class="post-read-more">Read article &rarr;</span>
+        </a>
+
+        <a href="postgresql-streaming-replication-setup.html" class="post-card-h">
+          <div class="post-meta">
+            <span class="post-cat">PostgreSQL &middot; High Availability</span>
+            <span class="post-date">February 2024</span>
+            <span class="post-read-time">15 min read</span>
+          </div>
+          <h2>How to Set Up PostgreSQL Streaming Replication (With Failover)</h2>
+          <p>A complete, production-ready guide to setting up PostgreSQL streaming replication — including replica configuration, monitoring replication lag, and automated failover with Patroni. Includes configuration snippets you can use directly.</p>
+          <span class="post-read-more">Read article &rarr;</span>
+        </a>
+
+        <a href="mysql-replication-lag-production.html" class="post-card-h">
+          <div class="post-meta">
+            <span class="post-cat">MySQL &middot; Replication</span>
+            <span class="post-date">January 2024</span>
+            <span class="post-read-time">9 min read</span>
+          </div>
+          <h2>How to Fix MySQL Replication Lag in Production</h2>
+          <p>Replication lag in MySQL is a common and frustrating problem — reads from your replica are stale, and if lag grows long enough, failover becomes risky. This guide covers diagnosing lag cause (write-heavy primaries, long-running transactions, network) and the practical fixes for each.</p>
+          <span class="post-read-more">Read article &rarr;</span>
+        </a>
+
+        <a href="signs-database-setup-needs-dba.html" class="post-card-h">
+          <div class="post-meta">
+            <span class="post-cat">Best Practices</span>
+            <span class="post-date">January 2024</span>
+            <span class="post-read-time">6 min read</span>
+          </div>
+          <h2>7 Signs Your Startup Has Outgrown Its Database Setup</h2>
+          <p>Your database was fine when you had 10,000 users. Now you have 500,000. These are the seven warning signs that your database architecture needs a serious review — and what to do about each of them before they cause an outage.</p>
+          <span class="post-read-more">Read article &rarr;</span>
+        </a>
+
+      </div>
+    </main>
+
+    <!-- SIDEBAR -->
+    <aside class="blog-sidebar">
+
+      <div class="sidebar-widget sidebar-cta">
+        <h3>Database Problems?</h3>
+        <p>Book a free 30-minute assessment call. I'll review your setup and give you three actionable recommendations.</p>
+        <a href="../contact.html" class="btn">Book Free Assessment</a>
+      </div>
+
+      <div class="sidebar-widget">
+        <h3>Popular Posts</h3>
+        <ul class="sidebar-links">
+          <li><a href="postgresql-running-slow-diagnostic-guide.html">PostgreSQL Running Slow? A Diagnostic Guide</a></li>
+          <li><a href="aws-rds-cost-optimisation.html">How to Reduce AWS RDS Costs</a></li>
+          <li><a href="postgresql-streaming-replication-setup.html">PostgreSQL Streaming Replication Setup</a></li>
+          <li><a href="mysql-replication-lag-production.html">Fixing MySQL Replication Lag</a></li>
+          <li><a href="signs-database-setup-needs-dba.html">7 Signs You Need a DBA Review</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h3>Topics</h3>
+        <ul class="sidebar-links">
+          <li><a href="#">PostgreSQL Performance</a></li>
+          <li><a href="#">MySQL Optimisation</a></li>
+          <li><a href="#">AWS RDS Cost Savings</a></li>
+          <li><a href="#">High Availability & Failover</a></li>
+          <li><a href="#">Database Migrations</a></li>
+          <li><a href="#">Backup & Recovery</a></li>
+          <li><a href="#">Database Security</a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-widget">
+        <h3>Get New Posts</h3>
+        <p style="font-size:0.87rem;color:#666;margin-bottom:14px;">New practical guides published weekly. No spam.</p>
+        <!--
+          SETUP: Replace with your actual MailerLite or ConvertKit embed form.
+          Get the embed code from your email tool and paste it here.
+        -->
+        <form class="newsletter-form" action="https://formspree.io/f/YOUR_NEWSLETTER_ID" method="POST">
+          <input type="email" name="email" placeholder="your@email.com" required />
+          <button type="submit">Subscribe &rarr;</button>
+        </form>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="logo-icon">R</span>
+          <span class="logo-text">ReliaDB</span>
+        </div>
+        <p>Expert PostgreSQL & MySQL consulting for growing companies. Based in Pakistan, serving EU and US clients.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="../services.html">All Services</a></li>
+          <li><a href="../services.html#audit">Database Audit</a></li>
+          <li><a href="../services.html#support">Monthly Support</a></li>
+          <li><a href="../services.html#emergency">Emergency Response</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="../results.html">Results</a></li>
+          <li><a href="index.html">Blog</a></li>
+          <li><a href="../about.html">About</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get in Touch</h4>
+        <ul>
+          <li><a href="mailto:mughees@reliadb.com">mughees@reliadb.com</a></li>
+          <li><a href="../contact.html">Book Free Assessment</a></li>
+          <li><a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 ReliaDB. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>

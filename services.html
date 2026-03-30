@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Services | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
+  <meta name="description" content="Expert PostgreSQL and MySQL database consulting services: health audits, monthly support, emergency response, migration projects, and architecture consulting." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Services page extras */
+    .services-hero {
+      background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
+      padding: 140px 0 80px;
+      text-align: center;
+      color: #fff;
+    }
+    .services-hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; }
+    .services-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
+
+    .service-full {
+      padding: 80px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .service-full:nth-child(even) { background: #f8fafc; }
+    .service-full:last-child { border-bottom: none; }
+
+    .service-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: start;
+    }
+    .service-inner.reversed { direction: rtl; }
+    .service-inner.reversed > * { direction: ltr; }
+
+    .service-badge {
+      display: inline-block;
+      background: #EAF2F8;
+      color: #1A5276;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .service-title { font-size: 1.75rem; font-weight: 800; color: #1a1a2e; margin-bottom: 12px; }
+    .service-tagline { font-size: 1rem; color: #2980B9; font-weight: 600; margin-bottom: 16px; }
+    .service-desc { color: #555; line-height: 1.75; margin-bottom: 24px; }
+
+    .service-price-box {
+      background: #1A5276;
+      color: #fff;
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+    }
+    .service-price-box .price-label { font-size: 0.8rem; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.06em; }
+    .service-price-box .price { font-size: 2rem; font-weight: 800; margin: 4px 0; }
+    .service-price-box .price-note { font-size: 0.85rem; opacity: 0.8; }
+
+    .what-included h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+    }
+    .included-list { list-style: none; padding: 0; margin: 0 0 24px; }
+    .included-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+      color: #444;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .included-list li:last-child { border-bottom: none; }
+    .included-list li::before {
+      content: '';
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      background: #2980B9;
+      border-radius: 50%;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'/%3E%3C/svg%3E");
+      background-size: 12px;
+      background-position: center;
+      background-repeat: no-repeat;
+      margin-top: 2px;
+    }
+
+    .service-cta-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .for-who {
+      background: #f0f7ff;
+      border-left: 4px solid #2980B9;
+      border-radius: 0 8px 8px 0;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .for-who h5 { font-size: 0.85rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .for-who p { font-size: 0.92rem; color: #555; margin: 0; line-height: 1.6; }
+
+    .addons-section {
+      background: #1a1a2e;
+      color: #fff;
+      padding: 80px 0;
+    }
+    .addons-section h2 { text-align: center; font-size: 2rem; margin-bottom: 12px; }
+    .addons-section .sub { text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 48px; }
+    .addon-cards {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .addon-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 28px;
+    }
+    .addon-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
+    .addon-card .addon-price { font-size: 1.4rem; font-weight: 800; color: #E67E22; margin-bottom: 10px; }
+    .addon-card p { color: rgba(255,255,255,0.7); font-size: 0.9rem; line-height: 1.6; margin: 0; }
+
+    .guarantee-section {
+      background: #EAF2F8;
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .guarantee-section h2 { font-size: 1.75rem; color: #1A5276; margin-bottom: 16px; }
+    .guarantee-section p { max-width: 640px; margin: 0 auto; color: #555; line-height: 1.75; font-size: 1.05rem; }
+
+    @media (max-width: 768px) {
+      .service-inner { grid-template-columns: 1fr; gap: 32px; }
+      .service-inner.reversed { direction: ltr; }
+      .addon-cards { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">R</span>
+        <span class="logo-text">ReliaDB</span>
+      </a>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="services.html" class="active">Services</a></li>
+        <li><a href="results.html">Results</a></li>
+        <li><a href="blog/index.html">Blog</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html" class="nav-cta">Book Free Assessment</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="services-hero">
+    <div class="container">
+      <h1>Database Consulting Services</h1>
+      <p>Choose the right level of support for your team. Every engagement starts with a free 30-minute assessment call — no commitment required.</p>
+    </div>
+  </section>
+
+  <!-- SERVICE 1: HEALTH AUDIT -->
+  <section class="service-full" id="audit">
+    <div class="service-inner">
+      <div class="service-info">
+        <span class="service-badge">One-Time Engagement</span>
+        <h2 class="service-title">Database Health Audit</h2>
+        <p class="service-tagline">Know exactly what's wrong — and what to fix first.</p>
+        <p class="service-desc">You get a thorough, expert review of your entire database setup. I dig into query performance, indexing strategy, replication health, backup reliability, security posture, and your monitoring coverage. You receive a detailed written report with prioritised recommendations you can act on immediately — whether you engage me further or hand it to your engineering team.</p>
+        <div class="for-who">
+          <h5>This is for you if…</h5>
+          <p>Your database is getting slower, you're scaling fast and worried about what you'll hit next, you've never had a proper DBA review, or you're preparing for a funding round or compliance audit and need confidence your data layer is solid.</p>
+        </div>
+        <div class="service-cta-row">
+          <a href="contact.html" class="btn btn-primary">Book Free Assessment</a>
+          <a href="results.html" class="btn btn-outline">See Example Outcomes</a>
+        </div>
+      </div>
+      <div class="service-detail">
+        <div class="service-price-box">
+          <div class="price-label">Starting from</div>
+          <div class="price">$1,500</div>
+          <div class="price-note">One-time flat fee · Delivered within 5 business days</div>
+        </div>
+        <div class="what-included">
+          <h4>What's included</h4>
+          <ul class="included-list">
+            <li>Full query performance analysis — slow query log review, EXPLAIN output, index audit</li>
+            <li>Replication health check (streaming replication, logical replication, binlog-based)</li>
+            <li>Backup and recovery verification — can you actually restore? How fast?</li>
+            <li>Security configuration review — roles, permissions, encryption, network exposure</li>
+            <li>Connection pooling and configuration tuning recommendations</li>
+            <li>Monitoring and alerting gap analysis</li>
+            <li>Written report with prioritised action plan (executive summary + technical detail)</li>
+            <li>45-minute review call to walk through findings and answer questions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICE 2: MONTHLY SUPPORT -->
+  <section class="service-full" id="support">
+    <div class="service-inner reversed">
+      <div class="service-info">
+        <span class="service-badge">Retainer · Most Popular</span>
+        <h2 class="service-title">Monthly Database Support</h2>
+        <p class="service-tagline">A senior DBA in your corner — without the full-time cost.</p>
+        <p class="service-desc">Your dedicated monthly retainer gives you ongoing access to expert database support, proactive monitoring, and priority response when something goes wrong. Think of it as having a senior DBA on your team — without the $120K+ salary and benefits. I handle the database layer so your engineers can focus on building product.</p>
+        <div class="for-who">
+          <h5>This is for you if…</h5>
+          <p>Your engineering team is great at building features but nobody has deep database expertise. You've had database incidents you couldn't resolve quickly. You're scaling and need someone watching the data layer proactively.</p>
+        </div>
+        <div class="service-cta-row">
+          <a href="contact.html" class="btn btn-primary">Book Free Assessment</a>
+        </div>
+      </div>
+      <div class="service-detail">
+        <div class="service-price-box">
+          <div class="price-label">Monthly retainer from</div>
+          <div class="price">$2,000 / mo</div>
+          <div class="price-note">3-month minimum · Includes 20–40 hrs/month depending on tier</div>
+        </div>
+        <div class="what-included">
+          <h4>What's included (all tiers)</h4>
+          <ul class="included-list">
+            <li>Dedicated hours each month for tasks, reviews, and reactive support</li>
+            <li>Monthly performance review call and written summary report</li>
+            <li>Monitoring and alerting setup and tuning (PgBadger, pg_activity, CloudWatch, etc.)</li>
+            <li>Priority response for production issues — guaranteed response within 2 hours during business hours</li>
+            <li>Proactive query optimisation and schema review as your product evolves</li>
+            <li>Replication health monitoring and failover testing</li>
+            <li>Coverage across EU and US business hours (timezone overlap built in)</li>
+            <li>Slack or Teams integration for async communication</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICE 3: EMERGENCY RESPONSE -->
+  <section class="service-full" id="emergency">
+    <div class="service-inner">
+      <div class="service-info">
+        <span class="service-badge">On-Demand · Urgent</span>
+        <h2 class="service-title">Emergency Incident Response</h2>
+        <p class="service-tagline">Production is down. I can fix it.</p>
+        <p class="service-desc">Database emergencies don't wait for business hours. When your production database is down, replication has broken, or you're facing catastrophic performance degradation, you need a senior DBA who can diagnose and resolve the issue fast — not a support ticket queue. I've handled PostgreSQL and MySQL emergencies for companies at every scale. I engage immediately and work until the issue is resolved.</p>
+        <div class="for-who">
+          <h5>This is for you if…</h5>
+          <p>You're facing a production database outage, critical performance failure, data integrity issue, failed migration, or replication breakdown. Every minute of downtime costs you money — getting this fixed fast is worth far more than my rate.</p>
+        </div>
+        <div class="service-cta-row">
+          <a href="mailto:mughees@reliadb.com?subject=URGENT: Database Emergency" class="btn btn-primary" style="background:#c0392b;border-color:#c0392b;">Email Emergency Line</a>
+          <a href="contact.html" class="btn btn-outline">Book Standard Assessment</a>
+        </div>
+      </div>
+      <div class="service-detail">
+        <div class="service-price-box" style="background:#c0392b;">
+          <div class="price-label">Emergency rate</div>
+          <div class="price">$400 / hour</div>
+          <div class="price-note">4-hour minimum · Billed in 1-hour increments after minimum</div>
+        </div>
+        <div class="what-included">
+          <h4>What to expect</h4>
+          <ul class="included-list">
+            <li>Immediate acknowledgement within 30 minutes of contact (during active hours)</li>
+            <li>Live diagnosis session via video call — I share my screen and talk through findings in real time</li>
+            <li>Direct database access review (read-only recommended; I'll guide your team on any writes)</li>
+            <li>Root cause identification with documented findings</li>
+            <li>Resolution implementation with your engineering team present</li>
+            <li>Post-incident report within 24 hours: what happened, why, and how to prevent recurrence</li>
+            <li>Follow-up recommendations to harden the setup</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD-ONS -->
+  <section class="addons-section">
+    <h2>Project-Based Services</h2>
+    <p class="sub">Larger scoped engagements with clear deliverables and fixed or estimated pricing.</p>
+    <div class="addon-cards">
+      <div class="addon-card">
+        <h3>Migration Projects</h3>
+        <div class="addon-price">$5,000 – $20,000+</div>
+        <p>Full-service database migration: Oracle → PostgreSQL, MySQL → PostgreSQL, on-premise → AWS RDS or Aurora, or version upgrades. Includes assessment, migration plan, dry runs, cutover strategy, and post-migration validation. Quoted individually based on database size and complexity.</p>
+      </div>
+      <div class="addon-card">
+        <h3>Architecture Consulting</h3>
+        <div class="addon-price">$300 / hour</div>
+        <p>Designing your database layer for a new product, planning for scale, choosing between PostgreSQL and MySQL, evaluating managed services vs self-hosted, or designing a multi-region HA strategy? I provide expert architectural guidance with clear tradeoff analysis and a written recommendation document.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GUARANTEE -->
+  <section class="guarantee-section">
+    <h2>Risk-Free First Engagement</h2>
+    <p>Not sure if the investment is worth it? Every new client relationship starts with a free 30-minute database assessment call. If after that call you choose to proceed with any paid service, I offer a satisfaction guarantee on your first engagement: if you're not happy with the deliverables, I'll revise them until you are — or refund you in full. I'm building a long-term consulting practice, not chasing one-off transactions.</p>
+    <br />
+    <a href="contact.html" class="btn btn-primary" style="margin-top:16px;">Book Your Free Assessment Call</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="logo-icon">R</span>
+          <span class="logo-text">ReliaDB</span>
+        </div>
+        <p>Expert PostgreSQL & MySQL consulting for growing companies. Based in Pakistan, serving EU and US clients.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#audit">Database Health Audit</a></li>
+          <li><a href="#support">Monthly Support</a></li>
+          <li><a href="#emergency">Emergency Response</a></li>
+          <li><a href="#addons">Migration Projects</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="results.html">Results</a></li>
+          <li><a href="blog/index.html">Blog</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get in Touch</h4>
+        <ul>
+          <li><a href="mailto:mughees@reliadb.com">mughees@reliadb.com</a></li>
+          <li><a href="contact.html">Book Free Assessment</a></li>
+          <li><a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 ReliaDB. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>

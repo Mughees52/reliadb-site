@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide | ReliaDB</title>
+  <meta name="description" content="Your PostgreSQL database is slow and you don't know why. This guide walks through a systematic diagnosis process — slow queries, EXPLAIN output, missing indexes, bloat, and autovacuum." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .post-hero { background: linear-gradient(135deg, #1A5276 0%, #154360 100%); padding: 140px 0 60px; color: #fff; }
+    .post-hero-inner { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+    .post-meta-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .post-cat-badge { background: rgba(255,255,255,0.15); color: #fff; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+    .post-date-top, .post-read-top { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
+    .post-hero h1 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); line-height: 1.3; margin-bottom: 20px; }
+    .post-hero .excerpt { font-size: 1.05rem; color: rgba(255,255,255,0.85); line-height: 1.7; }
+    .post-layout { max-width: 1100px; margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: 1fr 300px; gap: 56px; align-items: start; }
+    .post-body { max-width: 720px; }
+    .post-body h2 { font-size: 1.5rem; color: #1a1a2e; margin: 40px 0 16px; line-height: 1.3; }
+    .post-body h3 { font-size: 1.15rem; color: #1a1a2e; margin: 28px 0 12px; }
+    .post-body p { color: #444; line-height: 1.8; margin-bottom: 18px; font-size: 1rem; }
+    .post-body ul, .post-body ol { padding-left: 24px; margin-bottom: 18px; }
+    .post-body li { color: #444; line-height: 1.7; margin-bottom: 8px; font-size: 1rem; }
+    .post-body code { background: #f0f4f8; color: #1A5276; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; font-family: 'Courier New', monospace; }
+    .post-body pre { background: #1a1a2e; color: #e8f4f8; padding: 20px 24px; border-radius: 10px; overflow-x: auto; margin-bottom: 24px; font-size: 0.85rem; line-height: 1.65; }
+    .post-body pre code { background: none; color: inherit; padding: 0; }
+    .post-body blockquote { border-left: 4px solid #2980B9; margin: 24px 0; padding: 12px 20px; background: #f0f7ff; border-radius: 0 8px 8px 0; color: #555; font-style: italic; }
+    .post-body .callout { background: #EAF2F8; border-left: 4px solid #1A5276; border-radius: 0 10px 10px 0; padding: 18px 22px; margin: 24px 0; }
+    .post-body .callout strong { color: #1A5276; }
+    .post-body .callout p { margin: 0; color: #444; }
+    .post-cta-inline { background: #1A5276; color: #fff; border-radius: 12px; padding: 28px 32px; margin: 40px 0; }
+    .post-cta-inline h4 { font-size: 1.1rem; margin-bottom: 8px; }
+    .post-cta-inline p { font-size: 0.92rem; color: rgba(255,255,255,0.82); margin-bottom: 16px; }
+    .post-cta-inline .btn { background: #E67E22; border-color: #E67E22; }
+    .author-box { display: flex; align-items: flex-start; gap: 16px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-top: 48px; }
+    .author-avatar { width: 56px; height: 56px; border-radius: 50%; background: #1A5276; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .author-info h4 { font-size: 1rem; color: #1a1a2e; margin-bottom: 4px; }
+    .author-info p { font-size: 0.88rem; color: #666; line-height: 1.6; margin: 0; }
+    .related-posts { margin-top: 48px; }
+    .related-posts h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: #1a1a2e; }
+    .related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .related-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; text-decoration: none; transition: box-shadow 0.15s; }
+    .related-card:hover { box-shadow: 0 4px 16px rgba(26,82,118,0.08); }
+    .related-card .rc-cat { font-size: 0.72rem; font-weight: 700; color: #2980B9; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .related-card h4 { font-size: 0.9rem; color: #1a1a2e; line-height: 1.4; margin: 0; }
+    .post-sidebar { position: sticky; top: 90px; }
+    .sidebar-widget { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 22px; margin-bottom: 20px; }
+    .sidebar-widget h3 { font-size: 0.85rem; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #EAF2F8; }
+    .toc-list { list-style: none; padding: 0; margin: 0; }
+    .toc-list li { padding: 6px 0; border-bottom: 1px solid #f5f5f5; }
+    .toc-list li:last-child { border-bottom: none; }
+    .toc-list a { font-size: 0.87rem; color: #555; text-decoration: none; }
+    .toc-list a:hover { color: #1A5276; }
+    .sidebar-cta-box { background: #1A5276; color: #fff; border-radius: 12px; padding: 24px 22px; text-align: center; border: none; }
+    .sidebar-cta-box h3 { color: #fff; border-bottom-color: rgba(255,255,255,0.15); }
+    .sidebar-cta-box p { font-size: 0.85rem; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 14px; }
+    .sidebar-cta-box .btn { background: #E67E22; border-color: #E67E22; font-size: 0.85rem; padding: 10px 16px; }
+    @media (max-width: 880px) { .post-layout { grid-template-columns: 1fr; } .post-sidebar { position: static; } .related-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo"><span class="logo-icon">R</span><span class="logo-text">ReliaDB</span></a>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../services.html">Services</a></li>
+        <li><a href="../results.html">Results</a></li>
+        <li><a href="index.html" class="active">Blog</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../contact.html" class="nav-cta">Book Free Assessment</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="post-hero">
+    <div class="post-hero-inner">
+      <div class="post-meta-top">
+        <span class="post-cat-badge">PostgreSQL &middot; Performance</span>
+        <span class="post-date-top">March 2024</span>
+        <span class="post-read-top">&middot; 12 min read</span>
+      </div>
+      <h1>PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide</h1>
+      <p class="excerpt">Your PostgreSQL database is slow and you don't know why. This guide walks you through a systematic diagnosis process — from active query monitoring to EXPLAIN analysis, index auditing, and autovacuum configuration — so you can find and fix the real problem.</p>
+    </div>
+  </section>
+
+  <div class="post-layout">
+    <article class="post-body">
+
+      <p>Your application is slow. Users are complaining. You've checked the app servers, the network, the CDN — everything seems fine. The database is the suspect, but where do you start?</p>
+      <p>PostgreSQL performance problems almost always come from a handful of root causes: missing or wrong indexes, table and index bloat, misconfigured autovacuum, connection exhaustion, or poorly-written queries hitting the wrong execution plan. This guide walks you through a systematic diagnostic process to find which of these is causing your slowdown.</p>
+
+      <h2 id="step1">Step 1: Check What's Running Right Now</h2>
+      <p>Before digging into historical data, look at what's happening in your database at this moment. The <code>pg_stat_activity</code> view shows you every active connection and what it's doing.</p>
+      <pre><code>-- Find long-running queries (over 5 seconds)
+SELECT
+  pid,
+  now() - pg_stat_activity.query_start AS duration,
+  query,
+  state,
+  wait_event_type,
+  wait_event
+FROM pg_stat_activity
+WHERE (now() - pg_stat_activity.query_start) > interval '5 seconds'
+  AND state != 'idle'
+ORDER BY duration DESC;</code></pre>
+      <p>Pay attention to the <code>wait_event_type</code> and <code>wait_event</code> columns. If you see queries waiting on <code>Lock</code> events, you have a lock contention problem. If you see <code>IO</code> waits, you're hitting disk. If the query itself is running (no wait event), it's a CPU-bound computation problem — usually a sequential scan on a large table.</p>
+
+      <div class="callout">
+        <p><strong>Quick check:</strong> Run <code>SELECT count(*) FROM pg_stat_activity WHERE state = 'idle in transaction';</code> — if this number is high (more than a handful), you likely have long-running transactions holding locks open. This is a common cause of cascading slowness.</p>
+      </div>
+
+      <h2 id="step2">Step 2: Find Your Slowest Queries with pg_stat_statements</h2>
+      <p>If your database has <code>pg_stat_statements</code> enabled (it should be — add it to <code>shared_preload_libraries</code> if not), you can see aggregate statistics across all query executions since the last stats reset.</p>
+      <pre><code>-- Top 20 slowest queries by total execution time
+SELECT
+  left(query, 100) AS query_snippet,
+  calls,
+  round((total_exec_time / calls)::numeric, 2) AS avg_ms,
+  round(total_exec_time::numeric, 2) AS total_ms,
+  round((100 * total_exec_time / sum(total_exec_time) OVER ())::numeric, 2) AS pct_total
+FROM pg_stat_statements
+ORDER BY total_exec_time DESC
+LIMIT 20;</code></pre>
+      <p>This tells you which queries are consuming the most database time overall. Focus on the queries with the highest <code>total_ms</code> first — these have the biggest impact on overall performance, even if individual executions are fast but frequent.</p>
+
+      <h2 id="step3">Step 3: Read the EXPLAIN Output</h2>
+      <p>Once you've identified a slow query, run <code>EXPLAIN (ANALYZE, BUFFERS)</code> to see the actual execution plan and understand what PostgreSQL is doing.</p>
+      <pre><code>EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+SELECT *
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+WHERE o.status = 'pending'
+  AND o.created_at > now() - interval '7 days';</code></pre>
+
+      <h3>What to look for in EXPLAIN output</h3>
+      <ul>
+        <li><strong>Seq Scan on large tables:</strong> If you see <code>Seq Scan</code> on a table with millions of rows, you're missing an index. This is the most common cause of slow queries.</li>
+        <li><strong>High "rows removed by filter":</strong> If PostgreSQL is fetching many rows but filtering most of them out, your index isn't selective enough or you need a partial index.</li>
+        <li><strong>Hash Join with large memory spill:</strong> Look for <code>Batches: N</code> (where N > 1) — this means the hash join spilled to disk. You can increase <code>work_mem</code> for this session to fix it.</li>
+        <li><strong>Nested Loop with many iterations:</strong> A nested loop over a large dataset is often the result of a missing index on the join column of the inner table.</li>
+      </ul>
+
+      <div class="callout">
+        <p><strong>Pro tip:</strong> Paste your EXPLAIN output into <a href="https://explain.depesz.com" target="_blank" rel="noopener" style="color:#2980B9;">explain.depesz.com</a> for a colour-coded, human-readable breakdown. It highlights the most expensive nodes automatically.</p>
+      </div>
+
+      <h2 id="step4">Step 4: Audit Your Indexes</h2>
+      <p>Missing indexes are responsible for the majority of PostgreSQL performance problems I encounter. Here's how to find tables with sequential scans that should have indexes:</p>
+      <pre><code>-- Tables with high sequential scan counts (candidates for indexing)
+SELECT
+  schemaname,
+  tablename,
+  seq_scan,
+  seq_tup_read,
+  idx_scan,
+  n_live_tup
+FROM pg_stat_user_tables
+WHERE seq_scan > 0
+  AND n_live_tup > 10000
+ORDER BY seq_tup_read DESC
+LIMIT 20;</code></pre>
+      <p>A table that has a high <code>seq_scan</code> count and a low or zero <code>idx_scan</code> count, with many live tuples, is a prime candidate for a new index. Cross-reference with your <code>pg_stat_statements</code> results to find the query causing the scans.</p>
+      <p>Also check for unused indexes — indexes that consume space and slow down writes without being used for reads:</p>
+      <pre><code>-- Indexes that have never been used (candidates for removal)
+SELECT
+  schemaname,
+  tablename,
+  indexname,
+  pg_size_pretty(pg_relation_size(indexrelid)) AS index_size,
+  idx_scan
+FROM pg_stat_user_indexes
+WHERE idx_scan = 0
+  AND indexrelname NOT LIKE '%pkey%'
+ORDER BY pg_relation_size(indexrelid) DESC;</code></pre>
+
+      <div class="post-cta-inline">
+        <h4>Finding index problems in your production database?</h4>
+        <p>If you're seeing sequential scans on large tables or aren't sure which indexes to add, book a free 30-minute assessment. I'll look at your specific query patterns and give you a prioritised indexing plan.</p>
+        <a href="../contact.html" class="btn">Book Free Assessment &rarr;</a>
+      </div>
+
+      <h2 id="step5">Step 5: Check for Table Bloat</h2>
+      <p>PostgreSQL's MVCC system means that deleted and updated rows aren't immediately removed — they become "dead tuples" that take up space and slow down queries. If autovacuum isn't keeping up, bloat can significantly degrade performance.</p>
+      <pre><code>-- Tables with significant dead tuple bloat
+SELECT
+  schemaname,
+  tablename,
+  n_live_tup,
+  n_dead_tup,
+  round(100 * n_dead_tup::numeric / nullif(n_live_tup + n_dead_tup, 0), 1) AS dead_pct,
+  last_autovacuum,
+  last_autoanalyze
+FROM pg_stat_user_tables
+WHERE n_dead_tup > 1000
+ORDER BY dead_pct DESC
+LIMIT 20;</code></pre>
+      <p>A table with more than 10–20% dead tuples needs attention. For immediate relief, run <code>VACUUM ANALYZE tablename;</code>. For long-term health, you need to tune your autovacuum settings for that table's write pattern.</p>
+
+      <h3>Tuning autovacuum for high-churn tables</h3>
+      <p>The default autovacuum settings work well for small tables but are too conservative for large, frequently-updated tables. You can set per-table autovacuum parameters:</p>
+      <pre><code>-- Make autovacuum more aggressive for a high-churn table
+ALTER TABLE orders SET (
+  autovacuum_vacuum_scale_factor = 0.01,   -- vacuum when 1% of rows are dead
+  autovacuum_analyze_scale_factor = 0.005, -- analyze when 0.5% of rows change
+  autovacuum_vacuum_cost_delay = 2         -- reduce delay between vacuum chunks
+);</code></pre>
+
+      <h2 id="step6">Step 6: Check Connection Count and Pooling</h2>
+      <p>PostgreSQL has a hard limit on connections (<code>max_connections</code>, typically 100 by default on managed services). When you approach this limit, new connections queue or fail, and existing connections slow down due to resource contention.</p>
+      <pre><code>-- Current connection usage by state
+SELECT
+  state,
+  count(*) AS connections
+FROM pg_stat_activity
+GROUP BY state
+ORDER BY connections DESC;
+
+-- Check against max_connections
+SHOW max_connections;</code></pre>
+      <p>If you're regularly using more than 70–80% of <code>max_connections</code>, you need connection pooling. PgBouncer in transaction mode is the standard solution — it multiplexes hundreds of application connections onto a much smaller set of actual PostgreSQL connections.</p>
+
+      <h2 id="summary">Putting It All Together</h2>
+      <p>PostgreSQL performance diagnosis is a process of elimination. Start with what's running right now (<code>pg_stat_activity</code>), find your worst offenders over time (<code>pg_stat_statements</code>), understand their execution plans (<code>EXPLAIN ANALYZE</code>), and then work through the underlying causes: missing indexes, bloat, or connection exhaustion.</p>
+      <p>In my experience, 80% of PostgreSQL performance problems come down to two things: missing or wrong indexes, and autovacuum not keeping up with table bloat. Fix those two and most slowdowns disappear. The remaining 20% are usually query design problems or hardware constraints — and those require a closer look at the specific query patterns.</p>
+      <p>If you've worked through this diagnostic process and still can't identify the root cause, or if the fix requires changes you're not confident making in production, that's exactly what I help with.</p>
+
+      <div class="author-box">
+        <div class="author-avatar">M</div>
+        <div class="author-info">
+          <h4>Mughees — ReliaDB</h4>
+          <p>Senior DBA specialising in PostgreSQL and MySQL performance, high availability, and cloud database optimisation. I help growing companies keep their databases fast, reliable, and cost-efficient. <a href="../about.html" style="color:#2980B9;">More about me &rarr;</a></p>
+        </div>
+      </div>
+
+      <div class="related-posts">
+        <h3>Related Articles</h3>
+        <div class="related-grid">
+          <a href="postgresql-high-cpu-usage-causes-fixes.html" class="related-card">
+            <div class="rc-cat">PostgreSQL</div>
+            <h4>PostgreSQL High CPU Usage: Common Causes and How to Fix Them</h4>
+          </a>
+          <a href="aws-rds-cost-optimisation.html" class="related-card">
+            <div class="rc-cat">AWS RDS</div>
+            <h4>How to Reduce AWS RDS Costs Without Sacrificing Performance</h4>
+          </a>
+        </div>
+      </div>
+
+    </article>
+
+    <aside class="post-sidebar">
+      <div class="sidebar-widget">
+        <h3>In This Article</h3>
+        <ul class="toc-list">
+          <li><a href="#step1">1. Check active queries</a></li>
+          <li><a href="#step2">2. Find slow queries (pg_stat_statements)</a></li>
+          <li><a href="#step3">3. Read EXPLAIN output</a></li>
+          <li><a href="#step4">4. Audit your indexes</a></li>
+          <li><a href="#step5">5. Check for bloat</a></li>
+          <li><a href="#step6">6. Connection pooling</a></li>
+          <li><a href="#summary">Summary</a></li>
+        </ul>
+      </div>
+      <div class="sidebar-widget sidebar-cta-box">
+        <h3>Still Stuck?</h3>
+        <p>If you've run through this guide and still can't find the issue, book a free assessment call. I'll look at your specific setup.</p>
+        <a href="../contact.html" class="btn">Book Free Call</a>
+      </div>
+      <div class="sidebar-widget">
+        <h3>Related Posts</h3>
+        <ul class="toc-list">
+          <li><a href="postgresql-high-cpu-usage-causes-fixes.html">PostgreSQL High CPU Usage</a></li>
+          <li><a href="aws-rds-cost-optimisation.html">AWS RDS Cost Optimisation</a></li>
+          <li><a href="postgresql-streaming-replication-setup.html">PostgreSQL Streaming Replication</a></li>
+          <li><a href="signs-database-setup-needs-dba.html">7 Signs You Need a DBA Review</a></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo"><span class="logo-icon">R</span><span class="logo-text">ReliaDB</span></div>
+        <p>Expert PostgreSQL & MySQL consulting for growing companies. Based in Pakistan, serving EU and US clients.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="../services.html">All Services</a></li>
+          <li><a href="../services.html#audit">Database Audit</a></li>
+          <li><a href="../services.html#support">Monthly Support</a></li>
+          <li><a href="../services.html#emergency">Emergency Response</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="../results.html">Results</a></li>
+          <li><a href="index.html">Blog</a></li>
+          <li><a href="../about.html">About</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get in Touch</h4>
+        <ul>
+          <li><a href="mailto:mughees@reliadb.com">mughees@reliadb.com</a></li>
+          <li><a href="../contact.html">Book Free Assessment</a></li>
+          <li><a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom"><p>&copy; 2024 ReliaDB. All rights reserved.</p></div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>

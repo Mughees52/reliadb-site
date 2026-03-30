@@ -1,0 +1,38 @@
+# Decap CMS Configuration for ReliaDB
+# ======================================
+# This file controls the blog admin panel at /admin
+# Documentation: https://decapcms.org/docs/
+
+backend:
+  name: git-gateway
+  branch: main   # Change to "master" if your GitHub default branch is master
+
+# Where media uploads are stored
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "blog"
+    label: "Blog Posts"
+    folder: "_posts"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string", hint: "Make it specific and problem-focused, e.g. 'PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide'" }
+      - { label: "Publish Date", name: "date", widget: "datetime" }
+      - { label: "Description (SEO)", name: "description", widget: "string", hint: "150-160 characters. What problem does this post solve?" }
+      - label: "Category"
+        name: "category"
+        widget: "select"
+        options:
+          - { label: "PostgreSQL", value: "postgresql" }
+          - { label: "MySQL", value: "mysql" }
+          - { label: "AWS RDS", value: "aws-rds" }
+          - { label: "Performance", value: "performance" }
+          - { label: "High Availability", value: "high-availability" }
+          - { label: "Migrations", value: "migrations" }
+          - { label: "Cost Optimisation", value: "cost-optimisation" }
+          - { label: "Best Practices", value: "best-practices" }
+      - { label: "Read Time (minutes)", name: "read_time", widget: "number", default: 8 }
+      - { label: "Featured Post", name: "featured", widget: "boolean", default: false, hint: "Show this post highlighted at the top of the blog" }
+      - { label: "Body", name: "body", widget: "markdown", hint: "Write your post here. Use ## for headings, ``` for code blocks." }

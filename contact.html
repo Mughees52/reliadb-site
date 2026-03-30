@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact | ReliaDB — Book Your Free Database Assessment</title>
+  <meta name="description" content="Book a free 30-minute database assessment call with ReliaDB. Expert PostgreSQL and MySQL consulting for growing companies." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .contact-hero {
+      background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
+      padding: 140px 0 80px;
+      text-align: center;
+      color: #fff;
+    }
+    .contact-hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; }
+    .contact-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
+
+    .contact-main {
+      padding: 80px 0;
+      background: #f8fafc;
+    }
+    .contact-grid {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 60px;
+      align-items: start;
+    }
+
+    /* LEFT: Info */
+    .contact-info h2 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 8px; }
+    .contact-info .sub { color: #666; font-size: 0.95rem; line-height: 1.7; margin-bottom: 32px; }
+
+    .contact-method {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 20px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .contact-method:last-of-type { border-bottom: none; }
+    .contact-icon {
+      width: 42px;
+      height: 42px;
+      background: #EAF2F8;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .contact-icon svg { width: 20px; height: 20px; fill: #1A5276; }
+    .contact-method-text h4 { font-size: 0.85rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .contact-method-text a, .contact-method-text p { color: #333; font-size: 0.95rem; text-decoration: none; margin: 0; }
+    .contact-method-text a:hover { color: #1A5276; }
+    .contact-method-text .detail { font-size: 0.83rem; color: #888; margin-top: 3px; }
+
+    .tz-note {
+      background: #EAF2F8;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 24px;
+    }
+    .tz-note h5 { font-size: 0.83rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+    .tz-note p { font-size: 0.88rem; color: #555; line-height: 1.6; margin: 0; }
+
+    /* RIGHT: Form */
+    .contact-form-wrap {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 4px 24px rgba(26,82,118,0.08);
+    }
+    .contact-form-wrap h2 { font-size: 1.3rem; color: #1a1a2e; margin-bottom: 4px; }
+    .contact-form-wrap .form-sub { font-size: 0.9rem; color: #888; margin-bottom: 28px; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #dde;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: #333;
+      background: #fff;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #2980B9;
+    }
+    .form-group textarea { height: 120px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    .form-submit {
+      width: 100%;
+      padding: 14px;
+      background: #E67E22;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .form-submit:hover { background: #d35400; }
+    .form-submit:active { transform: scale(0.98); }
+    .form-submit:disabled { background: #aaa; cursor: not-allowed; }
+
+    .form-guarantee {
+      text-align: center;
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 14px;
+    }
+    .form-guarantee svg { width: 13px; height: 13px; fill: #2980B9; vertical-align: middle; margin-right: 4px; }
+
+    .what-happens {
+      padding: 60px 0;
+      background: #fff;
+      border-top: 1px solid #eee;
+    }
+    .what-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .what-inner h2 { font-size: 1.6rem; margin-bottom: 12px; color: #1a1a2e; }
+    .what-inner .sub { color: #666; margin-bottom: 40px; }
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      text-align: left;
+    }
+    .step-item { }
+    .step-num {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #EAF2F8;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .step-item h4 { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+    .step-item p { font-size: 0.88rem; color: #666; line-height: 1.6; margin: 0; }
+
+    @media (max-width: 768px) {
+      .contact-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .steps-row { grid-template-columns: 1fr; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-icon">R</span>
+        <span class="logo-text">ReliaDB</span>
+      </a>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="services.html">Services</a></li>
+        <li><a href="results.html">Results</a></li>
+        <li><a href="blog/index.html">Blog</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html" class="nav-cta active">Book Free Assessment</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="contact-hero">
+    <div class="container">
+      <h1>Book Your Free Assessment</h1>
+      <p>A free 30-minute call where I review your database setup, identify your biggest risks, and give you three actionable recommendations — no commitment required.</p>
+    </div>
+  </section>
+
+  <!-- CONTACT MAIN -->
+  <section class="contact-main">
+    <div class="contact-grid">
+
+      <!-- LEFT: Info -->
+      <div class="contact-info">
+        <h2>Get in touch</h2>
+        <p class="sub">Fill in the form and I'll reply within 4 hours during business hours to schedule your free assessment call. You can also reach me directly via email or LinkedIn.</p>
+
+        <div class="contact-method">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          </div>
+          <div class="contact-method-text">
+            <h4>Email</h4>
+            <a href="mailto:mughees@reliadb.com">mughees@reliadb.com</a>
+            <div class="detail">Response within 4 hours during business hours</div>
+          </div>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+          </div>
+          <div class="contact-method-text">
+            <h4>LinkedIn</h4>
+            <a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">linkedin.com/in/mughees-reliadb</a>
+            <div class="detail">Connect and message me directly</div>
+          </div>
+        </div>
+
+        <div class="contact-method">
+          <div class="contact-icon">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.53 4.92.42-3.73 3.23L16.23 18z"/></svg>
+          </div>
+          <div class="contact-method-text">
+            <h4>Emergency (Production Down)</h4>
+            <a href="mailto:mughees@reliadb.com?subject=URGENT: Production Database Emergency">Email emergency line</a>
+            <div class="detail">Mark subject "URGENT" — I monitor email for production emergencies</div>
+          </div>
+        </div>
+
+        <div class="tz-note">
+          <h5>Business Hours (PKT / UTC+5)</h5>
+          <p>Monday – Friday, 9:00 AM – 8:00 PM Pakistan Time. This covers European business hours fully and US East Coast business hours. I respond to production emergencies outside these hours for clients on monthly retainer.</p>
+        </div>
+      </div>
+
+      <!-- RIGHT: Form -->
+      <div class="contact-form-wrap">
+        <h2>Send me a message</h2>
+        <p class="form-sub">Tell me a bit about your database situation and I'll reply to schedule your free assessment call.</p>
+
+        <!--
+          SETUP INSTRUCTION: Replace "YOUR_FORM_ID" below with your Formspree form ID.
+          Sign up free at formspree.io, create a form, and paste the ID here.
+          Example: action="https://formspree.io/f/xdoqkjlp"
+        -->
+        <form id="contactForm" action="https://formspree.io/f/mzdkrdkw" method="POST">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">Your Name *</label>
+              <input type="text" id="name" name="name" placeholder="Jane Smith" required />
+            </div>
+            <div class="form-group">
+              <label for="company">Company</label>
+              <input type="text" id="company" name="company" placeholder="Acme Corp" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" placeholder="jane@acme.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="service">What are you looking for?</label>
+            <select id="service" name="service">
+              <option value="">Select a service…</option>
+              <option value="audit">Database Health Audit ($1,500–$3,000)</option>
+              <option value="support">Monthly Support Retainer ($2,000+/mo)</option>
+              <option value="emergency">Emergency Incident Response</option>
+              <option value="migration">Migration Project</option>
+              <option value="architecture">Architecture Consulting</option>
+              <option value="assessment">Just the free assessment call for now</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="database">Database setup</label>
+            <input type="text" id="database" name="database" placeholder="e.g. PostgreSQL 15 on AWS RDS, ~20M rows" />
+          </div>
+
+          <div class="form-group">
+            <label for="message">Tell me about your situation *</label>
+            <textarea id="message" name="message" placeholder="What database problems are you experiencing? What's your biggest concern right now?" required></textarea>
+          </div>
+
+          <button type="submit" class="form-submit">Send Message &rarr;</button>
+          <p class="form-guarantee">
+            <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+            Free assessment call · No commitment · Reply within 4 hours
+          </p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT HAPPENS NEXT -->
+  <section class="what-happens">
+    <div class="what-inner">
+      <h2>What Happens After You Send a Message</h2>
+      <p class="sub">Here's exactly what to expect — no surprises.</p>
+      <div class="steps-row">
+        <div class="step-item">
+          <div class="step-num">01</div>
+          <h4>I reply within 4 hours</h4>
+          <p>During business hours (9am–8pm PKT, Mon–Fri), I'll reply to your message with a few scheduling options for your free 30-minute assessment call.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">02</div>
+          <h4>Free 30-minute call</h4>
+          <p>We'll talk through your database setup and pain points. I'll give you three specific, actionable recommendations you can use immediately — with or without me.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">03</div>
+          <h4>Clear next step (if you want one)</h4>
+          <p>If there's a clear fit for a paid engagement, I'll send you a specific proposal with scope, price, and timeline. No vague estimates — you know exactly what you're getting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo">
+          <span class="logo-icon">R</span>
+          <span class="logo-text">ReliaDB</span>
+        </div>
+        <p>Expert PostgreSQL & MySQL consulting for growing companies. Based in Pakistan, serving EU and US clients.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li><a href="services.html">All Services</a></li>
+          <li><a href="services.html#audit">Database Audit</a></li>
+          <li><a href="services.html#support">Monthly Support</a></li>
+          <li><a href="services.html#emergency">Emergency Response</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="results.html">Results</a></li>
+          <li><a href="blog/index.html">Blog</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get in Touch</h4>
+        <ul>
+          <li><a href="mailto:mughees@reliadb.com">mughees@reliadb.com</a></li>
+          <li><a href="contact.html">Book Free Assessment</a></li>
+          <li><a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">LinkedIn</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 ReliaDB. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

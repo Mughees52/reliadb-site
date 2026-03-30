@@ -1,0 +1,36 @@
+# Netlify Configuration for ReliaDB
+# =====================================
+# This file tells Netlify how to build and serve the site.
+# No build command needed — this is a static HTML site.
+
+[build]
+  # No build command — static files are served as-is
+  publish = "."
+
+# Enable Netlify Identity (required for Decap CMS login)
+# After deploying, go to: Netlify dashboard → Site settings → Identity → Enable
+# Then: Identity → Services → Git Gateway → Enable
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/admin/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+# Redirect trailing slashes (optional, cleaner URLs)
+[[redirects]]
+  from = "/blog/"
+  to = "/blog/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/services/"
+  to = "/services.html"
+  status = 200
