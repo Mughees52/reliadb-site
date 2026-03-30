@@ -141,6 +141,84 @@
     .for-who h5 { font-size: 0.85rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
     .for-who p { font-size: 0.92rem; color: #555; margin: 0; line-height: 1.6; }
 
+    .sla-section {
+      padding: 80px 0;
+      background: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .sla-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .sla-head {
+      max-width: 760px;
+      margin: 0 auto 36px;
+      text-align: center;
+    }
+    .sla-head h2 { font-size: 2rem; color: #1a1a2e; margin-bottom: 10px; }
+    .sla-head p { color: #555; line-height: 1.7; }
+    .sla-table-wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      overflow-x: auto;
+      border-radius: 14px;
+      box-shadow: 0 10px 28px rgba(26,82,118,0.08);
+      background: #fff;
+      border: 1px solid #dfe5ec;
+    }
+    .sla-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 760px;
+    }
+    .sla-table th,
+    .sla-table td {
+      padding: 16px 18px;
+      border-right: 1px solid #dfe5ec;
+      border-bottom: 1px solid #dfe5ec;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #1a1a2e;
+      vertical-align: middle;
+      background: #fff;
+    }
+    .sla-table tr > *:last-child { border-right: none; }
+    .sla-table tr:last-child > * { border-bottom: none; }
+
+    .sla-table thead th {
+      background: #2980B9;
+      color: #fff;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-size: 0.92rem;
+    }
+    .sla-table thead th:first-child { border-top-left-radius: 14px; }
+    .sla-table thead th:last-child { border-top-right-radius: 14px; }
+
+    .sla-rowhead {
+      text-align: left !important;
+      font-weight: 700;
+      color: #1A5276;
+      background: #f8fafc;
+      width: 26%;
+    }
+    .sla-subhead td {
+      background: #f1f5f9;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      font-size: 0.82rem;
+      color: #334155;
+      text-align: left;
+    }
+    .sla-subhead td:first-child { border-left: none; }
+
+    .sla-muted { color: #667085; font-size: 0.92rem; }
+
     .addons-section {
       background: #1a1a2e;
       color: #fff;
@@ -192,7 +270,16 @@
         <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
       <ul class="nav-links" id="navLinks">
-        <li><a href="services.html" class="active">Services</a></li>
+        <li class="nav-dropdown">
+          <a href="services.html" class="dropdown-toggle active">Services</a>
+          <ul class="dropdown-menu" aria-label="Services submenu">
+            <li><a href="services.html#audit">Database Health Audit</a></li>
+            <li><a href="services.html#support">Monthly Support</a></li>
+            <li><a href="services.html#emergency">Emergency Response</a></li>
+            <li><a href="services.html#addons">Projects</a></li>
+            <li><a href="services.html#sla">Support &amp; SLA</a></li>
+          </ul>
+        </li>
         <li><a href="results.html">Results</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="blog/index.html">Blog</a></li>
@@ -331,8 +418,66 @@
     </div>
   </section>
 
+  <!-- SUPPORT SLA -->
+  <section class="sla-section" id="sla">
+    <div class="sla-inner">
+      <div class="sla-head">
+        <h2>Support Model &amp; SLA Commitments</h2>
+        <p>ReliaDB support is built for production systems where uptime matters. You get direct access to a senior DBA, clear severity definitions, and response targets based on business impact.</p>
+      </div>
+
+      <div class="sla-table-wrap" aria-label="Support SLA table">
+        <table class="sla-table">
+          <thead>
+            <tr>
+              <th>Subscription Plan</th>
+              <th>Premium</th>
+              <th>Production</th>
+              <th>Basic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sla-rowhead">Availability</td>
+              <td>24 hours × 7 days</td>
+              <td>24 hours × 7 days</td>
+              <td>8 hours × 5 days</td>
+            </tr>
+            <tr class="sla-subhead">
+              <td colspan="4">Response SLO</td>
+            </tr>
+            <tr>
+              <td class="sla-rowhead">Sev-1</td>
+              <td>15 minutes</td>
+              <td>30 minutes</td>
+              <td>60 minutes</td>
+            </tr>
+            <tr>
+              <td class="sla-rowhead">Sev-2</td>
+              <td>30 minutes</td>
+              <td>60 minutes</td>
+              <td>2 hours</td>
+            </tr>
+            <tr>
+              <td class="sla-rowhead">Sev-3</td>
+              <td>60 minutes</td>
+              <td>2 hours</td>
+              <td>4 hours</td>
+            </tr>
+            <tr>
+              <td class="sla-rowhead">Sev-4</td>
+              <td>1 business day</td>
+              <td>1 business day</td>
+              <td>2 business days</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <!-- ADD-ONS -->
-  <section class="addons-section">
+  <section class="addons-section" id="addons">
     <h2>Project-Based Services</h2>
     <p class="sub">Larger scoped engagements with clear deliverables and fixed or estimated pricing.</p>
     <div class="addon-cards">
@@ -365,7 +510,7 @@
           <span class="logo-icon">R</span>
           <span class="logo-text">ReliaDB</span>
         </div>
-        <p>Expert PostgreSQL & MySQL consulting for growing companies. Based in Pakistan, serving EU and US clients.</p>
+        <p>International PostgreSQL &amp; MySQL consulting for growing companies, with delivery based in Pakistan.</p>
       </div>
       <div class="footer-col">
         <h4>Services</h4>

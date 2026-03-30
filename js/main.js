@@ -22,26 +22,87 @@ if (toggle && navLinks) {
   });
 }
 
-// --- Active nav link ---
-const currentPage = location.pathname.split('/').filter(Boolean).pop() || 'index.html';
-document.querySelectorAll('.nav-links a').forEach(a => {
-  const href = a.getAttribute('href');
-  if (href === currentPage || (currentPage === '' && href === 'index.html')) {
-    a.classList.add('active');
-  }
+// --- Services dropdown toggle (mobile + keyboard) ---
+document.querySelectorAll('.nav-dropdown > .dropdown-toggle').forEach(toggleLink => {
+  toggleLink.addEventListener('click', (e) => {
+    const li = toggleLink.closest('.nav-dropdown');
+    if (!li) return;
+
+    const isMobileMenu = navLinks?.classList.contains('open') || window.matchMedia('(max-width: 880px)').matches;
+    if (!isMobileMenu) return; // desktop uses hover/focus
+
+    e.preventDefault();
+    li.classList.toggle('open');
+  });
 });
 
-// --- Scroll reveal ---
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('visible');
-      observer.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.1 });
+// --- Active nav link (supports Services submenu hashes) ---
+const currentPage = location.pathname.split('/').filter(Boolean).pop() || 'index.html';
+const currentHash = location.hash || '';
 
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+const navAnchors = Array.from(document.querySelectorAll('.nav-links a'));
+navAnchors.forEach(a => a.classList.remove('active'));
+
+navAnchors.forEach(a => {
+  const href = a.getAttribute('href');
+  if (!href) return;
+  if (href.startsWith('mailto:') || href.startsWith('http')) return;
+
+  let linkPage = '';
+  let linkHash = '';
+
+  try {
+    const url = new URL(href, window.location.href);
+    linkPage = url.pathname.split('/').filter(Boolean).pop() || 'index.html';
+    linkHash = url.hash || '';
+  } catch {
+    const parts = href.split('#');
+    linkPage = (parts[0] || '').split('/').filter(Boolean).pop() || 'index.html';
+    linkHash = parts[1] ? `#${parts[1]}` : '';
+  }
+
+  if (linkPage !== currentPage) return;
+
+  // If link targets a section hash, only mark active when hash matches
+  if (linkHash) {
+    if (linkHash === currentHash) a.classList.add('active');
+    return;
+  }
+
+  // No hash: mark active for the page-level nav item.
+  // For Services page with a hash, keep the main Services link highlighted
+  // while the submenu highlights the specific section.
+  if (currentHash && (href.endsWith('services.html') || href.endsWith('/services.html'))) {
+    a.classList.add('active');
+    return;
+  }
+
+  if (!currentHash) a.classList.add('active');
+});
+
+// --- Scroll reveal (down + up) ---
+const revealTargets = document.querySelectorAll(
+  '.section, .service-full, .case-study-section, .about-section, .what-happens, .results-metrics, .contact-main, .blog-main, .addons-section, .guarantee-section, .cta-bottom, .cta-about, .cta-section'
+);
+
+if (revealTargets.length) {
+  revealTargets.forEach(el => el.classList.add('scroll-reveal'));
+
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+      } else {
+        entry.target.classList.remove('is-visible');
+      }
+    });
+  }, {
+    threshold: 0.12,
+    rootMargin: '0px 0px -8% 0px'
+  });
+
+  revealTargets.forEach(el => revealObserver.observe(el));
+}
 
 // --- Form handling ---
 const form = document.getElementById('contactForm');

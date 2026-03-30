@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
-  <meta name="description" content="Meet Mughees — senior DBA and founder of ReliaDB. Expert PostgreSQL and MySQL consulting for growing companies, serving EU and US clients from Pakistan." />
+  <meta name="description" content="Meet Mughees — senior DBA and founder of ReliaDB. International PostgreSQL and MySQL consulting for growing companies, with delivery based in Pakistan." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -163,7 +163,16 @@
         <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
       <ul class="nav-links" id="navLinks">
-        <li><a href="services.html">Services</a></li>
+        <li class="nav-dropdown">
+          <a href="services.html" class="dropdown-toggle">Services</a>
+          <ul class="dropdown-menu" aria-label="Services submenu">
+            <li><a href="services.html#audit">Database Health Audit</a></li>
+            <li><a href="services.html#support">Monthly Support</a></li>
+            <li><a href="services.html#emergency">Emergency Response</a></li>
+            <li><a href="services.html#addons">Projects</a></li>
+            <li><a href="services.html#sla">Support &amp; SLA</a></li>
+          </ul>
+        </li>
         <li><a href="results.html">Results</a></li>
         <li><a href="about.html" class="active">About</a></li>
         <li><a href="blog/index.html">Blog</a></li>
@@ -195,7 +204,7 @@
       <h2>Why I Started ReliaDB</h2>
       <p>I've spent years in the trenches with production databases — diagnosing slow queries at 2am, rebuilding replication after catastrophic failures, migrating millions of rows without downtime, and designing database architectures for systems that needed to scale by 100x. I've seen what happens when companies don't have access to deep database expertise: slow products, escalating cloud bills, preventable outages, and engineering teams spending days firefighting problems that a senior DBA could solve in hours.</p>
       <p>The problem is that dedicated DBA talent is expensive. Hiring a senior DBA in the US or Europe is a major annual investment once you factor in salary, benefits, equipment, and management overhead. Most growing companies can't justify that headcount, but they absolutely need that level of expertise.</p>
-      <p>I started ReliaDB to close that gap. Based in Pakistan, I provide senior-level PostgreSQL and MySQL expertise to companies in Europe and North America at a fraction of the cost of a local hire — while delivering the same (and often higher) quality of work, because I'm specialised and focused entirely on databases rather than being a generalist who "also knows databases".</p>
+      <p>I started ReliaDB to close that gap. ReliaDB serves companies internationally while operating from Pakistan. I provide senior-level PostgreSQL and MySQL expertise to teams in Europe and North America at a fraction of the cost of a local hire — while delivering the same (and often higher) quality of work, because I'm specialised and focused entirely on databases rather than being a generalist who "also knows databases".</p>
       <p>The expert who shows up on the sales call is the same person who touches your database. There's no account manager, no junior consultant who does the actual work, no project hand-offs. You work directly with me.</p>
     </div>
   </section>
@@ -258,8 +267,8 @@
   <section class="about-section">
     <div class="about-inner">
       <div class="section-label">Working Together</div>
-      <h2>Based in Pakistan. Available for EU &amp; US.</h2>
-      <p>Pakistan Standard Time (PKT, UTC+5) creates a natural timezone overlap that makes working with international clients genuinely practical — not just theoretically possible. My working day overlaps directly with European business hours, and I extend into evening hours to cover the US East Coast and, when needed, the US West Coast.</p>
+      <h2>International Delivery, Pakistan-Based Operations</h2>
+      <p>Operating from Pakistan (PKT, UTC+5) creates a natural timezone overlap that supports international collaboration in real time. My working day overlaps directly with European business hours, and I extend into evening hours to cover the US East Coast and, when needed, the US West Coast.</p>
       <p>I respond to messages within 2 hours during active hours, and for clients on the Monthly Support retainer, I maintain priority response for production issues within 2 hours around the clock. All client communication happens via Slack, email, or video call — whatever your team prefers.</p>
 
       <div class="tz-box">
@@ -348,7 +357,7 @@
           <span class="logo-icon">R</span>
           <span class="logo-text">ReliaDB</span>
         </div>
-        <p>Expert PostgreSQL & MySQL consulting for growing companies. Based in Pakistan, serving EU and US clients.</p>
+        <p>International PostgreSQL &amp; MySQL consulting for growing companies, with delivery based in Pakistan.</p>
       </div>
       <div class="footer-col">
         <h4>Services</h4>
