@@ -315,7 +315,7 @@
           <h4>The Result</h4>
           <p>Worst-case query time dropped from 18.4 seconds to 190ms — a 94% reduction. Average dashboard load time fell from 12 seconds to under 800ms.</p>
           <p>The customer who had been most vocal about leaving renewed their contract the following month. The engineering team told me this was the single biggest UX improvement they'd shipped in 18 months — without writing a line of new application code.</p>
-          <p>As an ongoing benefit: CPU utilisation on their RDS instance dropped 40%, which let them downsize the instance class and save approximately $380/month on AWS.</p>
+          <p>As an ongoing benefit: CPU utilisation on their RDS instance dropped 40%, which let them downsize the instance class and reduce their monthly AWS spend.</p>
         </div>
 
         <div class="quote-pullout">
@@ -333,7 +333,7 @@
         <div class="case-header-left">
           <span class="case-tag">Cost Optimisation &middot; AWS RDS &middot; MySQL</span>
           <h2>E-Commerce Platform: AWS RDS Bills Cut by 62%</h2>
-          <p class="case-summary">A fast-growing e-commerce company was spending $8,400/month on AWS RDS. After a two-week optimisation engagement, the same workload ran on $3,200/month — saving $62,400 per year.</p>
+          <p class="case-summary">A fast-growing e-commerce company had an AWS RDS bill that had grown rapidly. After a two-week optimisation engagement, the same workload ran at a much lower monthly cost — delivering major annual savings.</p>
           <div class="tech-tags">
             <span class="tech-tag">MySQL 8.0</span>
             <span class="tech-tag">AWS RDS</span>
@@ -348,7 +348,7 @@
             <span class="pill-label">Cost reduction</span>
           </div>
           <div class="result-pill">
-            <span class="pill-num">$62,400</span>
+            <span class="pill-num">Major</span>
             <span class="pill-label">Annual savings</span>
           </div>
           <div class="result-pill">
@@ -361,7 +361,7 @@
       <div class="case-body">
         <div class="case-block">
           <h4>The Problem</h4>
-          <p>This mid-size e-commerce business had grown rapidly during a period of high online retail growth, and their AWS bill had scaled with them — but inefficiently. Their monthly RDS spend had ballooned to $8,400/month across a multi-AZ db.r5.2xlarge instance, three read replicas, and significant storage I/O costs.</p>
+          <p>This mid-size e-commerce business had grown rapidly during a period of high online retail growth, and their AWS bill had scaled with them — but inefficiently. Their monthly RDS spend had ballooned across a multi-AZ instance, multiple read replicas, and significant storage I/O costs.</p>
           <p>Their CTO reached out after the board flagged the AWS bill in a quarterly review. They suspected they were over-provisioned but couldn't confidently downsize without risking performance degradation during peak sale periods.</p>
         </div>
 
@@ -369,7 +369,7 @@
           <h4>What I Found</h4>
           <ul class="timeline">
             <li><strong>Massively over-provisioned instance.</strong> The db.r5.2xlarge (64GB RAM) was running at 8–12% CPU and 15% memory utilisation on average. The large instance class was solving a query efficiency problem with brute-force hardware.</li>
-            <li><strong>Three read replicas, two barely used.</strong> Their application was routing all reads to a single replica. Two others sat near-idle, each costing $680/month.</li>
+            <li><strong>Three read replicas, two barely used.</strong> Their application was routing all reads to a single replica. Two others sat near-idle and added unnecessary monthly cost.</li>
             <li><strong>Unoptimised storage I/O costs.</strong> Their IOPS allocation was set to 3,000 provisioned IOPS but peak utilisation never exceeded 400 IOPS.</li>
             <li><strong>Missing indexes causing full table scans.</strong> Several frequently-run product search queries were scanning the full 8M-row products table because composite indexes were missing.</li>
             <li><strong>Binary logging retention set too high.</strong> Binlogs were being retained for 7 days, inflating storage by 180GB unnecessarily.</li>
@@ -385,9 +385,9 @@
 
         <div class="case-block">
           <h4>The Result</h4>
-          <p>Monthly RDS spend dropped from $8,400 to $3,190 — a 62% reduction. Annual savings: approximately $62,400. The changes were rolled out over two maintenance windows with zero downtime and no performance regressions.</p>
+          <p>Monthly RDS spend dropped by 62%. The changes were rolled out over two maintenance windows with zero downtime and no performance regressions.</p>
           <p>As a bonus, query response times on the product search feature improved by 65% due to the missing indexes — a performance improvement the business hadn't even asked for.</p>
-          <p>The engagement paid for itself within the first month of savings. The CTO went back to the board with a $62K annual saving and a written report explaining the technical changes.</p>
+          <p>The engagement paid for itself within the first month of savings. The CTO went back to the board with a clear annual savings figure and a written report explaining the technical changes.</p>
         </div>
 
         <div class="quote-pullout">

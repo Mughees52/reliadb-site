@@ -67,9 +67,31 @@
       padding: 24px 28px;
       margin-bottom: 24px;
     }
-    .service-price-box .price-label { font-size: 0.8rem; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.06em; }
-    .service-price-box .price { font-size: 2rem; font-weight: 800; margin: 4px 0; }
-    .service-price-box .price-note { font-size: 0.85rem; opacity: 0.8; }
+    .service-price-box .price-label { font-size: 0.92rem; opacity: 0.88; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .service-price-box .price { margin: 8px 0 0; }
+    .service-price-box .price-note { font-size: 1.02rem; opacity: 0.96; line-height: 1.6; margin-top: 10px; }
+    .price-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1px solid #E67E22;
+      background: #E67E22;
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: transform .18s ease, box-shadow .22s ease, background .2s ease, border-color .2s ease;
+      text-decoration: none;
+    }
+    .price-cta-btn:hover {
+      background: #d35400;
+      border-color: #d35400;
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(230,126,34,0.32);
+    }
 
     .what-included h4 {
       font-size: 1rem;
@@ -141,7 +163,8 @@
       padding: 28px;
     }
     .addon-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
-    .addon-card .addon-price { font-size: 1.4rem; font-weight: 800; color: #E67E22; margin-bottom: 10px; }
+    .addon-card .addon-price { margin-bottom: 12px; }
+    .addon-card .addon-price .price-cta-btn { width: auto; }
     .addon-card p { color: rgba(255,255,255,0.7); font-size: 0.9rem; line-height: 1.6; margin: 0; }
 
     .guarantee-section {
@@ -209,9 +232,9 @@
       </div>
       <div class="service-detail">
         <div class="service-price-box">
-          <div class="price-label">Starting from</div>
-          <div class="price">$1,500</div>
-          <div class="price-note">One-time flat fee · Delivered within 5 business days</div>
+          <div class="price-label">Pricing</div>
+          <div class="price"><a href="contact.html" class="price-cta-btn">Request a quote</a></div>
+          <div class="price-note">Fixed-scope audit · Delivered within 5 business days</div>
         </div>
         <div class="what-included">
           <h4>What's included</h4>
@@ -237,7 +260,7 @@
         <span class="service-badge">Retainer · Most Popular</span>
         <h2 class="service-title">Monthly Database Support</h2>
         <p class="service-tagline">A senior DBA in your corner — without the full-time cost.</p>
-        <p class="service-desc">Your dedicated monthly retainer gives you ongoing access to expert database support, proactive monitoring, and priority response when something goes wrong. Think of it as having a senior DBA on your team — without the $120K+ salary and benefits. I handle the database layer so your engineers can focus on building product.</p>
+        <p class="service-desc">Your dedicated monthly retainer gives you ongoing access to expert database support, proactive monitoring, and priority response when something goes wrong. Think of it as having a senior DBA on your team — without the cost and overhead of a full-time hire. I handle the database layer so your engineers can focus on building product.</p>
         <div class="for-who">
           <h5>This is for you if…</h5>
           <p>Your engineering team is great at building features but nobody has deep database expertise. You've had database incidents you couldn't resolve quickly. You're scaling and need someone watching the data layer proactively.</p>
@@ -248,8 +271,8 @@
       </div>
       <div class="service-detail">
         <div class="service-price-box">
-          <div class="price-label">Monthly retainer from</div>
-          <div class="price">$2,000 / mo</div>
+          <div class="price-label">Pricing</div>
+          <div class="price"><a href="contact.html" class="price-cta-btn">Request a quote</a></div>
           <div class="price-note">3-month minimum · Includes 20–40 hrs/month depending on tier</div>
         </div>
         <div class="what-included">
@@ -288,9 +311,9 @@
       </div>
       <div class="service-detail">
         <div class="service-price-box" style="background:#c0392b;">
-          <div class="price-label">Emergency rate</div>
-          <div class="price">$400 / hour</div>
-          <div class="price-note">4-hour minimum · Billed in 1-hour increments after minimum</div>
+          <div class="price-label">Pricing</div>
+          <div class="price"><a href="contact.html" class="price-cta-btn">Request pricing</a></div>
+          <div class="price-note">Minimum engagement applies · Billed in 1-hour increments after minimum</div>
         </div>
         <div class="what-included">
           <h4>What to expect</h4>
@@ -315,12 +338,12 @@
     <div class="addon-cards">
       <div class="addon-card">
         <h3>Migration Projects</h3>
-        <div class="addon-price">$5,000 – $20,000+</div>
+        <div class="addon-price"><a href="contact.html" class="price-cta-btn">Request a quote</a></div>
         <p>Full-service database migration: Oracle → PostgreSQL, MySQL → PostgreSQL, on-premise → AWS RDS or Aurora, or version upgrades. Includes assessment, migration plan, dry runs, cutover strategy, and post-migration validation. Quoted individually based on database size and complexity.</p>
       </div>
       <div class="addon-card">
         <h3>Architecture Consulting</h3>
-        <div class="addon-price">$300 / hour</div>
+        <div class="addon-price"><a href="contact.html" class="price-cta-btn">Request pricing</a></div>
         <p>Designing your database layer for a new product, planning for scale, choosing between PostgreSQL and MySQL, evaluating managed services vs self-hosted, or designing a multi-region HA strategy? I provide expert architectural guidance with clear tradeoff analysis and a written recommendation document.</p>
       </div>
     </div>
