@@ -203,31 +203,31 @@
 </head>
 <body>
 
-  <!-- NAVBAR -->
-  <nav id="navbar">
+  <!-- NAVIGATION (matched to homepage) -->
+  <nav id="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
-      <a href="index.html" class="nav-logo">
-        <span class="logo-icon">R</span>
-        <span class="logo-text">ReliaDB</span>
+      <a href="index.html" class="nav-logo" aria-label="ReliaDB Home">
+        <div class="nav-logo-icon">R</div>
+        <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
-      <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <ul class="nav-links" id="navLinks">
+        <li><a href="services.html">Services</a></li>
+        <li><a href="results.html" class="active">Results</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="blog/index.html">Blog</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cta"><a href="contact.html" class="btn btn-primary btn-sm">Book Free Assessment</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
-      <ul class="nav-links" id="navLinks">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="services/index.html">Services</a></li>
-        <li><a href="results.html" class="active">Results</a></li>
-        <li><a href="blog/index.html">Blog</a></li>
-        <li><a href="about.html">About</a></li>
-        <li><a href="contact.html" class="nav-cta">Book Free Assessment</a></li>
-      </ul>
     </div>
   </nav>
 
   <!-- HERO -->
   <section class="results-hero">
     <div class="container">
-      <h1>Real Results, Real Databases</h1>
+      <h1 style="color:#ffffff;font-weight:800;">Real Results, Real Databases</h1>
       <p>Anonymised case studies from real engagements. These are production databases — the problems were real, the fixes were measurable, and the impact was immediate.</p>
     </div>
   </section>
