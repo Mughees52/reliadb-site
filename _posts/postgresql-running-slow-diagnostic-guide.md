@@ -73,4 +73,4 @@ Tables with more than 10-20% dead tuples need a `VACUUM ANALYZE`.
 
 80% of PostgreSQL performance problems come from two things: missing or wrong indexes, and autovacuum not keeping up with bloat. Fix those and most slowdowns disappear.
 
-If you've worked through this and still can't identify the root cause, [book a free assessment call](/contact.html) — I'll look at your specific setup.
+If you've worked through this and still can't identify the root cause, [book a free assessment call](/contact.html) — we'll review your specific setup.

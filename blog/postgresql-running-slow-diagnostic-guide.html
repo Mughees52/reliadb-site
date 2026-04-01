@@ -161,7 +161,7 @@ WHERE o.status = 'pending'
       </div>
 
       <h2 id="step4">Step 4: Audit Your Indexes</h2>
-      <p>Missing indexes are responsible for the majority of PostgreSQL performance problems I encounter. Here's how to find tables with sequential scans that should have indexes:</p>
+      <p>Missing indexes are responsible for the majority of PostgreSQL performance problems we encounter. Here's how to find tables with sequential scans that should have indexes:</p>
       <pre><code>-- Tables with high sequential scan counts (candidates for indexing)
 SELECT
   schemaname,
@@ -191,7 +191,7 @@ ORDER BY pg_relation_size(indexrelid) DESC;</code></pre>
 
       <div class="post-cta-inline">
         <h4>Finding index problems in your production database?</h4>
-        <p>If you're seeing sequential scans on large tables or aren't sure which indexes to add, book a free 30-minute assessment. I'll look at your specific query patterns and give you a prioritised indexing plan.</p>
+        <p>If you're seeing sequential scans on large tables or aren't sure which indexes to add, book a free 30-minute assessment. We'll look at your specific query patterns and give you a prioritised indexing plan.</p>
         <a href="../contact.html" class="btn">Book Free Assessment &rarr;</a>
       </div>
 
@@ -237,14 +237,14 @@ SHOW max_connections;</code></pre>
 
       <h2 id="summary">Putting It All Together</h2>
       <p>PostgreSQL performance diagnosis is a process of elimination. Start with what's running right now (<code>pg_stat_activity</code>), find your worst offenders over time (<code>pg_stat_statements</code>), understand their execution plans (<code>EXPLAIN ANALYZE</code>), and then work through the underlying causes: missing indexes, bloat, or connection exhaustion.</p>
-      <p>In my experience, 80% of PostgreSQL performance problems come down to two things: missing or wrong indexes, and autovacuum not keeping up with table bloat. Fix those two and most slowdowns disappear. The remaining 20% are usually query design problems or hardware constraints — and those require a closer look at the specific query patterns.</p>
-      <p>If you've worked through this diagnostic process and still can't identify the root cause, or if the fix requires changes you're not confident making in production, that's exactly what I help with.</p>
+      <p>In our experience, 80% of PostgreSQL performance problems come down to two things: missing or wrong indexes, and autovacuum not keeping up with table bloat. Fix those two and most slowdowns disappear. The remaining 20% are usually query design problems or hardware constraints — and those require a closer look at specific query patterns.</p>
+      <p>If you've worked through this diagnostic process and still can't identify the root cause, or if the fix requires changes you're not confident making in production, that's exactly what we help with.</p>
 
       <div class="author-box">
         <div class="author-avatar">M</div>
         <div class="author-info">
           <h4>Mughees — ReliaDB</h4>
-          <p>Senior DBA specialising in PostgreSQL and MySQL performance, high availability, and cloud database optimisation. I help growing companies keep their databases fast, reliable, and cost-efficient. <a href="../about.html" style="color:#2980B9;">More about me &rarr;</a></p>
+          <p>ReliaDB is a specialist DBA team for PostgreSQL and MySQL performance, high availability, and cloud database optimization. We help growing companies keep their databases fast, reliable, and cost-efficient. <a href="../about.html" style="color:#2980B9;">More about ReliaDB &rarr;</a></p>
         </div>
       </div>
 
@@ -279,7 +279,7 @@ SHOW max_connections;</code></pre>
       </div>
       <div class="sidebar-widget sidebar-cta-box">
         <h3>Still Stuck?</h3>
-        <p>If you've run through this guide and still can't find the issue, book a free assessment call. I'll look at your specific setup.</p>
+        <p>If you've run through this guide and still can't find the issue, book a free assessment call. We'll look at your specific setup.</p>
         <a href="../contact.html" class="btn">Book Free Call</a>
       </div>
       <div class="sidebar-widget">
