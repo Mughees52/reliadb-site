@@ -22,6 +22,64 @@ if (toggle && navLinks) {
   });
 }
 
+// --- Header search (magnifier → inline field; GET /search/?q= for Pagefind) ---
+// Bind on trigger + panel only; input is queried lazily so a missing id cannot block the whole feature.
+const navSearchTrigger = document.getElementById('navSearchTrigger');
+const navSearchExpand = document.getElementById('navSearchExpand');
+const navSearchExit = document.getElementById('navSearchExit');
+function getNavSearchInput() {
+  return (
+    document.getElementById('navSearchQuery') ||
+    (navSearchExpand && navSearchExpand.querySelector('input[name="q"]'))
+  );
+}
+if (navbar && navSearchTrigger && navSearchExpand) {
+  function openNavSearch() {
+    navbar.classList.add('nav-search-open');
+    navSearchTrigger.setAttribute('aria-expanded', 'true');
+    navSearchExpand.removeAttribute('hidden');
+    navSearchExpand.style.display = 'flex';
+    if (navLinks) navLinks.classList.remove('open');
+    if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    const input = getNavSearchInput();
+    if (input) {
+      requestAnimationFrame(() => {
+        try {
+          input.focus();
+        } catch (_) {
+          /* focus can fail if still not visible in some browsers */
+        }
+      });
+    }
+  }
+  function closeNavSearch() {
+    navbar.classList.remove('nav-search-open');
+    navSearchTrigger.setAttribute('aria-expanded', 'false');
+    navSearchExpand.setAttribute('hidden', '');
+    navSearchExpand.style.display = '';
+    const input = getNavSearchInput();
+    if (input) input.value = '';
+  }
+  navSearchTrigger.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!navbar.classList.contains('nav-search-open')) openNavSearch();
+  });
+  if (navSearchExit) navSearchExit.addEventListener('click', closeNavSearch);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navbar.classList.contains('nav-search-open')) closeNavSearch();
+  });
+  const inputForKeys = getNavSearchInput();
+  if (inputForKeys) {
+    inputForKeys.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeNavSearch();
+      }
+    });
+  }
+}
+
 // --- Services dropdown toggle (mobile + keyboard) ---
 document.querySelectorAll('.nav-dropdown > .dropdown-toggle').forEach(toggleLink => {
   toggleLink.addEventListener('click', (e) => {
@@ -37,7 +95,14 @@ document.querySelectorAll('.nav-dropdown > .dropdown-toggle').forEach(toggleLink
 });
 
 // --- Active nav link (supports Services submenu hashes) ---
-const currentPage = location.pathname.split('/').filter(Boolean).pop() || 'index.html';
+// Use full pathname (not only the last segment) so /search/index.html ≠ /index.html.
+function normalizePathname(pathname) {
+  if (!pathname || pathname === '/') return '/index.html';
+  const p = pathname.replace(/\/$/, '');
+  if (!p.endsWith('.html')) return `${p}/index.html`;
+  return p;
+}
+const currentPath = normalizePathname(location.pathname);
 const currentHash = location.hash || '';
 
 const navAnchors = Array.from(document.querySelectorAll('.nav-links a'));
@@ -48,20 +113,24 @@ navAnchors.forEach(a => {
   if (!href) return;
   if (href.startsWith('mailto:') || href.startsWith('http')) return;
 
-  let linkPage = '';
+  let linkPath = '';
   let linkHash = '';
 
   try {
     const url = new URL(href, window.location.href);
-    linkPage = url.pathname.split('/').filter(Boolean).pop() || 'index.html';
+    linkPath = normalizePathname(url.pathname);
     linkHash = url.hash || '';
   } catch {
     const parts = href.split('#');
-    linkPage = (parts[0] || '').split('/').filter(Boolean).pop() || 'index.html';
     linkHash = parts[1] ? `#${parts[1]}` : '';
+    try {
+      linkPath = normalizePathname(new URL(parts[0] || '.', window.location.href).pathname);
+    } catch {
+      linkPath = '';
+    }
   }
 
-  if (linkPage !== currentPage) return;
+  if (linkPath !== currentPath) return;
 
   // If link targets a section hash, only mark active when hash matches
   if (linkHash) {
@@ -82,7 +151,7 @@ navAnchors.forEach(a => {
 
 // --- Scroll reveal (down + up) ---
 const revealTargets = document.querySelectorAll(
-  '.section, .service-full, .case-study-section, .about-section, .what-happens, .results-metrics, .contact-main, .blog-main, .addons-section, .guarantee-section, .cta-bottom, .cta-about, .cta-section'
+  '.section, .service-full, .case-study-section, .about-section, .what-happens, .results-metrics, .contact-main, .blog-main, .search-page-main, .addons-section, .guarantee-section, .cta-bottom, .cta-about, .cta-section'
 );
 
 if (revealTargets.length) {
@@ -131,7 +200,7 @@ if (form) {
     } catch {
       btn.textContent = orig;
       btn.disabled = false;
-      alert('Something went wrong. Please email mughees@reliadb.com directly.');
+      alert('Something went wrong. Please email support@reliadb.com directly.');
     }
   });
 }
@@ -139,7 +208,14 @@ if (form) {
 // --- Smooth scroll for anchor links ---
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
-    const target = document.querySelector(a.getAttribute('href'));
+    const href = a.getAttribute('href');
+    if (!href || href.length < 2) return;
+    let target;
+    try {
+      target = document.querySelector(href);
+    } catch {
+      return;
+    }
     if (target) {
       e.preventDefault();
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });

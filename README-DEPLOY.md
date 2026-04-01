@@ -131,15 +131,15 @@ Once your domain is connected, Netlify automatically provisions a free SSL certi
 
 ## Step 6: Set Up Email Forwarding (Hostinger)
 
-So that mughees@reliadb.com forwards to mughees52@gmail.com:
+So that support@reliadb.com forwards to mughees52@gmail.com:
 
 1. In Hostinger hPanel, go to **Email** → **Email accounts**
-2. Create a forwarder: `mughees@reliadb.com` → `mughees52@gmail.com`
+2. Create a forwarder: `support@reliadb.com` → `mughees52@gmail.com`
 
 Or set up a free business email via **Zoho Mail** (one free mailbox):
 1. Go to zoho.com/mail and sign up free
 2. Add your domain, verify it via DNS TXT record in Hostinger
-3. Create mughees@reliadb.com as your mailbox
+3. Create support@reliadb.com as your mailbox
 
 ---
 

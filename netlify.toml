@@ -1,7 +1,7 @@
 # Netlify Configuration for ReliaDB
 # =====================================
 # This file tells Netlify how to build and serve the site.
-# No build command needed — this is a static HTML site.
+# Build: npm run build (Eleventy + Pagefind search index).
 
 [build]
   command = "npm run build"
@@ -49,6 +49,11 @@
 [[redirects]]
   from = "/blog/"
   to = "/blog/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/search/"
+  to = "/search/index.html"
   status = 200
 
 [[redirects]]

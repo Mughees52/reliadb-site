@@ -3,6 +3,11 @@ title: "PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide"
 date: 2024-03-15T09:00:00.000Z
 description: "Your PostgreSQL database is slow and you don't know why. This guide walks through a systematic diagnosis process — slow queries, EXPLAIN analysis, index auditing, and autovacuum."
 category: postgresql
+categories:
+  - postgresql
+  - database-performance
+  - troubleshooting
+  - postgresql-query-tuning
 read_time: 12
 featured: true
 ---

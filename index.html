@@ -1,3 +1,6 @@
+---
+permalink: /index.html
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,6 +31,7 @@
       <li><a href="contact.html">Contact</a></li>
       <li class="nav-cta"><a href="contact.html" class="btn btn-primary btn-sm">Book Free Assessment</a></li>
     </ul>
+    {% include "nav-search-controls.njk" %}
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -242,59 +246,12 @@
     <h2>Not sure if you need a DBA?</h2>
     <p>Book a free 30-minute call. We'll tell you honestly whether your database setup is healthy — and what to prioritise if it's not.</p>
     <a href="contact.html" class="btn btn-primary btn-lg">Book Your Free Assessment →</a>
-    <p class="cta-note">Covers EU and US business hours · Based in Pakistan (UTC+5) · Response within 2 hours</p>
+    <p class="cta-note">24/7 inquiry coverage · Delivery based in Pakistan (UTC+5)</p>
   </div>
 </section>
 
-<!-- ── FOOTER ── -->
-<footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <a href="index.html" class="nav-logo">
-          <div class="nav-logo-icon">R</div>
-          <span class="nav-logo-text">Relia<span>DB</span></span>
-        </a>
-        <p>Senior PostgreSQL &amp; MySQL DBA consulting for growing SaaS and tech companies — without the cost of a full-time hire.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Services</h4>
-        <ul>
-          <li><a href="services.html#audit">Database Health Audit</a></li>
-          <li><a href="services.html#retainer">Monthly Support</a></li>
-          <li><a href="services.html#emergency">Emergency Response</a></li>
-          <li><a href="services.html#migration">Migration Projects</a></li>
-          <li><a href="services.html#architecture">Architecture Consulting</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <ul>
-          <li><a href="about.html">About</a></li>
-          <li><a href="results.html">Results</a></li>
-          <li><a href="blog/index.html">Blog</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Contact</h4>
-        <ul>
-          <li><a href="mailto:hello@reliadb.com">hello@reliadb.com</a></li>
-          <li><a href="mailto:urgent@reliadb.com">urgent@reliadb.com</a></li>
-          <li><a href="contact.html">Book a call</a></li>
-          <li><span style="color:rgba(255,255,255,.4);font-size:.85rem">UTC+5 · Pakistan</span></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>&copy; 2026 ReliaDB. All rights reserved.</span>
-      <div style="display:flex;gap:20px">
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="contact.html">Contact</a>
-      </div>
-    </div>
-  </div>
-</footer>
+<!-- ── FOOTER (shared: _includes/footer.njk) ── -->
+{% include "footer.njk" %}
 
 <script src="js/main.js"></script>
 <!-- Netlify Identity Widget — required for the blog admin panel at /admin -->

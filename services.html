@@ -1,3 +1,6 @@
+---
+permalink: /services.html
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -286,6 +289,7 @@
         <li><a href="contact.html">Contact</a></li>
         <li class="nav-cta"><a href="contact.html" class="btn btn-primary btn-sm">Book Free Assessment</a></li>
       </ul>
+      {% include "nav-search-controls.njk" %}
       <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
         <span></span><span></span><span></span>
       </button>
@@ -392,7 +396,7 @@
           <p>You're facing a production database outage, critical performance failure, data integrity issue, failed migration, or replication breakdown. Every minute of downtime costs you money — getting this fixed fast is worth far more than the engagement cost.</p>
         </div>
         <div class="service-cta-row">
-          <a href="mailto:mughees@reliadb.com?subject=URGENT: Database Emergency" class="btn btn-primary" style="background:#c0392b;border-color:#c0392b;">Email Emergency Line</a>
+          <a href="mailto:support@reliadb.com?subject=URGENT: Database Emergency" class="btn btn-primary" style="background:#c0392b;border-color:#c0392b;">Email Emergency Line</a>
           <a href="contact.html" class="btn btn-outline">Book Standard Assessment</a>
         </div>
       </div>
@@ -502,47 +506,7 @@
     <a href="contact.html" class="btn btn-primary" style="margin-top:16px;">Book Your Free Assessment Call</a>
   </section>
 
-  <!-- FOOTER -->
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <div class="footer-logo">
-          <span class="logo-icon">R</span>
-          <span class="logo-text">ReliaDB</span>
-        </div>
-        <p>International PostgreSQL &amp; MySQL consulting for growing companies, with delivery based in Pakistan.</p>
-      </div>
-      <div class="footer-col">
-        <h4>Services</h4>
-        <ul>
-          <li><a href="#audit">Database Health Audit</a></li>
-          <li><a href="#support">Monthly Support</a></li>
-          <li><a href="#emergency">Emergency Response</a></li>
-          <li><a href="#addons">Migration Projects</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Company</h4>
-        <ul>
-          <li><a href="results.html">Results</a></li>
-          <li><a href="blog/index.html">Blog</a></li>
-          <li><a href="about.html">About</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Get in Touch</h4>
-        <ul>
-          <li><a href="mailto:mughees@reliadb.com">mughees@reliadb.com</a></li>
-          <li><a href="contact.html">Book Free Assessment</a></li>
-          <li><a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">LinkedIn</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>&copy; 2024 ReliaDB. All rights reserved.</p>
-    </div>
-  </footer>
+  {% include "footer.njk" %}
 
   <script src="js/main.js"></script>
 </body>

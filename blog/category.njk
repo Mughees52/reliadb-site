@@ -1,0 +1,85 @@
+---
+pagination:
+  data: collections.categories
+  size: 1
+  alias: category
+permalink: "/blog/category/{{ category.slug }}/index.html"
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ category.title }} Articles | ReliaDB Blog</title>
+  <meta name="description" content="Browse {{ category.title }} articles from ReliaDB." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../../../css/style.css" />
+  <style>
+    .blog-hero { background: linear-gradient(135deg, #1A5276 0%, #154360 100%); padding: 140px 0 80px; text-align: center; color: #fff; }
+    .blog-hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; color: #ffffff; font-weight: 800; }
+    .blog-hero p { font-size: 1.05rem; color: rgba(255,255,255,0.85); max-width: 720px; margin: 0 auto; }
+    .blog-main { max-width: 980px; margin: 0 auto; padding: 64px 24px; }
+    .back-link { display: inline-block; margin-bottom: 18px; color: #1A5276; font-weight: 600; text-decoration: none; }
+    .post-list { display: flex; flex-direction: column; gap: 22px; }
+    .post-card-h { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px 28px; text-decoration: none; display: block; }
+    .post-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .post-cat { background: #EAF2F8; color: #1A5276; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; }
+    .post-date, .post-read-time { font-size: 0.82rem; color: #999; }
+    .post-card-h h2 { font-size: 1.15rem; color: #1a1a2e; margin-bottom: 8px; line-height: 1.35; }
+    .post-card-h p { font-size: 0.92rem; color: #666; line-height: 1.7; margin: 0; }
+  </style>
+</head>
+<body>
+  <nav id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="/index.html" class="nav-logo" aria-label="ReliaDB Home">
+        <div class="nav-logo-icon">R</div>
+        <span class="nav-logo-text">Relia<span>DB</span></span>
+      </a>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="/index.html">Home</a></li>
+        <li><a href="/services.html">Services</a></li>
+        <li><a href="/results.html">Results</a></li>
+        <li><a href="/blog/index.html" class="active">Blog</a></li>
+        <li><a href="/about.html">About</a></li>
+        <li><a href="/contact.html" class="nav-cta">Book Free Assessment</a></li>
+      </ul>
+      {% include "nav-search-controls.njk" %}
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <section class="blog-hero">
+    <div class="container">
+      <h1>{{ category.title }}</h1>
+      <p>{{ category.posts.length }} article{% if category.posts.length != 1 %}s{% endif %} in this category.</p>
+    </div>
+  </section>
+
+  <main class="blog-main">
+    <a class="back-link" href="/blog/index.html">&larr; Back to all posts</a>
+    <div class="post-list">
+      {% for post in category.posts %}
+        <a href="{{ post.url }}" class="post-card-h">
+          <div class="post-meta">
+            {% set categories = post.data | postCategories(collections.categories) %}
+            {% for cat in categories %}
+              <span class="post-cat">{{ cat.title }}</span>
+            {% endfor %}
+            <span class="post-date">{{ post.date.toDateString() }}</span>
+            <span class="post-read-time">{{ post.data.read_time or 8 }} min read</span>
+          </div>
+          <h2>{{ post.data.title }}</h2>
+          <p>{{ post.data.description }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </main>
+
+  {% include "footer.njk" %}
+
+  <script src="../../../js/main.js"></script>
+</body>
+</html>

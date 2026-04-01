@@ -1,0 +1,14 @@
+{# Header search: icon opens inline bar (Percona-style); GET /search/index.html?q= for Pagefind #}
+<button type="button" class="nav-search-trigger" id="navSearchTrigger" aria-expanded="false" aria-controls="navSearchExpand" aria-label="Open site search">
+  <svg class="nav-search-icon-svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+    <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.75" />
+    <path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M15 15L20 20" />
+  </svg>
+</button>
+<div id="navSearchExpand" class="nav-search-expand" hidden>
+  <form class="nav-search-form" method="get" action="/search/index.html" role="search">
+    <label for="navSearchQuery" class="visually-hidden">Search site</label>
+    <input type="search" name="q" id="navSearchQuery" class="nav-search-input" placeholder="Search…" autocomplete="off" enterkeyhint="search" />
+    <button type="button" class="nav-search-exit" id="navSearchExit" aria-label="Close search"><span class="nav-search-exit-x" aria-hidden="true">×</span></button>
+  </form>
+</div>

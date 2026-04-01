@@ -5,6 +5,11 @@ description: At default settings, a 1 TB PostgreSQL table accumulates up to 200
   GB of dead rows before autovacuum triggers. Learn how autovacuum's cost model
   works and how to tune it for production databases.
 category: postgresql
+categories:
+  - postgresql
+  - database-performance
+  - postgresql-query-tuning
+  - troubleshooting
 read_time: 5
 featured: true
 ---
