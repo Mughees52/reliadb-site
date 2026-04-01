@@ -4,8 +4,8 @@
 # No build command needed — this is a static HTML site.
 
 [build]
-  # No build command — static files are served as-is
-  publish = "."
+  command = "npm run build"
+  publish = "_site"
 
 # Enable Netlify Identity (required for Decap CMS login)
 # After deploying, go to: Netlify dashboard → Site settings → Identity → Enable

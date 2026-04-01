@@ -3,3 +3,7 @@
 
 # Local Claude / Cursor agent settings
 .claude/
+
+# Node/Eleventy build artifacts
+node_modules/
+_site/
