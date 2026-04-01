@@ -168,19 +168,13 @@ Are these intervals giving you enough visibility, or do you need deeper I/O-leve
 <svg viewBox="0 0 600 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Timeline showing PostgreSQL recovery monitoring features introduced from version 14 through 17">
   <rect width="600" height="340" fill="transparent"/>
   <text x="300" y="28" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="bold" fill="#e2e8f0">PostgreSQL Recovery Monitoring Features by Version</text>
-
-  <!-- Timeline line -->
   <line x1="80" y1="70" x2="540" y2="70" stroke="#4a5568" stroke-width="3"/>
-
-  <!-- PG 14 -->
   <circle cx="120" cy="70" r="8" fill="#4299e1"/>
   <text x="120" y="55" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#4299e1">PG 14</text>
   <text x="120" y="95" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">log_recovery_</text>
   <text x="120" y="108" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">conflict_waits</text>
   <text x="120" y="126" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">compactify_tuples</text>
   <text x="120" y="139" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">(2.4x faster replay)</text>
-
-  <!-- PG 15 -->
   <circle cx="260" cy="70" r="8" fill="#48bb78"/>
   <text x="260" y="55" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#48bb78">PG 15</text>
   <text x="260" y="95" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">recovery_prefetch</text>
@@ -188,23 +182,18 @@ Are these intervals giving you enough visibility, or do you need deeper I/O-leve
   <text x="260" y="121" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">prefetch</text>
   <text x="260" y="139" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">log_startup_</text>
   <text x="260" y="152" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">progress_interval</text>
-
-  <!-- PG 16 -->
   <circle cx="400" cy="70" r="8" fill="#ed8936"/>
   <text x="400" y="55" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#ed8936">PG 16</text>
   <text x="400" y="95" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">Checkpoint logs</text>
   <text x="400" y="108" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">include LSN values</text>
   <text x="400" y="126" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">Replay distance</text>
   <text x="400" y="139" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">visible in logs</text>
-
-  <!-- PG 17 -->
   <circle cx="520" cy="70" r="8" fill="#9f7aea"/>
   <text x="520" y="55" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="bold" fill="#9f7aea">PG 17</text>
   <text x="520" y="95" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">pg_stat_checkpointer</text>
   <text x="520" y="108" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#a0aec0">pg_wait_events</text>
   <text x="520" y="126" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">Incremental</text>
   <text x="520" y="139" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#68d391">backups</text>
-
   <text x="300" y="330" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="#718096">Source: PostgreSQL Release Notes, 2021–2024</text>
 </svg>
 <figcaption>Source: PostgreSQL Release Notes, 2021–2024</figcaption>
@@ -269,45 +258,30 @@ Checkpoint configuration is where you make the trade-off between normal operatio
 <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Horizontal bar chart comparing checkpoint timeout settings and their impact on WAL accumulation and estimated recovery time">
   <rect width="560" height="300" fill="transparent"/>
   <text x="280" y="25" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#e2e8f0">Checkpoint Timeout vs. Recovery Trade-off</text>
-
-  <!-- Labels -->
   <text x="135" y="72" text-anchor="end" font-family="system-ui, sans-serif" font-size="12" fill="#a0aec0">5 min (default)</text>
   <text x="135" y="117" text-anchor="end" font-family="system-ui, sans-serif" font-size="12" fill="#a0aec0">15 min</text>
   <text x="135" y="162" text-anchor="end" font-family="system-ui, sans-serif" font-size="12" fill="#a0aec0">30 min</text>
   <text x="135" y="207" text-anchor="end" font-family="system-ui, sans-serif" font-size="12" fill="#a0aec0">60 min</text>
-
-  <!-- WAL bars (blue) -->
   <rect x="145" y="58" width="32" height="22" rx="3" fill="#4299e1"/>
   <text x="182" y="74" font-family="system-ui, sans-serif" font-size="10" fill="#4299e1">~0.8 GB WAL</text>
-
   <rect x="145" y="103" width="96" height="22" rx="3" fill="#4299e1"/>
   <text x="246" y="119" font-family="system-ui, sans-serif" font-size="10" fill="#4299e1">~3.6 GB WAL</text>
-
   <rect x="145" y="148" width="176" height="22" rx="3" fill="#4299e1"/>
   <text x="326" y="164" font-family="system-ui, sans-serif" font-size="10" fill="#4299e1">~7 GB WAL</text>
-
   <rect x="145" y="193" width="320" height="22" rx="3" fill="#4299e1"/>
   <text x="470" y="209" font-family="system-ui, sans-serif" font-size="10" fill="#4299e1">~11 GB WAL</text>
-
-  <!-- Recovery time bars (green) -->
   <rect x="145" y="80" width="16" height="12" rx="2" fill="#48bb78"/>
   <text x="166" y="90" font-family="system-ui, sans-serif" font-size="9" fill="#48bb78">~5s recovery</text>
-
   <rect x="145" y="125" width="48" height="12" rx="2" fill="#48bb78"/>
   <text x="198" y="135" font-family="system-ui, sans-serif" font-size="9" fill="#48bb78">~20s recovery</text>
-
   <rect x="145" y="170" width="88" height="12" rx="2" fill="#48bb78"/>
   <text x="238" y="180" font-family="system-ui, sans-serif" font-size="9" fill="#48bb78">~45s recovery</text>
-
   <rect x="145" y="215" width="160" height="12" rx="2" fill="#48bb78"/>
   <text x="310" y="225" font-family="system-ui, sans-serif" font-size="9" fill="#48bb78">~90s recovery</text>
-
-  <!-- Legend -->
   <rect x="170" y="255" width="12" height="12" rx="2" fill="#4299e1"/>
   <text x="187" y="266" font-family="system-ui, sans-serif" font-size="11" fill="#a0aec0">Max WAL accumulation</text>
   <rect x="330" y="255" width="12" height="12" rx="2" fill="#48bb78"/>
   <text x="347" y="266" font-family="system-ui, sans-serif" font-size="11" fill="#a0aec0">Estimated recovery time</text>
-
   <text x="280" y="290" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" fill="#718096">Estimates based on ~50 MB/s WAL generation, modern SSD storage. Source: EDB, 2023</text>
 </svg>
 <figcaption>Estimates based on ~50 MB/s WAL generation with modern SSD storage. Source: EDB, 2023</figcaption>
