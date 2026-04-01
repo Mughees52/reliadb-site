@@ -1,0 +1,113 @@
+---
+permalink: /blog/index.html
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
+  <meta name="description" content="Practical guides, case studies, and deep-dives on PostgreSQL performance, MySQL optimisation, AWS RDS, high availability, and database best practices." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .blog-hero { background: linear-gradient(135deg, #1A5276 0%, #154360 100%); padding: 140px 0 80px; text-align: center; color: #fff; }
+    .blog-hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; color: #ffffff; font-weight: 800; }
+    .blog-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
+    .blog-main { max-width: 1100px; margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: 1fr 320px; gap: 56px; align-items: start; }
+    .post-list { display: flex; flex-direction: column; gap: 32px; }
+    .post-card-h { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px 32px; transition: box-shadow 0.2s, transform 0.15s; text-decoration: none; display: block; }
+    .post-card-h:hover { box-shadow: 0 8px 32px rgba(26,82,118,0.1); transform: translateY(-2px); }
+    .post-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+    .post-cat { background: #EAF2F8; color: #1A5276; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; }
+    .post-date, .post-read-time { font-size: 0.82rem; color: #999; }
+    .post-card-h h2 { font-size: 1.2rem; color: #1a1a2e; margin-bottom: 10px; line-height: 1.4; font-weight: 700; }
+    .post-card-h p { font-size: 0.93rem; color: #666; line-height: 1.7; margin: 0; }
+    .post-read-more { display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; font-weight: 600; color: #2980B9; margin-top: 14px; }
+    .blog-sidebar { position: sticky; top: 90px; }
+    .sidebar-widget { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    .sidebar-widget h3 { font-size: 0.9rem; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #EAF2F8; }
+    .sidebar-links { list-style: none; padding: 0; margin: 0; }
+    .sidebar-links li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .sidebar-links a { font-size: 0.9rem; color: #444; text-decoration: none; line-height: 1.4; }
+    .sidebar-cta { background: #1A5276; color: #fff; border-radius: 12px; padding: 28px 24px; text-align: center; border: none; }
+    .sidebar-cta h3 { color: #fff; border-bottom-color: rgba(255,255,255,0.2); }
+    .sidebar-cta p { font-size: 0.88rem; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 16px; }
+    .sidebar-cta .btn { background: #E67E22; border-color: #E67E22; font-size: 0.88rem; padding: 10px 18px; }
+    @media (max-width: 880px) { .blog-main { grid-template-columns: 1fr; } .blog-sidebar { position: static; } }
+  </style>
+</head>
+<body>
+  <nav id="navbar">
+    <div class="nav-inner">
+      <a href="../index.html" class="nav-logo"><span class="logo-icon">R</span><span class="logo-text">ReliaDB</span></a>
+      <button id="navToggle" class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false"><span></span><span></span><span></span></button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../services.html">Services</a></li>
+        <li><a href="../results.html">Results</a></li>
+        <li><a href="index.html" class="active">Blog</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../contact.html" class="nav-cta">Book Free Assessment</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <section class="blog-hero">
+    <div class="container">
+      <h1>The ReliaDB Blog</h1>
+      <p>Practical guides on PostgreSQL performance, MySQL optimisation, AWS RDS cost savings, high availability, and everything in between.</p>
+    </div>
+  </section>
+
+  <div class="blog-main">
+    <main>
+      <div class="post-list">
+        {% for post in collections.blogPosts %}
+          <a href="{{ post.url }}" class="post-card-h">
+            <div class="post-meta">
+              <span class="post-cat">{{ post.data.category or "PostgreSQL" }}</span>
+              <span class="post-date">{{ post.date.toDateString() }}</span>
+              <span class="post-read-time">{{ post.data.read_time or 8 }} min read</span>
+            </div>
+            <h2>{{ post.data.title }}</h2>
+            <p>{{ post.data.description }}</p>
+            <span class="post-read-more">Read article &rarr;</span>
+          </a>
+        {% endfor %}
+      </div>
+    </main>
+
+    <aside class="blog-sidebar">
+      <div class="sidebar-widget sidebar-cta">
+        <h3>Database Problems?</h3>
+        <p>Book a free 30-minute assessment call and get actionable recommendations.</p>
+        <a href="../contact.html" class="btn">Book Free Assessment</a>
+      </div>
+
+      <div class="sidebar-widget">
+        <h3>Latest Posts</h3>
+        <ul class="sidebar-links">
+          {% for post in collections.blogPosts | slice(0, 6) %}
+            <li><a href="{{ post.url }}">{{ post.data.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="footer-logo"><span class="logo-icon">R</span><span class="logo-text">ReliaDB</span></div>
+        <p>International PostgreSQL &amp; MySQL consulting for growing companies, with delivery based in Pakistan.</p>
+      </div>
+    </div>
+    <div class="footer-bottom"><p>&copy; 2024 ReliaDB. All rights reserved.</p></div>
+  </footer>
+
+  <script src="../js/main.js"></script>
+</body>
+</html>
