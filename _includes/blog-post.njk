@@ -89,9 +89,19 @@
       <p class="excerpt">{{ description }}</p>
       {% if coverImage %}
         <div class="post-cover">
+          {# Decap's image widget may save different shapes (string URL or object).
+             Normalize to a usable src so images render consistently. #}
+          {% set coverSrc = coverImage %}
+          {% if coverImage.publicURL %}
+            {% set coverSrc = coverImage.publicURL %}
+          {% elif coverImage.url %}
+            {% set coverSrc = coverImage.url %}
+          {% elif coverImage.path %}
+            {% set coverSrc = coverImage.path %}
+          {% endif %}
           <img
-            src="{{ coverImage }}"
-            alt="{{ coverImageAlt or title }}"
+            src="{{ coverSrc }}"
+            alt="{{ coverImageAlt or coverImage.alt or title }}"
             loading="lazy"
             decoding="async"
           />
