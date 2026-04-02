@@ -110,7 +110,9 @@
       {% if tags and (tags | length) %}
         <div class="post-tags" aria-label="Post tags">
           {% for tag in tags %}
-            <span class="post-tag-badge">{{ tag }}</span>
+            <span class="post-tag-badge">
+              {{ tag | replace('[', '') | replace(']', '') | replace('"', '') | replace("'", '') | trim }}
+            </span>
           {% endfor %}
         </div>
       {% endif %}

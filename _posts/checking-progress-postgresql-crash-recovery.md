@@ -5,11 +5,11 @@ description: PostgreSQL 14's compactify_tuples optimization made crash recovery
   2.4x faster. Learn 5 methods to monitor WAL replay progress, from
   pg_controldata to pg_stat_recovery_prefetch.
 tags:
-  - '["PostgreSQL"'
-  - '"Crash Recovery"'
-  - '"WAL"'
-  - '"Monitoring"'
-  - '"DBA"]'
+  - PostgreSQL
+  - Crash Recovery
+  - WAL
+  - Monitoring
+  - DBA
 categories:
   - postgresql
   - database-performance
@@ -25,11 +25,11 @@ Your PostgreSQL server just crashed. It's replaying WAL and you're staring at a 
 
 For 90% of midsize and large companies, one hour of database downtime costs over $300,000 ([ITIC, 2024](https://www.enterprisedb.com/blog/cost-of-downtime)). Every minute you can't answer "how much longer?" is a minute stakeholders assume the worst. PostgreSQL doesn't give you a progress bar, but it gives you five distinct tools to estimate where crash recovery stands and when it'll finish.
 
-This guide covers every method available in PostgreSQL 14 through 17 to monitor crash recovery progress: log messages, `pg_controldata`, process titles, `pg_stat_recovery_prefetch`, and startup progress logging.
+This guide covers the practical monitoring signals for PostgreSQL crash recovery in versions 14 through 17: log messages, `pg_controldata`, process titles, and startup progress logging. For standby/partial recovery with SQL connections, it also includes `pg_stat_recovery_prefetch`.
 
 > **Key Takeaways**
 > - PostgreSQL 14's `compactify_tuples` optimization made WAL replay ~2.4x faster, dropping replay of 2.2 GB WAL from 148s to 60.8s ([Microsoft/Citus](https://techcommunity.microsoft.com/blog/adforpostgresql/speeding-up-recovery-and-vacuum-in-postgres-14/2234071), 2021).
-> - Five monitoring methods exist: log messages, `pg_controldata`, `ps` output, `pg_stat_recovery_prefetch` (PG 15+), and `log_startup_progress_interval` (PG 15+).
+> - Five monitoring methods exist: log messages, `pg_controldata`, `ps` output, and `log_startup_progress_interval` (PG 15+); `pg_stat_recovery_prefetch` is for standby/connection-based partial recovery.
 > - You can estimate remaining recovery time by comparing the REDO start LSN against the end-of-WAL LSN using `pg_controldata`.
 > - Only 20% of enterprises are fully prepared to handle database outages ([Cockroach Labs](https://www.cockroachlabs.com/blog/the-state-of-resilience-2025-reveals-the-true-cost-of-downtime/), 2025).
 
@@ -147,7 +147,7 @@ PostgreSQL 15 introduced `log_startup_progress_interval`, a parameter that autom
 The default is 10 seconds. Set it lower for more granular progress during recovery:
 
 ```sql
--- In postgresql.conf (requires restart to take effect before crash)
+-- In postgresql.conf (apply via SIGHUP / config reload; no full restart required)
 log_startup_progress_interval = 5s
 ```
 

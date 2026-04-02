@@ -9,6 +9,7 @@
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
     "markdown-it": "^14.1.0",
+    "markdown-it-multimd-table": "^4.2.3",
     "pagefind": "^1.4.0"
   }
 }

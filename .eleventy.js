@@ -1,4 +1,5 @@
 const markdownIt = require("markdown-it");
+const mdTables = require("markdown-it-multimd-table");
 
 function toSlug(value) {
   return String(value || "")
@@ -29,14 +30,13 @@ function getPostCategorySlugs(postData) {
 }
 
 module.exports = function (eleventyConfig) {
-  eleventyConfig.setLibrary(
-    "md",
-    markdownIt({
-      html: true,
-      linkify: true,
-      breaks: false
-    })
-  );
+  const md = markdownIt({
+    html: true,
+    linkify: true,
+    breaks: false
+  }).use(mdTables);
+
+  eleventyConfig.setLibrary("md", md);
 
   eleventyConfig.addCollection("blogPosts", function (collectionApi) {
     return collectionApi
