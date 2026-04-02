@@ -35,6 +35,14 @@ npm run build        # production build → Eleventy to _site/, then Pagefind in
 
 ---
 
+## Workflow Guardrails (avoid missing new blog posts)
+
+1. **Before building / serving:** make sure your local repo is in sync with Git (`git pull`).
+2. **After changing blog content:** always run `npm run build` so Eleventy regenerates `_site/` from `_posts/`.
+3. **If you serve `_site/` directly** (e.g. `python3 -m http.server -d _site`): it reflects whatever is currently inside `_site/`. Re-run `npm run build` and hard refresh after.
+
+---
+
 ## Deployment model
 
 | Aspect | Detail |
@@ -79,6 +87,11 @@ Media uploads from the CMS go under `images/uploads` (see `admin/config.yml` `me
 ## Content locations (brief)
 
 - **Blog posts:** `_posts/*.md`
+  - **Common front matter fields** (used by `_includes/blog-post.njk`):
+    - `categories`: existing category relation (used for category badges + linking)
+    - `tags`: array of strings (renders as tag chips when present)
+    - `coverImage`: image URL (renders a cover image in the post hero when present)
+    - `coverImageAlt`: string (used as `img` alt text; falls back to `title` if omitted)
 - **Category metadata:** `_categories/*.md`
 - **Layouts / partials:** `_includes/*.njk`
 - **Blog listing & templates:** under `blog/` (e.g. `blog/index.njk`, category templates)

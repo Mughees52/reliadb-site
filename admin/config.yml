@@ -32,6 +32,7 @@ collections:
       - { label: "Title", name: "title", widget: "string", hint: "Make it specific and problem-focused, e.g. 'PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide'" }
       - { label: "Publish Date", name: "date", widget: "datetime" }
       - { label: "Description (SEO)", name: "description", widget: "string", hint: "150-160 characters. What problem does this post solve?" }
+      - { label: "Tags", name: "tags", widget: "list", required: false, default: [] }
       - label: "Categories"
         name: "categories"
         widget: "relation"
@@ -43,4 +44,6 @@ collections:
         required: false
       - { label: "Read Time (minutes)", name: "read_time", widget: "number", default: 8 }
       - { label: "Featured Post", name: "featured", widget: "boolean", default: false, hint: "Show this post highlighted at the top of the blog" }
+      - { label: "Cover Image", name: "coverImage", widget: "image", required: false }
+      - { label: "Cover Image Alt Text", name: "coverImageAlt", widget: "string", required: false }
       - { label: "Body", name: "body", widget: "markdown", hint: "Write your post here. Use ## for headings, ``` for code blocks." }

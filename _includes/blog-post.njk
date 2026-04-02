@@ -17,6 +17,10 @@
     .post-date-top, .post-read-top { font-size: 0.85rem; color: rgba(255,255,255,0.7); }
     .post-hero h1 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); line-height: 1.3; margin-bottom: 20px; color: #fff; }
     .post-hero .excerpt { font-size: 1.05rem; color: rgba(255,255,255,0.85); line-height: 1.7; }
+    .post-cover { margin: 18px 0 26px; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+    .post-cover img { width: 100%; height: auto; display: block; }
+    .post-tags { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 0; }
+    .post-tag-badge { background: rgba(255,255,255,0.15); color: #fff; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
     .post-layout { max-width: 1100px; margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: 1fr 300px; gap: 56px; align-items: start; }
     .post-body { max-width: 720px; }
     .post-body h2 { font-size: 1.5rem; color: #1a1a2e; margin: 40px 0 16px; line-height: 1.3; }
@@ -83,6 +87,23 @@
       </div>
       <h1>{{ title }}</h1>
       <p class="excerpt">{{ description }}</p>
+      {% if coverImage %}
+        <div class="post-cover">
+          <img
+            src="{{ coverImage }}"
+            alt="{{ coverImageAlt or title }}"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      {% endif %}
+      {% if tags and (tags | length) %}
+        <div class="post-tags" aria-label="Post tags">
+          {% for tag in tags %}
+            <span class="post-tag-badge">{{ tag }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
     </div>
   </section>
 
