@@ -4,13 +4,22 @@ date: 2026-04-01T21:30:00.000+01:00
 description: PostgreSQL 14's compactify_tuples optimization made crash recovery
   2.4x faster. Learn 5 methods to monitor WAL replay progress, from
   pg_controldata to pg_stat_recovery_prefetch.
-category: postgresql
+tags:
+  - '["PostgreSQL"'
+  - '"Crash Recovery"'
+  - '"WAL"'
+  - '"Monitoring"'
+  - '"DBA"]'
 categories:
   - postgresql
   - database-performance
   - troubleshooting
 read_time: 10
 featured: true
+coverImage: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=630&fit=crop&q=80
+coverImageAlt: Rows of illuminated server racks in a data center representing
+  PostgreSQL database infrastructure during crash recovery
+category: postgresql
 ---
 Your PostgreSQL server just crashed. It's replaying WAL and you're staring at a process list that tells you almost nothing. The phone is ringing. How far along is recovery? When will the database accept connections again?
 
