@@ -1,12 +1,12 @@
 ---
-title: "How Do You Check Progress on PostgreSQL's Crash Recovery Process?"
+title: How Do You Check Progress on PostgreSQL's Crash Recovery Process?
 date: 2026-04-01T21:30:00.000+01:00
-description: PostgreSQL 14's compactify_tuples optimization made crash recovery 2.4x
-  faster. Learn 5 methods to monitor WAL replay progress, from pg_controldata to pg_stat_recovery_prefetch.
+description: PostgreSQL 14's compactify_tuples optimization made crash recovery
+  2.4x faster. Learn 5 methods to monitor WAL replay progress, from
+  pg_controldata to pg_stat_recovery_prefetch.
 category: postgresql
 categories:
   - postgresql
-  - backups-recovery
   - database-performance
   - troubleshooting
 read_time: 10
