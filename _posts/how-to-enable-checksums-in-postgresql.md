@@ -11,26 +11,26 @@ categories:
 read_time: 12
 featured: false
 ---
-PostgreSQL didn't protect your data with checksums by default until version 18 (September 2025). Every earlier version — including the widely deployed PostgreSQL 14, 15, and 16 — ships with checksums off. That means a flipped bit on disk, a failing storage controller, or a corrupted page can sit undetected for months — until it propagates into your backups and you've lost the only clean copy.
+PostgreSQL didn't protect your data with checksums by default until version 18 (September 2025). Every earlier version  including the widely deployed PostgreSQL 14, 15, and 16  ships with checksums off. That means a flipped bit on disk, a failing storage controller, or a corrupted page can sit undetected for months  until it propagates into your backups and you've lost the only clean copy.
 
 A study by NetApp and the University of Wisconsin across 1.5 million hard drives over 41 months found more than 400,000 silent data corruptions, with over 30,000 bypassing hardware RAID detection entirely ([Bairavasundaram et al., USENIX FAST '08](https://www.usenix.org/legacy/event/fast08/tech/full_papers/bairavasundaram/bairavasundaram.pdf)). Google's Spanner team reports detecting and preventing silent data corruption events several times per week in their exabyte-scale database system ([Google, 2022](https://research.google/pubs/pub51477/)). Checksums are the only mechanism PostgreSQL provides to catch this class of failure before it does permanent damage.
 
-This guide walks through enabling checksums at every stage — during `initdb`, on running clusters with `pg_checksums`, and verifying detection works. Every command and output shown here was executed on a fresh Ubuntu 24.04 VM running PostgreSQL 16.13, with actual terminal output captured live.
+This guide walks through enabling checksums at every stage  during `initdb`, on running clusters with `pg_checksums`, and verifying detection works. Every command and output shown here was executed on a fresh Ubuntu 24.04 VM running PostgreSQL 16.13, with actual terminal output captured live.
 
 > **Key Takeaways**
 > - Enable checksums with `--data-checksums` during `initdb` for zero-downtime setup on new clusters.
-> - Use `pg_checksums --enable` on existing clusters — requires downtime but processes a 176 MB data directory in 0.24 seconds.
+> - Use `pg_checksums --enable` on existing clusters  requires downtime but processes a 176 MB data directory in 0.24 seconds.
 > - Checksums add roughly 1.7% TPS overhead in pgbench tests ([Command Prompt, 2019](https://www.commandprompt.com/blog/performance-postgresql-data-checksums/)).
-> - PostgreSQL 18 enables checksums by default — all earlier versions require manual activation ([PostgreSQL 18 Release Notes](https://www.postgresql.org/docs/release/18.0/)).
+> - PostgreSQL 18 enables checksums by default  all earlier versions require manual activation ([PostgreSQL 18 Release Notes](https://www.postgresql.org/docs/release/18.0/)).
 > - PostgreSQL immediately detects and logs corrupted pages with WARNING + ERROR on read.
 
 ## What Are PostgreSQL Data Checksums?
 
-PostgreSQL data checksums compute a 16-bit CRC over every byte of each 8 KB data page, plus the block address ([PostgreSQL Documentation](https://www.postgresql.org/docs/current/checksums.html)). The checksum is written when the page is modified and verified every time the page is read from disk. Any mismatch means the data on disk doesn't match what PostgreSQL wrote — silent corruption that would otherwise go completely unnoticed.
+PostgreSQL data checksums compute a 16-bit CRC over every byte of each 8 KB data page, plus the block address ([PostgreSQL Documentation](https://www.postgresql.org/docs/current/checksums.html)). The checksum is written when the page is modified and verified every time the page is read from disk. Any mismatch means the data on disk doesn't match what PostgreSQL wrote  silent corruption that would otherwise go completely unnoticed.
 
-With 55.6% of developers now using PostgreSQL — up from 48.7% in 2024 ([Stack Overflow Developer Survey, 2025](https://survey.stackoverflow.co/2025/technology)) — and deployments growing in scale, checksums aren't optional anymore. They're the minimum viable data integrity layer. PostgreSQL 18 recognized this by making checksums the default for `initdb` — the first time in PostgreSQL's 30-year history ([PostgreSQL 18 Release Notes](https://www.postgresql.org/docs/release/18.0/)).
+With 55.6% of developers now using PostgreSQL  up from 48.7% in 2024 ([Stack Overflow Developer Survey, 2025](https://survey.stackoverflow.co/2025/technology))  and deployments growing in scale, checksums aren't optional anymore. They're the minimum viable data integrity layer. PostgreSQL 18 recognized this by making checksums the default for `initdb`  the first time in PostgreSQL's 30-year history ([PostgreSQL 18 Release Notes](https://www.postgresql.org/docs/release/18.0/)).
 
-When enabled, all checksum failures get recorded in the `pg_stat_database` view with the database name, failure count, and timestamp of the last failure. You don't need external monitoring to know corruption happened — PostgreSQL tracks it for you.
+When enabled, all checksum failures get recorded in the `pg_stat_database` view with the database name, failure count, and timestamp of the last failure. You don't need external monitoring to know corruption happened  PostgreSQL tracks it for you.
 
 <!-- [UNIQUE INSIGHT] -->
 > **Why this matters more than you think:** Silent corruption doesn't crash your database. It sits there, gets backed up, gets replicated to standbys, and eventually becomes the only version of your data. By the time you notice, your recovery options are gone. Checksums are the only way PostgreSQL can tell you "this page is wrong" before you act on bad data.
@@ -56,7 +56,7 @@ $ /usr/lib/postgresql/16/bin/pg_controldata /var/lib/postgresql/16/main | grep -
 Data page checksum version:           0
 ```
 
-A checksum version of `0` means disabled. A value of `1` means enabled. There's no version `2` — it's a boolean encoded as an integer.
+A checksum version of `0` means disabled. A value of `1` means enabled. There's no version `2`  it's a boolean encoded as an integer.
 
 You can also check the `pg_stat_database` view. When checksums are off, the `checksum_failures` column returns NULL instead of a number:
 
@@ -71,7 +71,7 @@ postgres=# SELECT datname, checksum_failures, checksum_last_failure FROM pg_stat
 (4 rows)
 ```
 
-Notice the empty values — not zeros, but NULLs. That's how you can distinguish "checksums enabled, zero failures" from "checksums not enabled at all."
+Notice the empty values  not zeros, but NULLs. That's how you can distinguish "checksums enabled, zero failures" from "checksums not enabled at all."
 
 ## How Do You Enable Checksums During initdb?
 
@@ -107,14 +107,14 @@ $ /usr/lib/postgresql/16/bin/pg_controldata /tmp/pg_checksum_test | grep -i chec
 Data page checksum version:           1
 ```
 
-Version `1` — checksums are active. This is the recommended path for all new clusters. There's zero downtime involved, the initialization takes the same amount of time, and you're protected from the first write.
+Version `1`  checksums are active. This is the recommended path for all new clusters. There's zero downtime involved, the initialization takes the same amount of time, and you're protected from the first write.
 
 <!-- [PERSONAL EXPERIENCE] -->
 > **Our recommendation:** Every `initdb` command in production should include `--data-checksums`. We've never encountered a workload where the performance cost (covered below) justified leaving corruption undetected. If you're using configuration management (Ansible, Puppet, Chef), add the flag to your `initdb` templates now.
 
 ## How Do You Enable Checksums on an Existing Cluster?
 
-Most DBAs don't get to start fresh. If your cluster already has data, the `pg_checksums` utility can enable checksums after the fact — but it requires the database to be fully stopped. No connections, no background processes, no WAL writer.
+Most DBAs don't get to start fresh. If your cluster already has data, the `pg_checksums` utility can enable checksums after the fact  but it requires the database to be fully stopped. No connections, no background processes, no WAL writer.
 
 Here's the complete workflow we ran on our test cluster:
 
@@ -173,7 +173,7 @@ user    0m0.016s
 sys     0m0.070s
 ```
 
-176 MB in 0.24 seconds. But don't extrapolate linearly — disk I/O becomes the bottleneck on multi-terabyte databases. The `--progress` flag is essential for large clusters so you can estimate remaining time.
+176 MB in 0.24 seconds. But don't extrapolate linearly  disk I/O becomes the bottleneck on multi-terabyte databases. The `--progress` flag is essential for large clusters so you can estimate remaining time.
 
 ### Step 4: Start PostgreSQL and Verify
 
@@ -216,13 +216,13 @@ Bad checksums:  0
 Data checksum version: 1
 ```
 
-Zero bad checksums — your data directory is clean. Run this as part of your maintenance routine, especially before taking base backups with `pg_basebackup`. A corrupt page that makes it into your backup defeats the purpose of having backups at all.
+Zero bad checksums  your data directory is clean. Run this as part of your maintenance routine, especially before taking base backups with `pg_basebackup`. A corrupt page that makes it into your backup defeats the purpose of having backups at all.
 
 What does a failure look like? We simulated corruption by writing random bytes to a data file to show you exactly what PostgreSQL reports.
 
 ## What Happens When PostgreSQL Detects Corruption?
 
-We deliberately corrupted a single 8 KB page in a test table to demonstrate the full detection chain. This isn't theoretical — these are the actual commands and outputs from our test VM.
+We deliberately corrupted a single 8 KB page in a test table to demonstrate the full detection chain. This isn't theoretical  these are the actual commands and outputs from our test VM.
 
 ### Simulating Corruption
 
@@ -271,7 +271,7 @@ WARNING:  page verification failed, calculated checksum 45767 but expected 4551
 ERROR:  invalid page in block 1 of relation base/5/16385
 ```
 
-PostgreSQL refuses to return data from a corrupted page. It doesn't silently give you garbage — it stops and tells you. The PostgreSQL logs recorded the same event:
+PostgreSQL refuses to return data from a corrupted page. It doesn't silently give you garbage  it stops and tells you. The PostgreSQL logs recorded the same event:
 
 ```
 2026-04-03 13:27:27.019 BST [4874] postgres@postgres WARNING:  page verification failed, calculated checksum 45767 but expected 4551
@@ -288,7 +288,7 @@ postgres=# SELECT datname, checksum_failures, checksum_last_failure FROM pg_stat
  postgres |                 1 | 2026-04-03 13:27:27.019345+01
 ```
 
-The Facebook/Meta infrastructure team tested hundreds of thousands of machines over 18+ months and found hundreds of faulty CPUs causing silent data corruption — a systemic issue across CPU generations ([Meta, 2021](https://arxiv.org/abs/2102.11245)). Google's Spanner team detects and prevents corruption events several times per week at exabyte scale ([Google, 2022](https://research.google/pubs/pub51477/)). Alibaba Cloud observed CPUs giving wrong checksum calculation results, misleading applications and triggering repeated requests ([ACM TACO, 2024](https://dl.acm.org/doi/10.1145/3690825)). Without checksums, this kind of corruption propagates silently through your reads and writes.
+The Facebook/Meta infrastructure team tested hundreds of thousands of machines over 18+ months and found hundreds of faulty CPUs causing silent data corruption  a systemic issue across CPU generations ([Meta, 2021](https://arxiv.org/abs/2102.11245)). Google's Spanner team detects and prevents corruption events several times per week at exabyte scale ([Google, 2022](https://research.google/pubs/pub51477/)). Alibaba Cloud observed CPUs giving wrong checksum calculation results, misleading applications and triggering repeated requests ([ACM TACO, 2024](https://dl.acm.org/doi/10.1145/3690825)). Without checksums, this kind of corruption propagates silently through your reads and writes.
 
 <figure>
 <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lollipop chart showing silent data corruption findings by organization">
@@ -326,7 +326,7 @@ The Facebook/Meta infrastructure team tested hundreds of thousands of machines o
 
 ## What's the Real Performance Cost of Checksums?
 
-We ran `pgbench` on our test VM with identical settings — 4 clients, 2 threads, 10-second duration, scale factor 10 (1 million rows) — first with checksums on, then off.
+We ran `pgbench` on our test VM with identical settings  4 clients, 2 threads, 10-second duration, scale factor 10 (1 million rows)  first with checksums on, then off.
 
 **With checksums enabled:**
 
@@ -383,7 +383,7 @@ Is 1.7% worth catching corruption that could destroy your entire dataset? That's
 
 ## How Do You Disable Checksums?
 
-You might need to disable checksums during a major migration or to match a vendor's configuration. The process is fast — no full scan required — but the database must be stopped:
+You might need to disable checksums during a major migration or to match a vendor's configuration. The process is fast  no full scan required  but the database must be stopped:
 
 ```
 $ /usr/lib/postgresql/16/bin/pg_checksums --disable -D /var/lib/postgresql/16/main
@@ -399,7 +399,7 @@ $ /usr/lib/postgresql/16/bin/pg_controldata /var/lib/postgresql/16/main | grep -
 Data page checksum version:           0
 ```
 
-Disabling is nearly instant because it only updates the control file — it doesn't rewrite data pages. But think carefully before doing this. Once disabled, you lose all corruption detection until you re-enable and rescan.
+Disabling is nearly instant because it only updates the control file  it doesn't rewrite data pages. But think carefully before doing this. Once disabled, you lose all corruption detection until you re-enable and rescan.
 
 ## How Do You Monitor Checksums in Production?
 
@@ -424,13 +424,13 @@ Bad checksums:  0
 Data checksum version: 1
 ```
 
-CERN found that over six months, approximately 128 MB of data across 97 petabytes became permanently corrupted silently in their storage pathway ([CERN/Bernd Panzer-Steindel, 2007](https://indico.cern.ch/event/13797/contributions/1362288/attachments/115080/163419/Data_integrity_v3.pdf)). At database scale, that's enough to lose rows, corrupt indexes, or break foreign key relationships — all without a single error in your logs unless checksums are enabled.
+CERN found that over six months, approximately 128 MB of data across 97 petabytes became permanently corrupted silently in their storage pathway ([CERN/Bernd Panzer-Steindel, 2007](https://indico.cern.ch/event/13797/contributions/1362288/attachments/115080/163419/Data_integrity_v3.pdf)). At database scale, that's enough to lose rows, corrupt indexes, or break foreign key relationships  all without a single error in your logs unless checksums are enabled.
 
 ## Can You Enable Checksums Without Downtime?
 
 The standard `pg_checksums` tool requires the database to be stopped. For large databases, this means hours of downtime. There are community approaches to work around this:
 
-PostgresAI documents an approach using `pg_catalog` manipulation on a logical replica — you enable checksums on a standby, let replication catch up, then failover ([PostgresAI, 2023](https://postgres.ai/docs/postgres-howtos/database-administration/maintenance/how-to-enable-data-checksums-without-downtime)). The idea: instead of taking your primary offline, you build a checksummed replica and promote it.
+PostgresAI documents an approach using `pg_catalog` manipulation on a logical replica  you enable checksums on a standby, let replication catch up, then failover ([PostgresAI, 2023](https://postgres.ai/docs/postgres-howtos/database-administration/maintenance/how-to-enable-data-checksums-without-downtime)). The idea: instead of taking your primary offline, you build a checksummed replica and promote it.
 
 The general workflow:
 
@@ -442,17 +442,17 @@ The general workflow:
 
 This avoids downtime on the primary, but you're still planning a failover event. It's not transparent to the application.
 
-PostgreSQL 18 made checksums the default for new clusters, but the standard `pg_checksums` tool still requires a stopped cluster to enable on existing data directories. If you're upgrading to PostgreSQL 18 via `pg_upgrade`, your existing checksum setting carries forward — you don't automatically get checksums just because version 18 defaults to them.
+PostgreSQL 18 made checksums the default for new clusters, but the standard `pg_checksums` tool still requires a stopped cluster to enable on existing data directories. If you're upgrading to PostgreSQL 18 via `pg_upgrade`, your existing checksum setting carries forward  you don't automatically get checksums just because version 18 defaults to them.
 
 ## Frequently Asked Questions
 
 ### Do checksums protect against all types of corruption?
 
-No. Checksums detect corruption in data pages on disk — bit flips, storage failures, and I/O errors. They don't protect against logical corruption like bad application queries, bugs in extensions, or in-memory corruption. A NetApp study found over 400,000 silent disk corruptions across 1.5 million drives, and checksums catch exactly that class of failure ([Bairavasundaram et al., USENIX FAST '08](https://www.usenix.org/legacy/event/fast08/tech/full_papers/bairavasundaram/bairavasundaram.pdf)).
+No. Checksums detect corruption in data pages on disk  bit flips, storage failures, and I/O errors. They don't protect against logical corruption like bad application queries, bugs in extensions, or in-memory corruption. A NetApp study found over 400,000 silent disk corruptions across 1.5 million drives, and checksums catch exactly that class of failure ([Bairavasundaram et al., USENIX FAST '08](https://www.usenix.org/legacy/event/fast08/tech/full_papers/bairavasundaram/bairavasundaram.pdf)).
 
 ### How long does pg_checksums take on a large database?
 
-It depends on data directory size and disk speed. In our test, 176 MB took 0.24 seconds. Command Prompt's 2019 benchmark showed roughly linear scaling — expect approximately 1 GB per second on modern NVMe storage ([Command Prompt, 2019](https://www.commandprompt.com/blog/performance-postgresql-data-checksums/)). A 1 TB database could take 15-20 minutes on spinning disks.
+It depends on data directory size and disk speed. In our test, 176 MB took 0.24 seconds. Command Prompt's 2019 benchmark showed roughly linear scaling  expect approximately 1 GB per second on modern NVMe storage ([Command Prompt, 2019](https://www.commandprompt.com/blog/performance-postgresql-data-checksums/)). A 1 TB database could take 15-20 minutes on spinning disks.
 
 ### Can I enable checksums on a replica without affecting the primary?
 
@@ -472,8 +472,8 @@ Data checksums in PostgreSQL cost you roughly 1.7% TPS and give you the ability 
 
 - Enable checksums on every new cluster with `initdb --data-checksums`
 - Enable on existing clusters with `pg_checksums --enable` (requires downtime)
-- Monitor `pg_stat_database.checksum_failures` — any non-zero value needs investigation
+- Monitor `pg_stat_database.checksum_failures`  any non-zero value needs investigation
 - Run `pg_checksums --check` before base backups to catch unread corruption
-- The performance overhead is 1-3% in real workloads — negligible compared to undetected data loss
+- The performance overhead is 1-3% in real workloads  negligible compared to undetected data loss
 
 If you're running PostgreSQL in production without checksums, you're trusting that your storage hardware, controllers, and firmware will never corrupt a single byte. The research says otherwise.
