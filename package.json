@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "eleventy && pagefind --site _site --exclude-selectors \"nav,footer,#navbar,.site-footer\"",
-    "dev": "eleventy --serve"
+    "build:explain": "cd tools/explain && npm install && npm run build",
+    "build": "npm run build:explain && eleventy && pagefind --site _site --exclude-selectors \"nav,footer,#navbar,.site-footer\"",
+    "dev": "eleventy --serve",
+    "dev:explain": "cd tools/explain && npm run dev"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",

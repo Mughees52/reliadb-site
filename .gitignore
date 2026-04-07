@@ -7,3 +7,7 @@
 # Node/Eleventy build artifacts
 node_modules/
 _site/
+
+# Tool build artifacts
+tools/explain/dist/
+tools/explain/node_modules/

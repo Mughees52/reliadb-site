@@ -60,3 +60,9 @@
   from = "/services/"
   to = "/services.html"
   status = 200
+
+# SPA routing for MySQL EXPLAIN Analyzer tool
+[[redirects]]
+  from = "/tools/explain/*"
+  to = "/tools/explain/index.html"
+  status = 200
