@@ -45,9 +45,12 @@ export interface PlanNode {
   loops?: number
 
   totalActualTime?: number
+  exclusiveTime?: number
   rowMismatchRatio?: number
   costPercentage?: number
+  timePercentage?: number
   isBottleneck: boolean
+  rowsRemovedByFilter?: number
 
   condition?: string
   extra?: string[]
@@ -99,9 +102,12 @@ export function createNode(partial: Partial<PlanNode> = {}): PlanNode {
     actualRows: partial.actualRows,
     loops: partial.loops,
     totalActualTime: partial.totalActualTime,
+    exclusiveTime: partial.exclusiveTime,
     rowMismatchRatio: partial.rowMismatchRatio,
     costPercentage: partial.costPercentage,
+    timePercentage: partial.timePercentage,
     isBottleneck: partial.isBottleneck ?? false,
+    rowsRemovedByFilter: partial.rowsRemovedByFilter,
     condition: partial.condition,
     extra: partial.extra,
     usedColumns: partial.usedColumns,
@@ -160,6 +166,26 @@ export function computeStats(root: PlanNode): PlanStats {
       node.costPercentage = (node.estimatedCost / stats.totalCost) * 100
     }
 
+    // Exclusive time = this node's time minus children's time
+    if (node.actualTimeLast != null) {
+      const childrenTime = node.children.reduce((sum, c) => {
+        const ct = c.actualTimeLast != null && c.loops != null
+          ? c.actualTimeLast * c.loops
+          : c.actualTimeLast ?? 0
+        return sum + ct
+      }, 0)
+      const selfTotal = node.totalActualTime ?? node.actualTimeLast
+      node.exclusiveTime = Math.max(0, selfTotal - childrenTime)
+    }
+
+    // Rows removed by filter (estimate from filtered %)
+    if (node.filtered != null && node.filtered < 100) {
+      const examined = node.actualRows ?? node.estimatedRows
+      if (examined > 0) {
+        node.rowsRemovedByFilter = Math.round(examined * (100 - node.filtered) / node.filtered)
+      }
+    }
+
     const nodeTime = node.totalActualTime ?? node.actualTimeLast ?? 0
     if (nodeTime > maxTime) {
       maxTime = nodeTime
@@ -175,6 +201,17 @@ export function computeStats(root: PlanNode): PlanStats {
 
   if (stats.bottleneckNode) {
     stats.bottleneckNode.isBottleneck = true
+  }
+
+  // Second pass: compute time percentages (needs totalTime from first pass)
+  if (stats.totalTime && stats.totalTime > 0) {
+    function walkTime(node: PlanNode) {
+      if (node.exclusiveTime != null) {
+        node.timePercentage = (node.exclusiveTime / stats.totalTime!) * 100
+      }
+      for (const child of node.children) walkTime(child)
+    }
+    walkTime(root)
   }
 
   return stats

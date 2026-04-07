@@ -1,114 +1,160 @@
 # CHATLOG.md — Session Log
 
-## Session: 2026-04-07 — MySQL EXPLAIN Analyzer (Full Build)
+## Session: 2026-04-07 — MySQL EXPLAIN Analyzer (Phase 1 + Phase 2)
 
 ### What Was Done
 
-Built the complete MySQL EXPLAIN Analyzer tool from architecture design through implementation and site integration.
+Built the complete MySQL EXPLAIN Analyzer from architecture through Phase 2, with robust AI-comparison testing.
 
-### Phase 1: Architecture Design
+---
 
-- Researched explain.dalibo.com (PostgreSQL equivalent) and competitive landscape
-- Found **no open-source, web-based MySQL EXPLAIN visualization tool exists** — clear market gap
-- Initially designed with Claude API for AI-powered query optimization
-- **User rejected API approach** — does not want recurring costs for a free tool
-- Redesigned as **100% client-side** with built-in TypeScript rule engine
+### Phase 1: Architecture + MVP Build
+
+- Researched explain.dalibo.com (PostgreSQL) and competitive landscape
+- Found **no open-source, web-based MySQL EXPLAIN visualization tool exists**
+- Initially designed with Claude API — **user rejected** due to recurring costs
+- Redesigned as 100% client-side with built-in TypeScript rule engine
 - Architecture doc: `docs/MYSQL-EXPLAIN-ANALYZER-ARCHITECTURE.md`
 
-### Phase 2: Implementation
+**Built:**
+- Vue 3 + Vite + TypeScript project at `tools/explain/`
+- 3 parsers: tree (EXPLAIN ANALYZE), JSON (FORMAT=JSON), traditional table
+- 19 detection rules, 15 query hint patterns
+- D3.js tree visualization, table view, node detail panel
+- URL hash sharing (pako), localStorage history, 5 sample plans
+- Integrated with Eleventy site (passthrough copy, SPA redirect)
+- Added "EXPLAIN Analyzer" nav link across all 8 page templates
 
-#### Files Created (34 source files)
+**Bugs fixed during Phase 1 testing:**
+- MySQL result wrapper (`| -> ... |`) not being stripped — added `stripMySQLWrapper()`
+- Decimal row counts (`rows=0.25`) failing integer-only regex
+- Nested filter conditions with multi-level parens — added balanced paren parser
+- `Select #2 (subquery; dependent)` not parsed as dependent subquery
+- `extractIndex()` matching "temporary" from "Aggregate using temporary table"
+- `<temporary>` table scans triggering false-positive index recommendations
+- Vue SPA had its own header/footer that didn't match the site — moved nav/footer to HTML shell
 
-**Project scaffold** (`tools/explain/`):
-- `package.json`, `vite.config.ts`, `tsconfig.json`, `tailwind.config.js`, `postcss.config.js`
-- `index.html` — SPA shell with site nav + footer (matching main site exactly)
+**Committed:** `4d2e062` — 50 files, 8,333 lines (not yet pushed)
 
-**Parsing engine** (`src/parsers/`):
-- `types.ts` — PlanNode AST, AccessType enum, computeStats()
-- `detect-format.ts` — auto-detects tree vs JSON vs table format
-- `tree-parser.ts` — parses MySQL EXPLAIN ANALYZE indentation-based tree output
-- `json-parser.ts` — parses EXPLAIN FORMAT=JSON nested structure
-- `traditional-parser.ts` — parses traditional pipe-separated EXPLAIN table
-- `normalize.ts` — orchestrator that calls the right parser
+---
 
-**Analysis engine** (`src/analysis/`):
-- `rules.ts` — 19 detection rules (7 critical, 8 warning, 1 info, 3 good)
-- `index-advisor.ts` — generates ALTER TABLE / CREATE INDEX DDL recommendations
-- `query-hints.ts` — 15 SQL anti-pattern detectors
-- `engine.ts` — orchestrates rules + index advisor + query hints, produces scored results
-- `types.ts` — Issue, QueryHint, IndexRecommendation, AnalysisResult interfaces
+### Phase 2: Enhanced Analysis
 
-**Vue components** (`src/components/`):
-- `App.vue` — root component with toolbar, samples dropdown, all state management
-- `InputPanel.vue` — 3-tab CodeMirror editor (EXPLAIN, Query, DDL)
-- `PlanTree.vue` — D3.js interactive tree with color-coded nodes, zoom/pan
-- `PlanTable.vue` — tabular operation list with sortable columns
-- `NodeDetail.vue` — selected node deep-dive panel
-- `IssueList.vue` — 3-tab panel (Issues, Index Recommendations, Query Hints)
-- `StatsBar.vue` — summary dashboard with performance score
-- `PlanHistory.vue` — localStorage-based plan history
+**New components (3):**
+- `CostChart.vue` — horizontal bar chart showing cost distribution per node
+- `EstimateVsActual.vue` — side-by-side bar comparison with mismatch highlighting
+- `CompareView.vue` — paste "after" plan to compare metrics
 
-**Storage** (`src/storage/`):
-- `url-codec.ts` — pako compression for URL hash sharing
-- `history.ts` — localStorage CRUD for plan history (50 entry limit)
+**DDL Parser** (`parsers/ddl-parser.ts`):
+- Parses CREATE TABLE with balanced paren matching (handles DECIMAL(10,2), nested FK refs)
+- Extracts columns, indexes, foreign keys, engine
+- Cross-ref: `getForeignKeysWithoutIndex()`, `getRedundantIndexes()`, `findIndexWithPrefix()`
+- Fixed: initial regex approach failed on nested parens, rewrote with balanced paren scanner
 
-**Utilities** (`src/utils/`):
-- `formatting.ts` — formatDuration, formatNumber, formatCost, timeAgo
-- `samples.ts` — 5 sample plans covering all formats
+**Analysis rules expanded: 19 → 37** (+18 new):
+- `zeroRowJoin` (CRITICAL) — detects referential integrity issues when all join lookups return 0
+- `functionOnColumn` — YEAR(), LOWER() etc. preventing index use
+- `indexNotUsedDespiteAvailable` — possible_keys exist but scan chosen
+- `lowFilteredPercentage` — <25% filter ratio = wasted reads
+- `highCostNode` — single node >70% of total cost
+- `fullScanOnNullKey` — NULL outer expr triggers full scan in subquery
+- `refOrNull` — ref_or_null access from nullable subquery
+- `sortMergePasses` — large slow filesort (>10K rows, >500ms)
+- `expensiveSubqueryMaterialization` — materialized subquery >1K rows
+- `highRowMismatchInJoin` — join fan-out (est 1, actual >> 1)
+- `missingJoinIndex` — non-unique index with high fan-out
+- `coveringIndexScan` (INFO) — full index scan but covering
+- `indexMergeUsed` (INFO) — suggest composite index instead
+- `efficientRangeScan` (GOOD) — small range scan with selective index
+- FK without index (DDL-aware)
+- Redundant index (DDL-aware)
 
-#### Site Integration Changes
+**Query hints expanded: 15 → 24** (+9 new):
+- Scalar subquery → LEFT JOIN rewrite (with example SQL)
+- GROUP BY on non-unique name column (logic bug detection)
+- YEAR() → range rewrite (specific pattern)
+- GROUP BY without ORDER BY (MySQL 8.4+)
+- NOT IN with nullable columns
+- ORDER BY + LIMIT without tiebreaker
+- STRAIGHT_JOIN warning
+- Mixed ASC/DESC ORDER BY
+- COUNT(DISTINCT) performance
 
-- `.eleventy.js` — added passthrough copy for `tools/explain/dist`
-- `.eleventyignore` — added `tools/**` to prevent Eleventy processing source files
-- `package.json` — added `build:explain` and `dev:explain` scripts
-- `netlify.toml` — added SPA redirect for `/tools/explain/*`
-- `.gitignore` — added `tools/explain/dist/` and `tools/explain/node_modules/`
+**Index advisor upgraded:**
+- Query-aware: extracts WHERE, GROUP BY, ORDER BY columns from SQL
+- Resolves table aliases (`o` → `orders`)
+- Handles bare column names (no table prefix)
+- Handles function-wrapped columns (YEAR(order_date) → order_date)
+- Generates composite index DDL for WHERE conditions
+- Generates GROUP BY indexes for Loose Index Scan optimization
+- Covering index suggestions for join + aggregate patterns
+- Deduplicates recommendations across plan-level, DDL-level, and query-level
 
-#### Nav Updates (8 files)
+**Bugs fixed during Phase 2:**
+- `massiveRowMismatch` showing "Infinityx" when actual rows = 0 — now skips (deferred to `zeroRowJoin`)
+- `SELECT *` regex matching multiplication `*` in `SUM(qty * price)` — changed to `/SELECT\s+\*\s+FROM/`
+- DDL parser missing DECIMAL(10,2) columns — replaced regex with balanced paren scanner
+- DDL parser not capturing FOREIGN KEY — same fix
+- Duplicate index recommendations — normalized `seen` set keys
+- Missing composite index for Q1 `(status, order_date)` — added single-table WHERE inference
 
-Added "EXPLAIN Analyzer" link to navigation across:
-- `index.html`, `services.html`, `results.html`, `about.html`, `contact.html`
-- `blog/post-template.html`, `_includes/blog-post.njk`
-- `_includes/footer.njk`
+---
 
-### Key Decisions Made During Session
+### Robust Testing: Tool vs AI
 
-1. **No AI API** — user explicitly said "it will cost me a lot of money token" — all intelligence must be built-in TypeScript rules
-2. **Hostinger available** — user has Hostinger hosting in addition to Netlify, can be used as backup
-3. **Nav consistency** — user caught that the Vue SPA had its own header/footer that didn't match the site. Fixed by putting the real site nav/footer in the HTML shell and having Vue only render `#app` content between them.
-4. **Nav label** — user rejected "Tools" as the nav link name, chose "EXPLAIN Analyzer" instead
+Ran all 5 real MySQL EXPLAIN plans through our tool and compared against Claude AI analysis.
 
-### Build Output
+**Test schema:** customers, orders, order_items, products (with FKs)
+
+**Results:**
+
+| Query | AI Findings | Our Tool Catches | Verdict |
+|-------|:-:|:-:|:-:|
+| Q1: WHERE + YEAR() | 5 issues | 5/5 + composite index DDL | Match |
+| Q2: JOIN + GROUP BY name | 6 issues | 5/6 + GROUP BY logic bug | Match |
+| Q3: GROUP BY + ORDER BY + LIMIT | 4 issues | 4/4 + product_id index | Match |
+| Q4: 4-table JOIN (0-row integrity) | 7 issues | 7/7 + data audit SQL | Match |
+| Q5: Dependent subquery | 4 issues | 4/4 + JOIN rewrite hint | Match |
+
+**Our tool catches things AI missed:**
+- MySQL 8.4 implicit GROUP BY sorting removed
+- Non-deterministic ORDER BY + LIMIT without tiebreaker
+- GROUP BY on non-unique name column (logic bug)
+
+**Remaining gaps for Phase 3:**
+- AI suggests richer covering indexes (e.g., `(customer_id, total_amount)` not just `(customer_id)`)
+- AI generates actual rewritten SQL; our tool gives hints but not executable rewrites
+- AI flags missing NOT NULL constraints
+
+---
+
+### Key Decisions
+
+1. **No AI API** — all intelligence compiled as TypeScript rules, $0 cost
+2. **Hostinger available** — backup hosting already paid for
+3. **Nav consistency** — site nav/footer hardcoded in HTML shell, Vue only renders `#app`
+4. **"EXPLAIN Analyzer"** — user chose this over "Tools" as nav label
+5. **No dark mode** — matches main site (no dark mode)
+6. **MySQL result wrapper** — tool auto-strips `| ... |` borders from pasted mysql CLI output
+7. **`<temporary>` tables** — all scan rules skip internal temp tables to avoid false positives
+8. **Zero-row joins** — flagged as data integrity (not stale stats) — "Run ANALYZE TABLE" is wrong advice when rows don't exist
+
+### Build Output (Phase 2)
 
 ```
-Total gzipped: ~185KB
-- Main app: 60KB gzipped
-- CodeMirror: 100KB gzipped (lazy chunk)
-- D3: 17KB gzipped (lazy chunk)
-- CSS: 5KB gzipped
+dist/index.html                       6.3KB  (gzip: 2.2KB)
+dist/assets/index-*.css               26.8KB (gzip: 5.7KB)
+dist/assets/d3-*.js                   51.6KB (gzip: 17.5KB)
+dist/assets/index-*.js               198.6KB (gzip: 67.0KB)
+dist/assets/codemirror-*.js          303.2KB (gzip: 100.3KB)
 Monthly cost: $0
 ```
 
-### What's NOT Done Yet (Future Phases)
-
-**Phase 2 — Enhanced Analysis:**
-- DDL parser for schema cross-referencing
-- Before/After plan comparison view
-- Cost breakdown chart (inline SVG)
-- Timeline (Gantt) visualization
-- Export as PNG/SVG
-
-**Phase 3 — Ecosystem:**
-- PostgreSQL EXPLAIN support
-- MariaDB EXPLAIN support
-- Embeddable widget / npm package
-- Offline PWA with service worker
-- Slow query log parser
-
 ### Status at End of Session
 
-- Full build passes: `npm run build` completes successfully
-- All TypeScript type-checks pass: `vue-tsc --noEmit` clean
-- Tool accessible at `/tools/explain/` with consistent site nav/footer
-- Not yet committed to git — user wanted to verify locally first
-- Local testing confirmed working via `python3 -m http.server 8080 -d _site`
+- Phase 1 committed (`4d2e062`), not pushed
+- Phase 2 code complete, built, type-checked, tested — not yet committed
+- All 37 rules + 24 hints + DDL parser + 3 new views working
+- Tested against 5 real MySQL plans with AI comparison
+- Phase 3 gaps documented in memory for next session
+- `CLAUDE.md` and `CHATLOG.md` up to date

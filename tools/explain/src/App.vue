@@ -14,6 +14,9 @@ import PlanTable from './components/PlanTable.vue'
 import NodeDetail from './components/NodeDetail.vue'
 import IssueList from './components/IssueList.vue'
 import PlanHistory from './components/PlanHistory.vue'
+import CostChart from './components/CostChart.vue'
+import EstimateVsActual from './components/EstimateVsActual.vue'
+import CompareView from './components/CompareView.vue'
 
 // State
 const explainInput = ref('')
@@ -22,11 +25,12 @@ const ddlInput = ref('')
 const parseResult = ref<ParseResult | null>(null)
 const analysisResult = ref<AnalysisResult | null>(null)
 const selectedNode = ref<PlanNode | null>(null)
-const activeView = ref<'tree' | 'table'>('tree')
+const activeView = ref<'tree' | 'table' | 'cost' | 'estimate'>('tree')
 const showSamples = ref(false)
 const history = ref<HistoryEntry[]>([])
 const showHistory = ref(false)
 const showCopied = ref(false)
+const showCompare = ref(false)
 
 const hasResult = computed(() => parseResult.value !== null && parseResult.value.stats.nodeCount > 0)
 
@@ -101,6 +105,7 @@ function reset() {
   parseResult.value = null
   analysisResult.value = null
   selectedNode.value = null
+  showCompare.value = false
 }
 
 onMounted(() => {
@@ -178,10 +183,16 @@ onMounted(() => {
           <div class="results-plan">
             <div class="view-tabs">
               <button @click="activeView = 'tree'" :class="activeView === 'tree' ? 'tab-active' : 'tab-inactive'" class="view-tab">
-                Tree View
+                Tree
               </button>
               <button @click="activeView = 'table'" :class="activeView === 'table' ? 'tab-active' : 'tab-inactive'" class="view-tab">
-                Table View
+                Table
+              </button>
+              <button @click="activeView = 'cost'" :class="activeView === 'cost' ? 'tab-active' : 'tab-inactive'" class="view-tab">
+                Cost
+              </button>
+              <button @click="activeView = 'estimate'" :class="activeView === 'estimate' ? 'tab-active' : 'tab-inactive'" class="view-tab">
+                Est. vs Actual
               </button>
             </div>
 
@@ -190,6 +201,12 @@ onMounted(() => {
             </div>
             <div v-show="activeView === 'table'" class="card plan-card">
               <PlanTable :root="parseResult!.root" @select="selectNode" :selected-id="selectedNode?.id" />
+            </div>
+            <div v-show="activeView === 'cost'">
+              <CostChart :root="parseResult!.root" />
+            </div>
+            <div v-show="activeView === 'estimate'">
+              <EstimateVsActual :root="parseResult!.root" />
             </div>
 
             <NodeDetail v-if="selectedNode" :node="selectedNode" :total-cost="parseResult!.stats.totalCost" />
@@ -205,11 +222,19 @@ onMounted(() => {
                 <button @click="copyShareUrl" class="btn-tool">
                   {{ showCopied ? 'Copied!' : 'Copy Share Link' }}
                 </button>
+                <button @click="showCompare = !showCompare" class="btn-tool">
+                  {{ showCompare ? 'Hide Compare' : 'Compare Plans' }}
+                </button>
                 <button @click="showHistory = !showHistory" class="btn-tool">
                   History ({{ history.length }})
                 </button>
               </div>
             </div>
+
+            <CompareView v-if="showCompare"
+              :before-explain="explainInput"
+              :before-query="queryInput"
+            />
 
             <PlanHistory v-if="showHistory"
               :entries="history"

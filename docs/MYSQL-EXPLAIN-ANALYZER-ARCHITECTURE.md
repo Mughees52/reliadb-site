@@ -250,7 +250,6 @@ At Netlify's free 100GB/month: **~645,000 visits/month** before any cost. More t
 
 | Feature | Description | Cost |
 |---------|-------------|------|
-| **PostgreSQL Support** | Extend parsers for PostgreSQL EXPLAIN | $0 |
 | **MariaDB Support** | Handle MariaDB-specific EXPLAIN differences | $0 |
 | **Embeddable Widget** | Standalone `<script>` embed for other sites | $0 |
 | **Offline PWA** | Service worker for full offline support | $0 |
