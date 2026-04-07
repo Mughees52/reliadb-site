@@ -63,6 +63,7 @@ interface ExplainRow {
   table: string
   partitions?: string
   type: string
+  accessModifier?: string  // MariaDB: "filter" from "eq_ref|filter"
   possibleKeys?: string[]
   key?: string
   keyLen?: number
@@ -70,6 +71,9 @@ interface ExplainRow {
   rows: number
   filtered?: number
   extra?: string
+  // MariaDB ANALYZE columns
+  rRows?: number
+  rFiltered?: number
 }
 
 function parseRows(input: string): ExplainRow[] {
@@ -140,12 +144,29 @@ function mapToRow(headers: string[], values: string[]): ExplainRow | null {
   const key = get('key')
   const keyLen = parseInt(get('key_len') || get('keylen'))
 
+  // Handle MariaDB compound access type: "eq_ref|filter"
+  const rawType = get('type') || 'ALL'
+  let type = rawType
+  let accessModifier: string | undefined
+  if (rawType.includes('|')) {
+    const parts = rawType.split('|')
+    type = parts[0]
+    accessModifier = parts.slice(1).join('|')
+  }
+
+  // MariaDB ANALYZE columns
+  const rRowsStr = get('r_rows') || get('rrows')
+  const rFilteredStr = get('r_filtered') || get('rfiltered')
+  const rRows = rRowsStr ? parseFloat(rRowsStr) : undefined
+  const rFiltered = rFilteredStr ? parseFloat(rFilteredStr) : undefined
+
   return {
     id,
     selectType: get('select_type') || get('selecttype') || 'SIMPLE',
     table: get('table'),
     partitions: get('partitions') || undefined,
-    type: get('type') || 'ALL',
+    type,
+    accessModifier,
     possibleKeys,
     key: key && key !== 'NULL' ? key : undefined,
     keyLen: isNaN(keyLen) ? undefined : keyLen,
@@ -153,6 +174,8 @@ function mapToRow(headers: string[], values: string[]): ExplainRow | null {
     rows: parseInt(get('rows')) || 0,
     filtered: parseFloat(get('filtered')) || undefined,
     extra: get('Extra') || get('extra') || undefined,
+    rRows,
+    rFiltered,
   }
 }
 
@@ -190,6 +213,12 @@ function rowToNode(row: ExplainRow): PlanNode {
     keyLength: row.keyLen,
     selectType: row.selectType,
     condition,
+    // MariaDB ANALYZE fields
+    rRows: row.rRows,
+    rFiltered: row.rFiltered,
+    actualRows: row.rRows, // MariaDB r_rows = actual rows
+    accessModifier: row.accessModifier,
+    rowidFilter: row.accessModifier === 'filter' || extra.some(e => /rowid filter/i.test(e)),
     depth: 0,
   })
 }

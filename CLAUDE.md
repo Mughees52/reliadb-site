@@ -48,18 +48,27 @@ Key facts:
 - **Zero cost** — all intelligence is built-in TypeScript rules (not AI API)
 - **Tech**: Vue 3 + Vite + TypeScript + Tailwind CSS + D3.js + CodeMirror 6
 - **Parsing**: Supports EXPLAIN ANALYZE (tree), FORMAT=JSON, traditional table format, and MySQL result-wrapped output (`| -> ... |`)
-- **Analysis (Phase 2 current)**:
+- **Analysis (Phase 3 complete)**:
   - 37 detection rules (8 critical, 20 warning, 3 info, 4 good)
   - 24 SQL query hint patterns
-  - DDL parser with schema cross-referencing (FK without index, redundant index detection)
-  - Query-aware index advisor (extracts WHERE, GROUP BY, ORDER BY columns from SQL)
+  - 7 query rewrite generators (YEAR→range, subquery→JOIN, NOT IN→LEFT JOIN, GROUP BY fix, SELECT *, OFFSET→keyset, RAND())
+  - DDL parser with schema cross-referencing (FK without index, redundant index, NOT NULL suggestions)
+  - Query-aware index advisor with covering index intelligence and deduplication
+  - Resolves table aliases (o→orders) for correct DDL
+  - Scopes all recommendations to plan-relevant tables only
   - Handles: zero-row joins (data integrity), join fan-out, function-on-column, covering index scans, dependent subqueries, row estimate mismatches, and more
-- **Visualization**: Tree view (D3.js), Table view, Cost Breakdown chart, Estimate vs Actual comparison
-- **Comparison**: Before/After plan comparison with metric diff table
+  - Tested against 20 real queries on 680K-row MySQL 8.0 database
+  - Compared against AI (Claude) analysis — matches or exceeds on all test cases
+- **Visualization (PEV2-inspired)**:
+  - Tree view with edge thickness = row count, node badges (Slow/Costly/Bad Estimate/Filter)
+  - Highlight mode switcher (none/duration/rows/cost) with HSL gradient bars
+  - Rich hover tooltips, exclusive time calculation, row estimation display
+  - Table view, Cost Breakdown chart, Estimate vs Actual comparison
+  - Before/After plan comparison with metric diff table
+- **UI tabs**: Issues | Indexes | Hints | Rewrites | Schema
 - **Storage**: URL hash sharing (pako compression), localStorage history
-- **Integration**: Site nav/footer are in the HTML shell (`tools/explain/index.html`), Vue renders only the tool content in `#app`
-- **Build**: `tools/explain/` has its own `package.json`; Vite builds to `dist/`, Eleventy copies via passthrough
-- **Tested against AI analysis** — tool matches or exceeds Claude-level recommendations across 5 real MySQL query plans
+- **Integration**: Site nav/footer in HTML shell, Vue renders only `#app`
+- **Build**: Separate `package.json` + Vite; Eleventy copies dist via passthrough
 
 ## HOW
 
@@ -68,9 +77,9 @@ Key facts:
 ```
 reliadb-site/
 ├── .eleventy.js              # Eleventy config (collections, filters, passthrough)
-├── .eleventyignore           # Ignores tools/, CLAUDE.md, CHATLOG.md from Eleventy
+├── .eleventyignore           # Ignores tools/, CLAUDE.md, CHATLOG.md
 ├── package.json              # Root scripts: build:explain + eleventy + pagefind
-├── netlify.toml              # Build config, headers, redirects (incl SPA redirect for /tools/explain/*)
+├── netlify.toml              # Build config, headers, redirects (SPA redirect for /tools/explain/*)
 ├── _posts/                   # Blog posts (Markdown + YAML front matter)
 ├── _categories/              # Category metadata
 ├── _includes/                # Shared partials (blog-post.njk, footer.njk, nav-search-controls.njk)
@@ -85,40 +94,41 @@ reliadb-site/
 │   ├── index.html            # SPA shell with site nav + footer + #app mount
 │   ├── src/
 │   │   ├── main.ts           # Vue app entry
-│   │   ├── App.vue           # Root component (toolbar + 4 view tabs + comparison)
+│   │   ├── App.vue           # Root: toolbar + 4 view tabs + comparison
 │   │   ├── components/
-│   │   │   ├── InputPanel.vue      # 3-tab CodeMirror editor (EXPLAIN, Query, DDL)
-│   │   │   ├── PlanTree.vue        # D3.js interactive tree, color-coded, zoomable
-│   │   │   ├── PlanTable.vue       # Tabular operation list
-│   │   │   ├── NodeDetail.vue      # Selected node deep-dive
-│   │   │   ├── IssueList.vue       # Issues + Index Recommendations + Query Hints tabs
-│   │   │   ├── StatsBar.vue        # Summary dashboard with score
-│   │   │   ├── PlanHistory.vue     # localStorage history
-│   │   │   ├── CostChart.vue       # Horizontal bar cost breakdown (Phase 2)
-│   │   │   ├── EstimateVsActual.vue # Est vs Actual rows comparison (Phase 2)
-│   │   │   └── CompareView.vue     # Before/After plan comparison (Phase 2)
+│   │   │   ├── InputPanel.vue        # 3-tab CodeMirror (EXPLAIN, Query, DDL)
+│   │   │   ├── PlanTree.vue          # D3.js tree: badges, HSL bars, tooltips, highlight modes
+│   │   │   ├── PlanTable.vue         # Tabular operation list
+│   │   │   ├── NodeDetail.vue        # Selected node deep-dive
+│   │   │   ├── IssueList.vue         # 5 tabs: Issues, Indexes, Hints, Rewrites, Schema
+│   │   │   ├── StatsBar.vue          # Summary dashboard with score
+│   │   │   ├── PlanHistory.vue       # localStorage history
+│   │   │   ├── CostChart.vue         # Horizontal bar cost breakdown
+│   │   │   ├── EstimateVsActual.vue  # Est vs Actual bars
+│   │   │   └── CompareView.vue       # Before/After comparison
 │   │   ├── parsers/
-│   │   │   ├── types.ts            # PlanNode AST, AccessType, computeStats()
-│   │   │   ├── detect-format.ts    # Auto-detect tree vs JSON vs table (incl MySQL wrapper)
-│   │   │   ├── tree-parser.ts      # EXPLAIN ANALYZE tree (handles wrappers, decimals, subqueries)
-│   │   │   ├── json-parser.ts      # EXPLAIN FORMAT=JSON
+│   │   │   ├── types.ts              # PlanNode AST with exclusiveTime, timePercentage, rowsRemovedByFilter
+│   │   │   ├── detect-format.ts      # Auto-detect (incl MySQL wrapper)
+│   │   │   ├── tree-parser.ts        # EXPLAIN ANALYZE tree (wrappers, decimals, subqueries)
+│   │   │   ├── json-parser.ts        # EXPLAIN FORMAT=JSON
 │   │   │   ├── traditional-parser.ts # Traditional EXPLAIN table
-│   │   │   ├── ddl-parser.ts       # CREATE TABLE parser (Phase 2)
-│   │   │   └── normalize.ts        # Orchestrator
+│   │   │   ├── ddl-parser.ts         # CREATE TABLE (balanced parens, FK, indexes)
+│   │   │   └── normalize.ts          # Orchestrator
 │   │   ├── analysis/
-│   │   │   ├── engine.ts           # Orchestrates rules + DDL cross-ref + index advisor + hints
-│   │   │   ├── rules.ts            # 37 detection rules
-│   │   │   ├── index-advisor.ts    # Query-aware index recommendations with covering index suggestions
-│   │   │   ├── query-hints.ts      # 24 SQL anti-pattern detectors
-│   │   │   └── types.ts            # Issue, QueryHint, IndexRecommendation interfaces
-│   │   ├── storage/                # url-codec.ts (pako), history.ts (localStorage)
-│   │   ├── utils/                  # formatting.ts, samples.ts (5 real MySQL samples)
-│   │   └── styles/main.css         # Tailwind + tool-specific styles matching site design
-│   └── dist/                       # Vite build output (gitignored)
+│   │   │   ├── engine.ts             # Orchestrator: rules + DDL + index advisor + hints + rewrites + schema + scoring + dedup
+│   │   │   ├── rules.ts              # 37 detection rules
+│   │   │   ├── index-advisor.ts      # Query-aware with alias resolution + covering indexes
+│   │   │   ├── query-hints.ts        # 24 SQL anti-pattern detectors
+│   │   │   ├── query-rewriter.ts     # 7 executable SQL rewrite generators
+│   │   │   └── types.ts              # Issue, QueryHint, IndexRec, QueryRewrite, SchemaIssue
+│   │   ├── storage/                  # url-codec.ts (pako), history.ts (localStorage)
+│   │   ├── utils/                    # formatting.ts, samples.ts (5 real MySQL samples)
+│   │   └── styles/main.css           # Tailwind + tool styles matching site design
+│   └── dist/                         # Vite build output (gitignored)
 ├── docs/
-│   ├── MYSQL-EXPLAIN-ANALYZER-ARCHITECTURE.md  # Full architecture design
-│   └── MYSQL-OPTIMIZATION-REFERENCE.md         # MySQL 8.4 optimization knowledge base
-└── _site/                    # Eleventy build output (gitignored)
+│   ├── MYSQL-EXPLAIN-ANALYZER-ARCHITECTURE.md
+│   └── MYSQL-OPTIMIZATION-REFERENCE.md
+└── _site/                            # Eleventy build output (gitignored)
 ```
 
 ### Build Commands
@@ -126,63 +136,69 @@ reliadb-site/
 ```bash
 npm run build          # Full build: explain tool + eleventy + pagefind
 npm run dev            # Eleventy dev server (no explain tool hot reload)
-npm run dev:explain    # Vite dev server for explain tool only (http://localhost:5173/tools/explain/)
+npm run dev:explain    # Vite dev server for explain tool only (localhost:5173)
 npm run build:explain  # Build explain tool only
 ```
 
 ### Build Pipeline
 
-1. `npm run build:explain` — `cd tools/explain && npm install && npm run build` (vue-tsc + Vite → `tools/explain/dist/`)
-2. `eleventy` — builds static site to `_site/`, copies `tools/explain/dist/` → `_site/tools/explain/` via passthrough
+1. `npm run build:explain` — vue-tsc + Vite → `tools/explain/dist/`
+2. `eleventy` — builds site to `_site/`, copies dist via passthrough
 3. `pagefind` — indexes `_site/` for search
 
 ### Navigation
 
-The nav is **duplicated across 8 files** (not extracted to a single include for the non-blog pages):
+Duplicated across **8 files** (not extracted to a single include):
 - `index.html`, `services.html`, `results.html`, `about.html`, `contact.html`
 - `blog/post-template.html`, `_includes/blog-post.njk`
 - `tools/explain/index.html` (hardcoded, not Nunjucks)
 
-The footer is a single source of truth: `_includes/footer.njk` (used by all Eleventy pages). The explain tool has its own copy in `tools/explain/index.html`.
+Footer: `_includes/footer.njk` (single source for Eleventy pages). Tool has its own copy.
 
 ### Key Design Decisions
 
-1. **No AI API costs** — all analysis intelligence is compiled into TypeScript rules, not external API calls. The user explicitly rejected Claude API integration due to recurring costs. Tool was tested against AI (Claude) analysis and matches or exceeds its recommendations.
-2. **Client-side everything** — no backend, no serverless functions, no database. Plans shared via URL hash encoding.
-3. **Site nav/footer in HTML shell** — the Vue SPA's `index.html` contains the actual site nav and footer HTML (copy of main site). Vue only renders the `#app` div between them. This keeps the tool visually consistent with the rest of the site.
-4. **Separate build** — the explain tool has its own `package.json` and Vite build, completely independent of Eleventy. Eleventy just copies the dist output.
-5. **Tailwind scoped to tool** — the main site uses plain CSS (`css/style.css`). Only the explain tool uses Tailwind, scoped to its own styles. Both CSS files load on the tool page.
-6. **MySQL result wrapper handling** — parser strips `+---+` borders, `| EXPLAIN |` headers, and `| ... |` pipe wrappers so users can paste directly from the mysql CLI.
-7. **No dark mode** — matches main site which has no dark mode. Removed from tool for consistency.
+1. **No AI API costs** — all intelligence compiled as TypeScript rules. Tested against Claude analysis — matches or exceeds.
+2. **Client-side everything** — no backend, no functions, no database.
+3. **Site nav/footer in HTML shell** — Vue only renders `#app`.
+4. **Separate build** — tool has own `package.json`, independent of Eleventy.
+5. **Tailwind scoped to tool** — main site uses plain CSS.
+6. **MySQL result wrapper handling** — auto-strips `| ... |` borders.
+7. **No dark mode** — matches main site.
+8. **Plan-scoped recommendations** — DDL issues and index recs only for tables in the current plan.
+9. **Weighted scoring** — plan issues get full penalty, DDL issues reduced, good findings give bonus.
+10. **Index deduplication** — overlapping recs merged into wider indexes.
 
 ### Common Tasks
 
-**Adding a blog post**: Create `_posts/your-slug.md` with front matter (title, date, description, categories, tags, read_time). Or use Decap CMS at `/admin/`.
+**Adding a blog post**: Create `_posts/your-slug.md` or use Decap CMS at `/admin/`.
 
-**Adding an analysis rule**: Add a `RuleFn` function to `tools/explain/src/analysis/rules.ts` following the existing pattern. Add it to the `allRules` array in the correct severity section.
+**Adding an analysis rule**: Add `RuleFn` to `rules.ts`, add to `allRules` array.
 
-**Adding a query hint pattern**: Add a regex + hint object to `tools/explain/src/analysis/query-hints.ts` in the `patterns` array. Test the regex carefully — e.g., `SELECT *` regex must not match multiplication `*`.
+**Adding a query hint**: Add regex + hint to `query-hints.ts` `patterns` array. Test regex carefully.
 
-**Adding index recommendations**: Modify `tools/explain/src/analysis/index-advisor.ts`. Plan-level recs come from walking the PlanNode tree; query-level recs come from SQL parsing in `analyzeQueryForIndexes()`.
+**Adding a query rewrite**: Add function to `query-rewriter.ts`, call from `generateRewrites()`.
 
-**Updating the nav**: Must be updated in all 8 files listed above (7 Eleventy pages + the explain tool's `index.html`).
+**Adding index recommendation logic**: Modify `index-advisor.ts`. Plan-level in `walkNodes`, query-level in `analyzeQueryForIndexes()`.
+
+**Updating the nav**: Update all 8 files listed above.
 
 **Testing locally**: `npm run build && python3 -m http.server 8080 -d _site`
 
+**Testing analysis engine**: `cd tools/explain && npx tsx -e "import {...} from './src/...'"`
+
 ### Deployment
 
-Push to `main` → Netlify auto-builds and deploys. No manual steps needed.
+Push to `main` → Netlify auto-builds and deploys.
 
-### Current Phase Status
+### Phase Status
 
-- **Phase 1 (MVP)**: Complete — parsing, tree viz, 19 rules, sharing, history
-- **Phase 2 (Enhanced)**: Complete — DDL parser, 37 rules, 24 hints, cost chart, est vs actual, comparison view, query-aware index advisor
-- **Phase 3 (Planned)**: Covering index intelligence (multi-column), query rewrite engine (generate actual SQL), NOT NULL suggestions, index deduplication, PostgreSQL/MariaDB support, embeddable widget, PWA
+- **Phase 1**: Complete — parsing, tree viz, 19 rules, sharing, history
+- **Phase 2**: Complete — DDL parser, 37 rules, 24 hints, PEV2-level viz, cost chart, est vs actual, comparison, query-aware index advisor
+- **Phase 3**: Complete — query rewrite engine (7 rewrites), NOT NULL suggestions, index deduplication
+- **Future**: PostgreSQL support, MariaDB support, embeddable widget, PWA, slow query log parser, launch blog post
 
 ### Brand
 
 - **Colors**: Navy `#1A5276`, Accent `#2980B9`, CTA Orange `#E67E22`
-- **Font**: Inter (Google Fonts, 400-800 weights)
-- **Tone**: Professional DBA consulting, technical but approachable
-- **Domain**: reliadb.com
-- **Email**: support@reliadb.com
+- **Font**: Inter (Google Fonts, 400-800)
+- **Domain**: reliadb.com | **Email**: support@reliadb.com

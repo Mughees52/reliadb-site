@@ -29,6 +29,18 @@ function isTempTable(node: PlanNode): boolean {
   return node.table?.startsWith('<') === true || node.operation.toLowerCase().includes('<temporary>')
 }
 
+/** Get max rows from child nodes (for wrapper nodes with 0 rows) */
+function maxChildRows(node: PlanNode): number {
+  let max = 0
+  for (const child of node.children) {
+    const r = child.actualRows ?? child.estimatedRows
+    if (r > max) max = r
+    const childMax = maxChildRows(child)
+    if (childMax > max) max = childMax
+  }
+  return max
+}
+
 // ============================================================
 // CRITICAL RULES (7)
 // ============================================================
@@ -78,7 +90,11 @@ function extractConditionColumns(condition: string): string[] {
 
 const filesortLarge: RuleFn = (node) => {
   if (!node.extra?.some(e => /filesort/i.test(e))) return null
-  const rows = node.actualRows ?? node.estimatedRows
+  let rows = node.actualRows ?? node.estimatedRows
+  // For wrapper nodes (like MariaDB JSON filesort) with 0 rows, use max from children
+  if (rows === 0 && node.children.length > 0) {
+    rows = maxChildRows(node)
+  }
   if (rows <= 1000) return null
 
   return issue(node, 'critical', 'sort',
@@ -94,7 +110,8 @@ const filesortLarge: RuleFn = (node) => {
 
 const tempTableLarge: RuleFn = (node) => {
   if (!node.extra?.some(e => /temporary/i.test(e))) return null
-  const rows = node.actualRows ?? node.estimatedRows
+  let rows = node.actualRows ?? node.estimatedRows
+  if (rows === 0 && node.children.length > 0) rows = maxChildRows(node)
   if (rows <= 500) return null
 
   return issue(node, 'critical', 'sort',
@@ -132,12 +149,24 @@ const cartesianJoin: RuleFn = (node) => {
   const parentOp = node.parent.operation.toLowerCase()
   if (!parentOp.includes('join') && !parentOp.includes('loop')) return null
 
+  // Don't flag the driving (first) table of a join — it's expected to scan fully.
+  // Only flag inner (non-first) tables that have no join condition.
+  const siblings = node.parent.children
+  if (siblings.length > 0 && siblings[0] === node) return null
+  // Also skip if this is the first child deep in the tree (driving table of nested join)
+  if (siblings.length > 0 && siblings[0].children.length > 0 && containsNode(siblings[0], node)) return null
+
   return issue(node, 'critical', 'join',
     `Possible Cartesian join on \`${node.table ?? 'unknown'}\``,
     `Full table scan inside a join with no visible join condition. This produces a cross product of all rows.`,
     `Add a proper JOIN ON condition between the tables.`,
     { impact: 'Cross product — row count multiplies between tables' },
   )
+}
+
+function containsNode(parent: PlanNode, target: PlanNode): boolean {
+  if (parent === target) return true
+  return parent.children.some(c => containsNode(c, target))
 }
 
 const massiveRowMismatch: RuleFn = (node) => {
@@ -171,6 +200,9 @@ const nestedLoopUnindexed: RuleFn = (node) => {
   if (!node.parent) return null
   const parentOp = node.parent.operation.toLowerCase()
   if (!parentOp.includes('nested loop') && !parentOp.includes('join')) return null
+  // Don't flag the driving (first/outer) table — it's expected to scan
+  const siblings = node.parent.children
+  if (siblings.length > 0 && siblings[0] === node) return null
   const rows = node.actualRows ?? node.estimatedRows
   if (rows <= 50) return null
 
@@ -278,7 +310,8 @@ const rangeCheckEachRecord: RuleFn = (node) => {
 
 const tempTableSmall: RuleFn = (node) => {
   if (!node.extra?.some(e => /temporary/i.test(e))) return null
-  const rows = node.actualRows ?? node.estimatedRows
+  let rows = node.actualRows ?? node.estimatedRows
+  if (rows === 0 && node.children.length > 0) rows = maxChildRows(node)
   if (rows > 500) return null
   if (rows <= 50) return null
 
@@ -565,7 +598,97 @@ const efficientRangeScan: RuleFn = (node) => {
 }
 
 // ============================================================
-// ALL RULES (37 total)
+// MARIADB-SPECIFIC RULES
+// ============================================================
+
+const rowidFilterActive: RuleFn = (node) => {
+  if (!node.rowidFilter) return null
+
+  return issue(node, 'good', 'index',
+    `Rowid filtering on \`${node.table ?? 'unknown'}\``,
+    `MariaDB's rowid filtering optimization is active — using a secondary index to pre-filter row IDs before the primary lookup, reducing unnecessary reads.`,
+    `Good — rowid filtering improves performance when the secondary index is selective.`,
+    { docLink: 'https://mariadb.com/kb/en/rowid-filtering-optimization/' },
+  )
+}
+
+const mariadbActualVsEstimate: RuleFn = (node) => {
+  // Use MariaDB's r_rows vs estimated rows for mismatch detection
+  if (node.rRows == null || node.estimatedRows <= 0) return null
+  if (node.actualRows != null) return null // MySQL fields already handled by other rules
+  if (node.rRows === 0) return null
+  const ratio = node.rRows / node.estimatedRows
+  if (ratio <= 10 && ratio >= 0.1) return null
+
+  return issue(node, 'warning', 'estimate',
+    `Row estimate mismatch on \`${node.table ?? node.operation}\` (MariaDB)`,
+    `Estimated ${node.estimatedRows.toLocaleString()} rows, actually ${node.rRows.toLocaleString()} (r_rows). The ${ratio > 1 ? ratio.toFixed(0) + 'x under' : (1/ratio).toFixed(0) + 'x over'}-estimate may cause a suboptimal plan.`,
+    `Run \`ANALYZE TABLE ${node.table ?? '...'}\` to update statistics.`,
+    { docLink: 'https://mariadb.com/kb/en/analyze-table/' },
+  )
+}
+
+const mariadbLowRFiltered: RuleFn = (node) => {
+  if (node.rFiltered == null) return null
+  if (node.filtered != null) return null // MySQL filtered already handled
+  if (node.rFiltered > 50) return null
+  if (isTempTable(node)) return null
+  const rows = node.rRows ?? node.estimatedRows
+  if (rows <= 10) return null
+
+  return issue(node, 'warning', 'scan',
+    `Low actual filter ratio (${node.rFiltered.toFixed(1)}%) on \`${node.table ?? 'unknown'}\` (MariaDB)`,
+    `Only ${node.rFiltered.toFixed(1)}% of rows examined actually satisfy the WHERE condition (r_filtered). The rest are discarded after being read.`,
+    `Add a more selective index or composite index to reduce wasted row reads.`,
+  )
+}
+
+const mariadbFirstMatch: RuleFn = (node) => {
+  if (!node.extra?.some(e => /FirstMatch/i.test(e))) return null
+
+  return issue(node, 'good', 'join',
+    `Semi-join FirstMatch on \`${node.table ?? 'unknown'}\``,
+    `MariaDB's FirstMatch strategy stops scanning after the first matching row, avoiding duplicate work in semi-joins.`,
+    `Good — this is an efficient semi-join execution strategy.`,
+    { docLink: 'https://mariadb.com/kb/en/firstmatch-strategy/' },
+  )
+}
+
+const mariadbLooseScan: RuleFn = (node) => {
+  if (!node.extra?.some(e => /LooseScan/i.test(e))) return null
+
+  return issue(node, 'good', 'join',
+    `Semi-join LooseScan on \`${node.table ?? 'unknown'}\``,
+    `MariaDB's LooseScan strategy uses an index to pick one row per group of duplicates, efficiently executing the semi-join.`,
+    `Good — LooseScan avoids duplicate processing via index grouping.`,
+    { docLink: 'https://mariadb.com/kb/en/loosescan-strategy/' },
+  )
+}
+
+const mariadbDuplicateWeedout: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Start temporary|End temporary/i.test(e))) return null
+
+  return issue(node, 'info', 'join',
+    `DuplicateWeedout on \`${node.table ?? 'unknown'}\``,
+    `MariaDB runs the semi-join as an inner join and removes duplicates via a temporary table. This is a fallback strategy — other strategies (FirstMatch, LooseScan, Materialization) are usually faster.`,
+    `Consider rewriting the subquery as a JOIN with DISTINCT, or ensure the subquery column has an index for LooseScan.`,
+    { docLink: 'https://mariadb.com/kb/en/duplicateweedout-strategy/' },
+  )
+}
+
+const mariadbHashJoin: RuleFn = (node) => {
+  if (!node.extra?.some(e => /BNLH|BKAH/i.test(e))) return null
+
+  return issue(node, 'info', 'join',
+    `Hash join on \`${node.table ?? 'unknown'}\``,
+    `MariaDB is using a hash-based join strategy (BNLH/BKAH). This is generally efficient for large joins without indexes but uses memory for the hash table.`,
+    `If the join is slow, adding an index on the join column may allow a more efficient nested loop join.`,
+    { docLink: 'https://mariadb.com/kb/en/block-based-join-algorithms/' },
+  )
+}
+
+// ============================================================
+// ALL RULES (44 total)
 // ============================================================
 
 const allRules: RuleFn[] = [
@@ -601,11 +724,19 @@ const allRules: RuleFn[] = [
   smallTableScanOk,
   coveringIndexScan,
   indexMergeUsed,
-  // Good (4)
+  // MariaDB-specific (7)
+  mariadbActualVsEstimate,
+  mariadbLowRFiltered,
+  mariadbDuplicateWeedout,
+  mariadbHashJoin,
+  // Good (7)
   usingCoveringIndex,
   optimalAccess,
   indexConditionPushdown,
   efficientRangeScan,
+  rowidFilterActive,
+  mariadbFirstMatch,
+  mariadbLooseScan,
 ]
 
 export function runRules(node: PlanNode, root: PlanNode, stats: PlanStats): Issue[] {

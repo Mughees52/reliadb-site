@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PlanStats, ExplainFormat } from '../parsers/types'
+import type { PlanStats, ExplainFormat, DatabaseEngine } from '../parsers/types'
 import type { AnalysisResult } from '../analysis/types'
 import { formatDuration, formatNumber, formatCost } from '../utils/formatting'
 
@@ -7,6 +7,7 @@ defineProps<{
   stats: PlanStats
   summary: AnalysisResult['summary']
   format: ExplainFormat
+  engine: DatabaseEngine
 }>()
 
 function scoreColor(score: number): string {
@@ -62,7 +63,7 @@ function scoreColor(score: number): string {
       <!-- Format -->
       <div class="stat-item stat-hide-mobile">
         <div class="stat-label">Format</div>
-        <div class="stat-value">{{ format }}</div>
+        <div class="stat-value">{{ engine !== 'unknown' ? engine.charAt(0).toUpperCase() + engine.slice(1) + ' / ' : '' }}{{ format }}</div>
       </div>
 
       <!-- Nodes -->

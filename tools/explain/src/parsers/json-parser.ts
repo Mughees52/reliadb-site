@@ -48,6 +48,85 @@ function processQueryBlock(block: any, depth: number): PlanNode {
     children.push(dedupNode)
   }
 
+  // MariaDB: block-nl-join node
+  if (block['block-nl-join']) {
+    const bnl = block['block-nl-join']
+    const bnlNode = createNode({
+      operation: 'Block Nested Loop Join',
+      extra: ['Using join buffer'],
+      depth: depth + 1,
+    })
+    if (bnl.table) bnlNode.children.push(processTable(bnl.table, depth + 2))
+    if (bnl.nested_loop) {
+      for (const item of bnl.nested_loop) {
+        if (item.table) bnlNode.children.push(processTable(item.table, depth + 2))
+      }
+    }
+    children.push(bnlNode)
+  }
+
+  // MariaDB: filesort as a wrapper node
+  // Structure: filesort → temporary_table → nested_loop → [tables]
+  // Or: filesort → query_block / table
+  if (block.filesort) {
+    const fs = block.filesort
+    const fsNode = createNode({
+      operation: `Sort: ${fs.sort_key ?? 'filesort'}`,
+      extra: ['Using filesort'],
+      depth: depth + 1,
+    })
+
+    // filesort.temporary_table.nested_loop (most common MariaDB pattern)
+    const tempTable = fs.temporary_table
+    if (tempTable) {
+      const tmpNode = createNode({
+        operation: 'Aggregate using temporary table',
+        extra: ['Using temporary'],
+        depth: depth + 2,
+      })
+
+      if (tempTable.nested_loop) {
+        for (const item of tempTable.nested_loop) {
+          if (item.table) tmpNode.children.push(processTable(item.table, depth + 3))
+        }
+      }
+      if (tempTable.table) {
+        tmpNode.children.push(processTable(tempTable.table, depth + 3))
+      }
+      if (tempTable.query_block) {
+        tmpNode.children.push(processQueryBlock(tempTable.query_block, depth + 3))
+      }
+
+      fsNode.children.push(tmpNode)
+    }
+
+    // filesort.query_block (direct)
+    if (fs.query_block) {
+      fsNode.children.push(processQueryBlock(fs.query_block, depth + 2))
+    }
+    // filesort.table (direct)
+    if (fs.table) {
+      fsNode.children.push(processTable(fs.table, depth + 2))
+    }
+    // filesort.nested_loop (without temporary_table wrapper)
+    if (fs.nested_loop && !tempTable) {
+      for (const item of fs.nested_loop) {
+        if (item.table) fsNode.children.push(processTable(item.table, depth + 2))
+      }
+    }
+
+    children.push(fsNode)
+  }
+
+  // MariaDB: materialized subquery
+  if (block.materialized) {
+    const matBlock = block.materialized.query_block ?? block.materialized
+    const matNode = processQueryBlock(matBlock, depth + 1)
+    matNode.operation = block.materialized.lateral ? 'Lateral Derived' : 'Materialized'
+    matNode.selectType = block.materialized.lateral ? 'LATERAL DERIVED' : 'MATERIALIZED'
+    children.push(matNode)
+  }
+
   // Process table directly on query_block (simple queries)
   if (block.table) {
     children.push(processTable(block.table, depth + 1))
@@ -95,9 +174,18 @@ function processQueryBlock(block: any, depth: number): PlanNode {
 }
 
 function processTable(table: any, depth: number): PlanNode {
-  const accessType = normalizeAccessType(table.access_type)
+  // Handle MariaDB compound access type: "eq_ref|filter"
+  let rawAccessType = table.access_type ?? ''
+  let accessModifier: string | undefined
+  if (rawAccessType.includes('|')) {
+    const parts = rawAccessType.split('|')
+    rawAccessType = parts[0]
+    accessModifier = parts.slice(1).join('|')
+  }
+  const accessType = normalizeAccessType(rawAccessType)
   const extra = extractExtraFromTable(table)
 
+  // Cost: MySQL uses cost_info object, MariaDB may not have it
   let cost = 0
   if (table.cost_info) {
     cost = parseFloat(table.cost_info.read_cost ?? '0') +
@@ -105,20 +193,41 @@ function processTable(table: any, depth: number): PlanNode {
       parseFloat(table.cost_info.sort_cost ?? '0')
   }
 
-  const rows = table.rows_examined_per_scan ?? table.rows_produced_per_join ?? 0
+  // Rows: MySQL uses rows_examined_per_scan/rows_produced_per_join, MariaDB uses flat "rows"
+  const rows = table.rows_examined_per_scan ?? table.rows_produced_per_join ?? table.rows ?? 0
 
   let operation = `${accessType === 'ALL' ? 'Table scan' : 'Index lookup'} on ${table.table_name}`
   if (table.key) {
     operation += ` using ${table.key}`
   }
 
+  // MariaDB ANALYZE FORMAT=JSON runtime fields
+  const rRows = table.r_rows != null ? parseFloat(table.r_rows) : undefined
+  const rFiltered = table.r_filtered != null ? parseFloat(table.r_filtered) : undefined
+  const rLoops = table.r_loops != null ? parseInt(table.r_loops) : undefined
+  const rTotalTimeMs = table.r_total_time_ms != null ? parseFloat(table.r_total_time_ms) : undefined
+
+  // MariaDB rowid filter
+  const rowidFilter = !!table.rowid_filter || accessModifier === 'filter'
+  if (table.rowid_filter) {
+    extra.push('Using rowid filter')
+  }
+
+  // possible_keys: MySQL may use object keys, MariaDB uses array
+  let possibleKeys: string[] | undefined
+  if (table.possible_keys) {
+    possibleKeys = Array.isArray(table.possible_keys)
+      ? table.possible_keys
+      : Object.keys(table.possible_keys)
+  }
+
   return createNode({
     operation,
     table: table.table_name,
     accessType,
+    accessModifier,
     index: table.key ?? undefined,
-    possibleKeys: table.possible_keys ? Object.keys(table.possible_keys) :
-      (Array.isArray(table.possible_keys) ? table.possible_keys : undefined),
+    possibleKeys,
     estimatedRows: rows,
     estimatedCost: cost,
     filtered: table.filtered ? parseFloat(table.filtered) : undefined,
@@ -127,6 +236,11 @@ function processTable(table: any, depth: number): PlanNode {
     usedColumns: table.used_columns,
     keyLength: table.key_length ? parseInt(table.key_length) : undefined,
     selectType: table.select_type,
+    rRows,
+    rFiltered,
+    rLoops,
+    rTotalTimeMs,
+    rowidFilter,
     depth,
   })
 }

@@ -126,7 +126,7 @@ onMounted(() => {
     <div class="tool-toolbar">
       <div class="tool-toolbar-inner">
         <div class="tool-toolbar-left">
-          <h1 class="tool-title">MySQL EXPLAIN Analyzer</h1>
+          <h1 class="tool-title">MySQL &amp; MariaDB EXPLAIN Analyzer</h1>
           <span class="tool-subtitle">Free &mdash; 100% in your browser</span>
         </div>
         <div class="tool-toolbar-right">
@@ -176,7 +176,7 @@ onMounted(() => {
 
       <!-- Results -->
       <template v-if="hasResult && analysisResult">
-        <StatsBar :stats="parseResult!.stats" :summary="analysisResult.summary" :format="parseResult!.format" />
+        <StatsBar :stats="parseResult!.stats" :summary="analysisResult.summary" :format="parseResult!.format" :engine="parseResult!.engine" />
 
         <div class="results-grid">
           <!-- Plan View -->
@@ -249,9 +249,9 @@ onMounted(() => {
       <!-- Empty State -->
       <div v-else-if="!hasResult && !parseResult" class="empty-state">
         <div class="empty-icon">&#x1F50D;</div>
-        <h2 class="empty-title">Paste your MySQL EXPLAIN output above</h2>
+        <h2 class="empty-title">Paste your MySQL or MariaDB EXPLAIN output above</h2>
         <p class="empty-desc">
-          Supports EXPLAIN ANALYZE (tree), EXPLAIN FORMAT=JSON, and traditional EXPLAIN table output.
+          Supports MySQL EXPLAIN ANALYZE (tree), EXPLAIN FORMAT=JSON, traditional EXPLAIN table, and MariaDB ANALYZE / ANALYZE FORMAT=JSON.
         </p>
         <button @click="loadSample(0)" class="btn btn-primary">
           Try a Sample Plan

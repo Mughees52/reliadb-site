@@ -27,6 +27,8 @@ export const ACCESS_TYPE_RANK: Record<AccessType, number> = {
   ALL: 11,
 }
 
+export type DatabaseEngine = 'mysql' | 'mariadb' | 'unknown'
+
 export interface PlanNode {
   id: string
   operation: string
@@ -58,6 +60,14 @@ export interface PlanNode {
   keyLength?: number
   selectType?: string
 
+  // MariaDB ANALYZE specific fields
+  rRows?: number            // r_rows: actual rows (MariaDB ANALYZE)
+  rFiltered?: number        // r_filtered: actual filter % (MariaDB ANALYZE)
+  rLoops?: number           // r_loops: actual loop count (MariaDB ANALYZE FORMAT=JSON)
+  rTotalTimeMs?: number     // r_total_time_ms: wall-clock time (MariaDB ANALYZE FORMAT=JSON)
+  rowidFilter?: boolean     // MariaDB rowid filtering active
+  accessModifier?: string   // e.g., "filter" from "eq_ref|filter"
+
   children: PlanNode[]
   parent?: PlanNode
   depth: number
@@ -83,6 +93,7 @@ export interface ParseResult {
   root: PlanNode
   stats: PlanStats
   format: ExplainFormat
+  engine: DatabaseEngine
   warnings: string[]
 }
 
@@ -113,6 +124,12 @@ export function createNode(partial: Partial<PlanNode> = {}): PlanNode {
     usedColumns: partial.usedColumns,
     keyLength: partial.keyLength,
     selectType: partial.selectType,
+    rRows: partial.rRows,
+    rFiltered: partial.rFiltered,
+    rLoops: partial.rLoops,
+    rTotalTimeMs: partial.rTotalTimeMs,
+    rowidFilter: partial.rowidFilter,
+    accessModifier: partial.accessModifier,
     children: partial.children ?? [],
     parent: partial.parent,
     depth: partial.depth ?? 0,
@@ -153,6 +170,21 @@ export function computeStats(root: PlanNode): PlanStats {
     if (node.extra?.some(e => /temporary/i.test(e))) stats.hasTempTable = true
     if (node.accessType === 'ALL' && (node.estimatedRows > 100 || (node.actualRows != null && node.actualRows > 100))) {
       stats.hasFullScan = true
+    }
+
+    // Normalize MariaDB fields into standard fields when MySQL ones are absent
+    if (node.actualRows == null && node.rRows != null) {
+      node.actualRows = node.rRows
+    }
+    if (node.actualTimeLast == null && node.rTotalTimeMs != null) {
+      node.actualTimeLast = node.rTotalTimeMs
+      node.actualTimeFirst = node.rTotalTimeMs
+    }
+    if (node.loops == null && node.rLoops != null) {
+      node.loops = node.rLoops
+    }
+    if (node.filtered == null && node.rFiltered != null) {
+      node.filtered = node.rFiltered
     }
 
     // Compute derived fields

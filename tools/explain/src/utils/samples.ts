@@ -117,4 +117,78 @@ GROUP BY c.country, p.category;`,
 FROM customers c;`,
     ddl: SHARED_DDL,
   },
+  // MariaDB samples
+  {
+    name: 'MariaDB: ANALYZE Table Format',
+    description: 'MariaDB ANALYZE output with r_rows and r_filtered columns',
+    explain: `+----+-------------+--------+------+---------------+----------+---------+--------------------+------+--------+----------+------------+----------------------------------------------------+
+| id | select_type | table  | type | possible_keys | key      | key_len | ref                | rows | r_rows | filtered | r_filtered | Extra                                              |
++----+-------------+--------+------+---------------+----------+---------+--------------------+------+--------+----------+------------+----------------------------------------------------+
+|  1 | SIMPLE      | orders | ALL  | idx_user      | NULL     | NULL    | NULL               | 1000 |   1000 |    10.00 |       5.20 | Using where; Using temporary; Using filesort       |
+|  1 | SIMPLE      | users  | ref  | PRIMARY       | PRIMARY  | 4       | db.orders.user_id  |    1 |      1 |   100.00 |     100.00 | NULL                                               |
++----+-------------+--------+------+---------------+----------+---------+--------------------+------+--------+----------+------------+----------------------------------------------------+`,
+    query: `SELECT u.name, SUM(o.total_amount) AS total
+FROM orders o
+JOIN users u ON u.id = o.user_id
+WHERE o.status = 'delivered'
+GROUP BY u.name
+ORDER BY total DESC;`,
+    ddl: `CREATE TABLE users (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(100),
+  email VARCHAR(100)
+);
+CREATE TABLE orders (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT,
+  status VARCHAR(20),
+  total_amount DECIMAL(10,2),
+  order_date DATETIME,
+  INDEX idx_user (user_id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);`,
+  },
+  {
+    name: 'MariaDB: ANALYZE FORMAT=JSON',
+    description: 'MariaDB JSON format with runtime r_ fields',
+    explain: `{
+  "query_block": {
+    "select_id": 1,
+    "r_loops": 1,
+    "r_total_time_ms": 45.2,
+    "nested_loop": [
+      {
+        "table": {
+          "table_name": "orders",
+          "access_type": "ALL",
+          "rows": 5000,
+          "r_rows": 5000,
+          "filtered": 100,
+          "r_filtered": 10.5,
+          "attached_condition": "orders.status = 'pending'"
+        }
+      },
+      {
+        "table": {
+          "table_name": "customers",
+          "access_type": "eq_ref",
+          "possible_keys": ["PRIMARY"],
+          "key": "PRIMARY",
+          "key_length": "4",
+          "ref": ["db.orders.customer_id"],
+          "rows": 1,
+          "r_rows": 1,
+          "filtered": 100,
+          "r_filtered": 100
+        }
+      }
+    ]
+  }
+}`,
+    query: `SELECT c.name, o.total_amount
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+WHERE o.status = 'pending';`,
+    ddl: SHARED_DDL,
+  },
 ]
