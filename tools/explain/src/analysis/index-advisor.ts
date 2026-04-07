@@ -138,7 +138,56 @@ export function generateIndexRecommendations(
       }
     }
 
-    // Rule 6: Possible keys exist but none used
+    // Rule 6: Range/ref scan reading many rows — suggest better composite index
+    // When the optimizer uses an index but still reads many rows, a composite index
+    // covering WHERE + JOIN + aggregate columns would be more efficient
+    if (node.index && node.table && !node.table.startsWith('<') &&
+        (node.accessType === 'range' || node.accessType === 'ref' || node.accessType === 'index') &&
+        (node.actualRows ?? node.estimatedRows) > 1000) {
+      const tableName = resolvedTable ?? node.table
+      const filterCondition = node.parent?.condition ?? node.condition
+      const filterCols = extractColumnsFromCondition(filterCondition)
+
+      // Get columns this table contributes to the query (for covering index)
+      const queryCols: string[] = []
+      if (query) {
+        const alias = node.table
+        const colRegex = new RegExp(`\\b${alias}\\.(\\w+)\\b`, 'gi')
+        let m2
+        while ((m2 = colRegex.exec(query)) !== null) {
+          if (!queryCols.includes(m2[1]) && !filterCols.includes(m2[1])) queryCols.push(m2[1])
+        }
+      }
+
+      // Build optimal composite: [WHERE equality cols, WHERE range cols, JOIN cols, SELECT/aggregate cols]
+      const allCols = [...filterCols, ...queryCols].filter(c =>
+        !EXCLUDE_WORDS.has(c.toLowerCase()) && c !== node.index
+      )
+
+      // Build composite: filter columns first (these narrow the scan), then query/aggregate cols
+      // Don't use node.index (that's the index name, not column name)
+      const compositeCols = [...new Set([...filterCols, ...queryCols])]
+        .filter(c => !EXCLUDE_WORDS.has(c.toLowerCase()))
+        .slice(0, 5) // max 5 columns
+
+      if (compositeCols.length >= 2) {
+        const key = `${tableName}:composite:${compositeCols.join(',')}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          const idxName = `idx_${tableName}_composite`.slice(0, 64)
+          const rows = node.actualRows ?? node.estimatedRows
+          recommendations.push({
+            table: tableName,
+            columns: compositeCols,
+            reason: `\`${node.index}\` reads ${formatNumber(rows)} rows — a composite covering index (${compositeCols.map(c => `\`${c}\``).join(', ')}) would be more selective and avoid table lookups`,
+            impact: 'high',
+            ddl: `-- Composite covering index: current index + WHERE + JOIN + aggregate columns\nALTER TABLE \`${tableName}\` ADD INDEX \`${idxName}\` (${compositeCols.map(c => `\`${c}\``).join(', ')});`,
+          })
+        }
+      }
+    }
+
+    // Rule 7: Possible keys exist but none used
     if (node.accessType === 'ALL' && node.possibleKeys && node.possibleKeys.length > 0 && !node.index && node.table && !node.table.startsWith('<')) {
       const key = `unused:${node.table}`
       if (!seen.has(key)) {
@@ -285,7 +334,7 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
     }
   }
 
-  // GROUP BY index suggestion
+  // GROUP BY index suggestion — skip when PK is already in GROUP BY
   if (groupCols.length > 0) {
     const byTable = new Map<string, string[]>()
     for (const ref of groupCols) {
@@ -295,22 +344,39 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
     }
 
     for (const [tableName, cols] of byTable) {
+      const resolved = tableName === '_unknown' ? null : resolveTableAlias(query, tableName)
+      const table = resolved
+        ? tables.find(t => t.name.toLowerCase() === resolved.toLowerCase())
+        : null
+
+      // Skip if GROUP BY already includes the PK — the PK uniquely identifies rows,
+      // so additional GROUP BY columns don't need indexes
+      if (table) {
+        const pk = table.indexes.find(idx => idx.primary)
+        if (pk && cols.some(c => pk.columns.some(pc => pc.toLowerCase() === c.toLowerCase()))) {
+          continue // PK in GROUP BY — no extra index needed
+        }
+      }
+
       if (tableName === '_unknown') {
-        // Try to match unaliased columns against tables
-        for (const table of tables) {
+        for (const t2 of tables) {
+          // Same PK check for unaliased columns
+          const pk = t2.indexes.find(idx => idx.primary)
+          if (pk && cols.some(c => pk.columns.some(pc => pc.toLowerCase() === c.toLowerCase()))) continue
+
           for (const col of cols) {
-            const hasCol = table.columns.some(c => c.name.toLowerCase() === col.toLowerCase())
-            const hasIdx = table.indexes.some(idx => idx.columns[0]?.toLowerCase() === col.toLowerCase())
+            const hasCol = t2.columns.some(c => c.name.toLowerCase() === col.toLowerCase())
+            const hasIdx = t2.indexes.some(idx => idx.columns[0]?.toLowerCase() === col.toLowerCase())
             if (hasCol && !hasIdx) {
-              const key = `${table.name}:${col}`
+              const key = `${t2.name}:${col}`
               if (!seen.has(key)) {
                 seen.add(key)
                 recs.push({
-                  table: table.name,
+                  table: t2.name,
                   columns: [col],
                   reason: `GROUP BY uses \`${col}\` — an index enables Loose Index Scan and avoids temporary table`,
                   impact: 'medium',
-                  ddl: `ALTER TABLE \`${table.name}\` ADD INDEX \`idx_${table.name}_${col}\` (\`${col}\`);`,
+                  ddl: `ALTER TABLE \`${t2.name}\` ADD INDEX \`idx_${t2.name}_${col}\` (\`${col}\`);`,
                 })
               }
             }
@@ -319,8 +385,6 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
         continue
       }
 
-      const resolved = resolveTableAlias(query, tableName)
-      const table = tables.find(t => t.name.toLowerCase() === resolved.toLowerCase())
       if (!table) continue
 
       for (const col of cols) {
@@ -330,7 +394,7 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
           if (!seen.has(key)) {
             seen.add(key)
             recs.push({
-              table: resolved,
+              table: resolved!,
               columns: [col],
               reason: `GROUP BY uses \`${resolved}\`.\`${col}\` — an index enables Loose Index Scan and avoids temporary table`,
               impact: 'medium',

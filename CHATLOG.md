@@ -1,132 +1,111 @@
 # CHATLOG.md — Session Log
 
-## Session: 2026-04-07 — MySQL EXPLAIN Analyzer (Phases 1-3)
+## Session: 2026-04-07 — MySQL & MariaDB EXPLAIN Analyzer (Phases 1-3 + MariaDB)
 
 ### Summary
 
-Built a complete MySQL EXPLAIN Analyzer tool from architecture through three phases of implementation in a single session. The tool is production-ready, tested against 20 real MySQL queries on a 680K-row database, and matches or exceeds AI-level analysis.
+Built a complete MySQL & MariaDB EXPLAIN Analyzer tool from architecture through four implementation milestones in a single session. The tool has 44 detection rules, 24 query hints, 7 query rewrites, a DDL-aware index advisor, PEV2-level visualization, and supports both MySQL and MariaDB output formats. Tested against 26 real queries across MySQL 8.0 and MariaDB 10.11 databases.
 
 ---
 
 ### Phase 1: Architecture + MVP
 
-**Architecture decisions:**
-- Researched explain.dalibo.com (PostgreSQL) — no MySQL equivalent exists
-- User rejected Claude API approach due to recurring costs → 100% client-side
-- Zero backend, zero database, zero API calls = $0/month
+- Researched explain.dalibo.com — no MySQL equivalent exists
+- User rejected Claude API → 100% client-side, $0/month
+- Built: Vue 3 SPA, 3 parsers, 19 rules, D3.js tree, URL sharing, 5 samples
+- Committed: `4d2e062` (50 files, 8,333 lines)
 
-**Built:**
-- Vue 3 + Vite + TypeScript SPA at `tools/explain/`
-- 3 parsers: tree (EXPLAIN ANALYZE), JSON (FORMAT=JSON), traditional table
-- 19 detection rules, 15 query hints
-- D3.js tree visualization, table view, node detail panel
-- URL hash sharing (pako), localStorage history, 5 sample plans
-- Integrated with Eleventy site via passthrough copy + SPA redirect
+### Phase 2: Enhanced Analysis + PEV2 Visualization
 
-**Bugs fixed:**
-- MySQL `| -> ... |` wrapper not stripped → added `stripMySQLWrapper()`
-- Decimal rows (`rows=0.25`) → changed regex from `\d+` to `[0-9.]+`
-- `Select #2 (subquery; dependent)` not parsed → added detection
-- `extractIndex()` matching "temporary" → excluded keywords
-- `<temporary>` table scans → excluded from all scan rules
-- Vue SPA had own nav/footer → moved to HTML shell
-- `SELECT *` regex matching multiplication `*` → changed to `SELECT * FROM`
+- 37 rules, 24 hints, DDL parser, query-aware index advisor
+- PEV2-inspired: edge thickness, badges, HSL bars, tooltips, highlight modes
+- CostChart, EstimateVsActual, CompareView components
+- Tested 20 queries on 680K-row MySQL 8.0 database
+- Committed: `ac98a58` (16 files, 2,578 lines)
 
-**Committed:** `4d2e062` (50 files, 8,333 lines)
+### Phase 3: Intelligence Gaps
 
----
+- Query rewrite engine (7 patterns with executable SQL)
+- NOT NULL suggestions from DDL cross-referencing
+- Index deduplication (subset → wider index)
+- Committed: `8d9183e` (4 files, 422 lines)
 
-### Phase 2: Enhanced Analysis + PEV2-Level Visualization
+### MariaDB Support
 
-**Analysis engine expanded:**
-- 37 rules (from 19): zero-row joins, function-on-column, join fan-out, low filter ratio, covering index scan, index merge, etc.
-- 24 query hints (from 15): GROUP BY logic bugs, scalar subquery rewrites, YEAR() range, mixed ASC/DESC, etc.
-- DDL parser with balanced-paren matching (handles DECIMAL(10,2), nested FK refs)
-- Query-aware index advisor: extracts WHERE/GROUP BY/ORDER BY from SQL, resolves aliases
-- Weighted scoring: plan issues vs DDL issues vs good findings
-- Recommendations scoped to plan-relevant tables only
+- Parse ANALYZE table (r_rows, r_filtered) and ANALYZE FORMAT=JSON
+- Handle compound access types (eq_ref|filter), filesort.temporary_table nesting
+- 7 MariaDB-specific rules (rowid filter, FirstMatch, LooseScan, DuplicateWeedout, hash join, actual vs estimate, low r_filtered)
+- Auto-detect engine from output format
+- Tested 6 queries on 530K-row MariaDB 10.11 database
+- Committed: `3d018c4` (13 files, 816 lines)
 
-**PEV2-inspired visualization:**
-- Edge thickness proportional to row count
-- Node badges: Slow (S), Costly ($), Bad Estimate (E), Filter (F)
-- Highlight mode switcher: none/duration/rows/cost with HSL gradient bars
-- Rich hover tooltips, exclusive time, row estimation display
-- New components: CostChart, EstimateVsActual, CompareView
-- Full-width layout for maximum tree area
+### Post-MariaDB Fixes (this commit)
 
-**Robust testing:**
-- Created 7-table schema with 680K records on MySQL 8.0 (multipass VM)
-- Ran 20 diverse queries covering: full scans, YEAR(), GROUP BY, OR conditions, LIKE wildcards, high OFFSET, DISTINCT+JOIN, covering index opportunities, wrong index selection, 4-table joins, dependent subqueries
-- Compared tool output against AI (Claude) analysis for 5 original queries — matched on all findings
+**JSON wrapper detection overhaul:**
+- Users paste full terminal output including SQL query with `-> SELECT`, `-> GROUP BY` prompts
+- The `->` in SQL continuation prompts was falsely matching tree format detection
+- Fixed: tree detection now requires specific node keywords (`-> Nested loop`, `-> Table scan`, `-> Filter:`) — not just any `-> ` prefix
+- `stripResultWrapper` now strips SQL lines (`EXPLAIN FORMAT=JSON`, `-> SELECT`, `-> GROUP BY`, etc.) before checking content
+- `-> GROUP BY` no longer matches because tree pattern requires `Group aggregate:` not `GROUP BY`
+- `-> LIMIT 100;` no longer matches because tree pattern requires `Limit:` (colon)
 
-**Bugs fixed during testing:**
-- "Infinityx" display when actual rows = 0 → skip (defer to zeroRowJoin rule)
-- DDL noise: FK warnings for all tables → scoped to plan tables only
-- Table alias in DDL: `ALTER TABLE 'o'` → resolved to `orders`
-- `cache` leaking as column name from `<cache>((now()...))` → added to exclude list
-- Score 14/100 for 5ms query → weighted scoring (DDL = reduced penalty, good = bonus)
-
-**Committed:** `ac98a58` (16 files, 2,578 lines)
+**Index advisor improvements:**
+- **PK-aware GROUP BY**: Skips suggesting index on `users.name` when GROUP BY includes `user_id` (PK) — PK already uniquely identifies rows
+- **Composite covering index for range scans**: When a range/ref scan reads >1000 rows, suggests a covering index with WHERE + JOIN + aggregate columns
+- **Fixed column vs index name bug**: Was using `idx_user_id` (index name) instead of `user_id` (column name) in DDL
+- **Clean build required**: Old Vite bundles were cached in `_site/` — must `rm -rf _site/tools/explain/assets` before rebuild
 
 ---
 
-### Phase 3: Intelligence Gaps (AI Comparison)
+### All Bugs Fixed During Session
 
-**Query rewrite engine** (`query-rewriter.ts`) — 7 executable SQL rewrites:
-- `YEAR(col)=N` → date range condition
-- Scalar subquery → `LEFT JOIN + COALESCE + GROUP BY`
-- `NOT IN (SELECT)` → `LEFT JOIN ... IS NULL`
-- `GROUP BY name` → `GROUP BY id, name`
-- `SELECT *` → named columns
-- High OFFSET → keyset pagination
-- `ORDER BY RAND()` → random offset
+| Bug | Cause | Fix |
+|-----|-------|-----|
+| MySQL `\| ... \|` wrapper not stripped | No wrapper stripping | Added `stripResultWrapper()` |
+| Decimal rows `rows=0.25` | Integer-only regex | Changed to `[0-9.]+` |
+| `Select #2 (subquery)` not parsed | `->` prefix not handled | Added regex variant |
+| `extractIndex()` matching "temporary" | No keyword exclusion | Added exclude list |
+| `<temporary>` triggering false scans | No temp table check | Added `isTempTable()` |
+| Vue SPA had own nav/footer | Separate from site | Moved to HTML shell |
+| `SELECT *` matching multiplication | Too broad regex | Changed to `SELECT * FROM` |
+| "Infinityx" display | Divide by zero | Skip when actualRows=0 |
+| DDL noise for all tables | No plan scoping | Filtered to plan tables |
+| `ALTER TABLE 'o'` alias in DDL | No alias resolution | Added `resolveTableAlias()` |
+| `cache` as column name | MySQL `<cache>` syntax | Added to exclude words |
+| Score 14 for 5ms query | Flat penalty model | Weighted scoring |
+| Cartesian join on driving table | No first-child check | Skip first child of join |
+| Filesort 0 rows on wrapper | MariaDB JSON nesting | Inherit rows from children |
+| `-> GROUP BY` = tree format | SQL prompt matches `->` | Specific node keywords |
+| `-> LIMIT 100;` = tree format | SQL prompt matches `->` | Require `Limit:` with colon |
+| Old JS bundle served | Stale `_site/` assets | Clean assets before rebuild |
+| `idx_user_id` as column name | node.index = index name | Use condition columns |
+| GROUP BY index on PK table | No PK awareness | Skip when PK in GROUP BY |
 
-**NOT NULL suggestions:**
-- Cross-references DDL nullable columns with WHERE/JOIN/GROUP BY usage
-- Flags: `orders.customer_id` nullable in FK+JOIN, `customers.name` nullable in GROUP BY
-- Generates `ALTER TABLE MODIFY ... NOT NULL` DDL
-
-**Index deduplication:**
-- `(product_id)` + `(product_id, quantity)` → keeps only wider index
-- Sorted by impact priority
-
-**UI:** IssueList now has 5 tabs: Issues | Indexes | Hints | Rewrites | Schema
-
-**Committed:** `8d9183e` (4 files, 422 lines)
-
----
-
-### Key Decisions (Full Session)
-
-1. **No AI API** — all intelligence as TypeScript rules, $0 cost
-2. **Hostinger** — backup hosting, already paid
-3. **"EXPLAIN Analyzer"** — nav link name (user rejected "Tools")
-4. **No dark mode** — matches main site
-5. **MySQL wrapper stripping** — auto-strips `| ... |` from mysql CLI
-6. **`<temporary>` excluded** — all rules skip internal temp tables
-7. **Zero-row = data integrity** — not stale stats (ANALYZE TABLE wrong advice)
-8. **Plan-scoped recs** — DDL issues/index recs only for tables in current plan
-9. **Weighted scoring** — plan issues full penalty, DDL reduced, good = bonus
-10. **Index dedup** — subset indexes removed in favor of wider covering indexes
-11. **Table alias resolution** — `o` → `orders` in all generated DDL
-
-### Git History (3 commits, not pushed)
+### Git History (5 commits, not pushed)
 
 ```
-4d2e062 Phase 1: Add MySQL EXPLAIN Analyzer — free, client-side query plan visualizer
-ac98a58 Phase 2: Add enhanced analysis, PEV2-level visualization, and robust index advisor
-8d9183e Phase 3: Add query rewrite engine, NOT NULL suggestions, index deduplication
+4d2e062 Phase 1: Add MySQL EXPLAIN Analyzer
+ac98a58 Phase 2: Enhanced analysis, PEV2 visualization, robust index advisor
+8d9183e Phase 3: Query rewrite engine, NOT NULL suggestions, index dedup
+3d018c4 MariaDB support + JSON wrapper detection fix
+[next]  Index advisor improvements + wrapper detection overhaul
 ```
 
 ### Test Infrastructure
 
-- **MySQL 8.0.45** running on multipass VM `mysql-box`
-- **Database**: `advisor_test` with 7 tables, 680K rows
-- **20 test queries** covering all major optimization patterns
-- **5 original sample queries** with AI comparison
+- **MySQL 8.0.45** on `multipass exec mysql-box` — `advisor_test` (7 tables, 680K rows, 20 queries)
+- **MariaDB 10.11.14** on `multipass exec mariadb-box` — `advisor_test` (6 tables, 530K rows, 6 queries)
+- **Original samples**: 5 MySQL + 2 MariaDB in `samples.ts`
 
-### What's Next
+### What's Next (Backlog)
 
-1. **Push to production** — Netlify auto-deploys from `main`
-2. **Write launch blog post** — "Free MySQL EXPLAIN Analyzer" for SEO
-3. **Future**: PostgreSQL support, embeddable widget, PWA, slow query log parser
+1. Slow query log parser
+2. MySQL 8.4 EXPLAIN FORMAT=TREE enhancements (parallel workers, hash joins)
+3. Export report as PDF/PNG
+4. Saved workspaces (named plan collections)
+5. Bulk analyzer (multiple EXPLAINs at once)
+6. Index impact simulator
+7. Keyboard shortcuts
+8. Embeddable widget
+9. Offline PWA
+10. Launch blog post (LAST — after all features)
