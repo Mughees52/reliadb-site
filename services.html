@@ -27,6 +27,11 @@ permalink: /services.html
       font-weight: 800;
     }
     .services-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
+    .services-hero h1,
+    .services-hero p {
+      animation: fadeUp .6s ease both;
+    }
+    .services-hero p { animation-delay: .12s; }
 
     .service-full {
       padding: 80px 0;
@@ -46,6 +51,10 @@ permalink: /services.html
     }
     .service-inner.reversed { direction: rtl; }
     .service-inner.reversed > * { direction: ltr; }
+    .service-info,
+    .service-detail {
+      transition: transform .24s ease, opacity .24s ease;
+    }
 
     .service-badge {
       display: inline-block;
@@ -69,6 +78,11 @@ permalink: /services.html
       border-radius: 12px;
       padding: 24px 28px;
       margin-bottom: 24px;
+      transition: transform .2s ease, box-shadow .24s ease;
+    }
+    .service-price-box:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 26px rgba(26,82,118,0.22);
     }
     .service-price-box .price-label { font-size: 0.92rem; opacity: 0.88; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
     .service-price-box .price { margin: 8px 0 0; }
@@ -140,6 +154,11 @@ permalink: /services.html
       border-radius: 0 8px 8px 0;
       padding: 16px 20px;
       margin-bottom: 24px;
+      transition: transform .2s ease, box-shadow .24s ease;
+    }
+    .for-who:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(41,128,185,0.14);
     }
     .for-who h5 { font-size: 0.85rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
     .for-who p { font-size: 0.92rem; color: #555; margin: 0; line-height: 1.6; }
@@ -162,65 +181,117 @@ permalink: /services.html
     }
     .sla-head h2 { font-size: 2rem; color: #1a1a2e; margin-bottom: 10px; }
     .sla-head p { color: #555; line-height: 1.7; }
-    .sla-table-wrap {
+    .sla-cards-grid {
       max-width: 980px;
       margin: 0 auto;
-      overflow-x: auto;
-      border-radius: 14px;
-      box-shadow: 0 10px 28px rgba(26,82,118,0.08);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .sla-card {
       background: #fff;
       border: 1px solid #dfe5ec;
+      border-radius: 14px;
+      box-shadow: 0 10px 26px rgba(26,82,118,0.08);
+      padding: 22px 18px;
+      position: relative;
+      transition: transform .2s ease, box-shadow .24s ease, border-color .2s ease;
     }
-    .sla-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 0;
-      min-width: 760px;
+    .sla-card:hover {
+      transform: translateY(-3px);
+      border-color: #cbdbe9;
+      box-shadow: 0 16px 30px rgba(26,82,118,0.16);
     }
-    .sla-table th,
-    .sla-table td {
-      padding: 16px 18px;
-      border-right: 1px solid #dfe5ec;
-      border-bottom: 1px solid #dfe5ec;
-      text-align: center;
-      font-size: 0.95rem;
-      color: #1a1a2e;
-      vertical-align: middle;
-      background: #fff;
+    .sla-card.featured {
+      border-color: #1A5276;
+      box-shadow: 0 14px 30px rgba(26,82,118,0.18);
     }
-    .sla-table tr > *:last-child { border-right: none; }
-    .sla-table tr:last-child > * { border-bottom: none; }
-
-    .sla-table thead th {
-      background: #2980B9;
+    .sla-card-badge {
+      position: absolute;
+      top: -11px;
+      right: 12px;
+      background: #E67E22;
       color: #fff;
+      border-radius: 999px;
+      font-size: 0.7rem;
       font-weight: 800;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.05em;
       text-transform: uppercase;
-      font-size: 0.92rem;
+      padding: 4px 10px;
+      line-height: 1;
     }
-    .sla-table thead th:first-child { border-top-left-radius: 14px; }
-    .sla-table thead th:last-child { border-top-right-radius: 14px; }
-
-    .sla-rowhead {
-      text-align: left !important;
+    .sla-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 6px;
+      color: #1a1a2e;
+    }
+    .sla-card .plan-availability {
+      font-size: 0.92rem;
       font-weight: 700;
       color: #1A5276;
-      background: #f8fafc;
-      width: 26%;
+      margin-bottom: 14px;
     }
-    .sla-subhead td {
-      background: #f1f5f9;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 800;
-      font-size: 0.82rem;
+    .sla-response-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid #ecf1f6;
+    }
+    .sla-response-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #ecf1f6;
+      font-size: 0.92rem;
       color: #334155;
-      text-align: left;
     }
-    .sla-subhead td:first-child { border-left: none; }
-
-    .sla-muted { color: #667085; font-size: 0.92rem; }
+    .sla-response-list li:last-child { border-bottom: none; }
+    .sla-response-list strong { color: #1a1a2e; }
+    .sla-card-note {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: #64748b;
+      line-height: 1.45;
+    }
+    .sla-level {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 58px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      padding: 4px 10px;
+      line-height: 1.2;
+      color: #fff;
+    }
+    .sla-level.s1 { background: #c0392b; }
+    .sla-level.s2 { background: #d35400; }
+    .sla-level.s3 { background: #2980B9; }
+    .sla-level.s4 { background: #7f8c8d; }
+    .sla-legend {
+      max-width: 980px;
+      margin: 18px auto 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      color: #4b5563;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+    .sla-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
 
     .addons-section {
       background: #1a1a2e;
@@ -242,6 +313,12 @@ permalink: /services.html
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 12px;
       padding: 28px;
+      transition: transform .2s ease, box-shadow .24s ease, border-color .2s ease;
+    }
+    .addon-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.26);
+      box-shadow: 0 16px 28px rgba(0,0,0,0.18);
     }
     .addon-card h3 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
     .addon-card .addon-price { margin-bottom: 12px; }
@@ -256,10 +333,45 @@ permalink: /services.html
     .guarantee-section h2 { font-size: 1.75rem; color: #1A5276; margin-bottom: 16px; }
     .guarantee-section p { max-width: 640px; margin: 0 auto; color: #555; line-height: 1.75; font-size: 1.05rem; }
 
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .55s ease, transform .55s cubic-bezier(.2,.65,.2,1);
+      will-change: transform, opacity;
+    }
+    .reveal-on-scroll.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-stagger-1 { transition-delay: .08s; }
+    .reveal-stagger-2 { transition-delay: .16s; }
+    .reveal-stagger-3 { transition-delay: .24s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .services-hero h1,
+      .services-hero p,
+      .reveal-on-scroll,
+      .service-price-box,
+      .for-who,
+      .sla-card,
+      .addon-card {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+      }
+    }
+
     @media (max-width: 768px) {
       .service-inner { grid-template-columns: 1fr; gap: 32px; }
       .service-inner.reversed { direction: ltr; }
       .addon-cards { grid-template-columns: 1fr; }
+      .sla-cards-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -426,56 +538,51 @@ permalink: /services.html
   <section class="sla-section" id="sla">
     <div class="sla-inner">
       <div class="sla-head">
-        <h2>Support Model &amp; SLA Commitments</h2>
-        <p>ReliaDB support is built for production systems where uptime matters. You get direct access to a senior DBA, clear severity definitions, and response targets based on business impact.</p>
+        <h2>Support Plans &amp; Response Targets</h2>
+        <p>Choose the support tier that fits your system criticality. Each plan includes clearly defined severity-based response targets so your team knows exactly what to expect.</p>
       </div>
 
-      <div class="sla-table-wrap" aria-label="Support SLA table">
-        <table class="sla-table">
-          <thead>
-            <tr>
-              <th>Subscription Plan</th>
-              <th>Premium</th>
-              <th>Production</th>
-              <th>Basic</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="sla-rowhead">Availability</td>
-              <td>24 hours × 7 days</td>
-              <td>24 hours × 7 days</td>
-              <td>8 hours × 5 days</td>
-            </tr>
-            <tr class="sla-subhead">
-              <td colspan="4">Response SLO</td>
-            </tr>
-            <tr>
-              <td class="sla-rowhead">Sev-1</td>
-              <td>15 minutes</td>
-              <td>30 minutes</td>
-              <td>60 minutes</td>
-            </tr>
-            <tr>
-              <td class="sla-rowhead">Sev-2</td>
-              <td>30 minutes</td>
-              <td>60 minutes</td>
-              <td>2 hours</td>
-            </tr>
-            <tr>
-              <td class="sla-rowhead">Sev-3</td>
-              <td>60 minutes</td>
-              <td>2 hours</td>
-              <td>4 hours</td>
-            </tr>
-            <tr>
-              <td class="sla-rowhead">Sev-4</td>
-              <td>1 business day</td>
-              <td>1 business day</td>
-              <td>2 business days</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="sla-cards-grid" aria-label="Support plan response cards">
+        <article class="sla-card">
+          <h3>Premium</h3>
+          <p class="plan-availability">Availability: 24 hours × 7 days</p>
+          <ul class="sla-response-list">
+            <li><span class="sla-level s1">Sev-1</span><strong>15 minutes</strong></li>
+            <li><span class="sla-level s2">Sev-2</span><strong>30 minutes</strong></li>
+            <li><span class="sla-level s3">Sev-3</span><strong>60 minutes</strong></li>
+            <li><span class="sla-level s4">Sev-4</span><strong>1 business day</strong></li>
+          </ul>
+          <p class="sla-card-note">Best for mission-critical production systems with strict uptime requirements.</p>
+        </article>
+        <article class="sla-card featured">
+          <span class="sla-card-badge">Most Popular</span>
+          <h3>Production</h3>
+          <p class="plan-availability">Availability: 24 hours × 7 days</p>
+          <ul class="sla-response-list">
+            <li><span class="sla-level s1">Sev-1</span><strong>30 minutes</strong></li>
+            <li><span class="sla-level s2">Sev-2</span><strong>60 minutes</strong></li>
+            <li><span class="sla-level s3">Sev-3</span><strong>2 hours</strong></li>
+            <li><span class="sla-level s4">Sev-4</span><strong>1 business day</strong></li>
+          </ul>
+          <p class="sla-card-note">Balanced coverage for growing SaaS teams that need reliable response without enterprise overhead.</p>
+        </article>
+        <article class="sla-card">
+          <h3>Basic</h3>
+          <p class="plan-availability">Availability: 8 hours × 5 days</p>
+          <ul class="sla-response-list">
+            <li><span class="sla-level s1">Sev-1</span><strong>60 minutes</strong></li>
+            <li><span class="sla-level s2">Sev-2</span><strong>2 hours</strong></li>
+            <li><span class="sla-level s3">Sev-3</span><strong>4 hours</strong></li>
+            <li><span class="sla-level s4">Sev-4</span><strong>2 business days</strong></li>
+          </ul>
+          <p class="sla-card-note">Good fit for stable systems where most support requests are non-urgent.</p>
+        </article>
+      </div>
+      <div class="sla-legend" aria-label="Severity definitions">
+        <span><span class="sla-level s1">Sev-1</span>full outage or critical business impact</span>
+        <span><span class="sla-level s2">Sev-2</span>major degradation with active users affected</span>
+        <span><span class="sla-level s3">Sev-3</span>partial impact or significant non-critical issue</span>
+        <span><span class="sla-level s4">Sev-4</span>low-impact request, question, or minor issue</span>
       </div>
     </div>
   </section>
@@ -509,5 +616,37 @@ permalink: /services.html
   {% include "footer.njk" %}
 
   <script src="js/main.js"></script>
+  <script>
+    (function () {
+      const targets = [
+        ...document.querySelectorAll('.service-info, .service-detail'),
+        ...document.querySelectorAll('.sla-head, .sla-card, .sla-legend span'),
+        ...document.querySelectorAll('.addons-section h2, .addons-section .sub, .addon-card'),
+        ...document.querySelectorAll('.guarantee-section h2, .guarantee-section p, .guarantee-section .btn')
+      ];
+
+      targets.forEach((el, index) => {
+        el.classList.add('reveal-on-scroll');
+        if (index % 3 === 1) el.classList.add('reveal-stagger-1');
+        if (index % 3 === 2) el.classList.add('reveal-stagger-2');
+      });
+
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(el => el.classList.add('is-visible'));
+        return;
+      }
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
+
+      targets.forEach(el => io.observe(el));
+    })();
+  </script>
 </body>
 </html>

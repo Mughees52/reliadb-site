@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MySQL 8.0.37 to 8.4 LTS Upgrade Best Practices</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* === THEME TOKENS === */
+    :root {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F4F6F8;
+      --text-primary: #444444;
+      --text-secondary: #777777;
+      --muted: #777777;
+      --accent-warm: #E67E22;
+      --accent-gold: #1A5276;
+      --accent-pink: #2980B9;
+      --card-bg: #D6EAF8;
+      --card-border: #DDE3E9;
+      --ok: #1E8449;
+      --warn: #E67E22;
+      --danger: #CA6F1E;
+
+      --font-display: "Cormorant", serif;
+      --font-body: "IBM Plex Sans", sans-serif;
+      --title-size: clamp(1.6rem, 5vw, 4.4rem);
+      --h2-size: clamp(1.3rem, 3.2vw, 2.5rem);
+      --h3-size: clamp(1rem, 2.2vw, 1.6rem);
+      --body-size: clamp(0.75rem, 1.35vw, 1.05rem);
+      --small-size: clamp(0.65rem, 1vw, 0.88rem);
+      --slide-padding: clamp(1rem, 3.5vw, 3rem);
+      --content-gap: clamp(0.5rem, 1.5vw, 1.2rem);
+      --element-gap: clamp(0.3rem, 0.9vw, 0.8rem);
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* === RESET === */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-body); background: var(--bg-primary); color: var(--text-primary); }
+
+    /* ===========================================
+       VIEWPORT FITTING: MANDATORY BASE STYLES
+       Include this ENTIRE file in every presentation.
+       These styles ensure slides fit exactly in the viewport.
+       =========================================== */
+
+    /* 1. Lock html/body to viewport */
+    html, body {
+        height: 100%;
+        overflow-x: hidden;
+    }
+
+    html {
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+    }
+
+    /* 2. Each slide = exact viewport height */
+    .slide {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile browsers */
+        overflow: hidden; /* CRITICAL: Prevent ANY overflow */
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    /* 3. Content container with flex for centering */
+    .slide-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        max-height: 100%;
+        overflow: hidden; /* Double-protection against overflow */
+        padding: var(--slide-padding);
+    }
+
+    /* 4. ALL typography uses clamp() for responsive scaling */
+    :root {
+        /* Titles scale from mobile to desktop */
+        --title-size: clamp(1.5rem, 5vw, 4rem);
+        --h2-size: clamp(1.25rem, 3.5vw, 2.5rem);
+        --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+
+        /* Body text */
+        --body-size: clamp(0.75rem, 1.5vw, 1.125rem);
+        --small-size: clamp(0.65rem, 1vw, 0.875rem);
+
+        /* Spacing scales with viewport */
+        --slide-padding: clamp(1rem, 4vw, 4rem);
+        --content-gap: clamp(0.5rem, 2vw, 2rem);
+        --element-gap: clamp(0.25rem, 1vw, 1rem);
+    }
+
+    /* 5. Cards/containers use viewport-relative max sizes */
+    .card, .container, .content-box {
+        max-width: min(90vw, 1000px);
+        max-height: min(80vh, 700px);
+    }
+
+    /* 6. Lists auto-scale with viewport */
+    .feature-list, .bullet-list {
+        gap: clamp(0.4rem, 1vh, 1rem);
+    }
+
+    .feature-list li, .bullet-list li {
+        font-size: var(--body-size);
+        line-height: 1.4;
+    }
+
+    /* 7. Grids adapt to available space */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+        gap: clamp(0.5rem, 1.5vw, 1rem);
+    }
+
+    /* 8. Images constrained to viewport */
+    img, .image-container {
+        max-width: 100%;
+        max-height: min(50vh, 400px);
+        object-fit: contain;
+    }
+
+    /* ===========================================
+       RESPONSIVE BREAKPOINTS
+       Aggressive scaling for smaller viewports
+       =========================================== */
+
+    /* Short viewports (< 700px height) */
+    @media (max-height: 700px) {
+        :root {
+            --slide-padding: clamp(0.75rem, 3vw, 2rem);
+            --content-gap: clamp(0.4rem, 1.5vw, 1rem);
+            --title-size: clamp(1.25rem, 4.5vw, 2.5rem);
+            --h2-size: clamp(1rem, 3vw, 1.75rem);
+        }
+    }
+
+    /* Very short viewports (< 600px height) */
+    @media (max-height: 600px) {
+        :root {
+            --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem);
+            --content-gap: clamp(0.3rem, 1vw, 0.75rem);
+            --title-size: clamp(1.1rem, 4vw, 2rem);
+            --body-size: clamp(0.7rem, 1.2vw, 0.95rem);
+        }
+
+        /* Hide non-essential elements */
+        .nav-dots, .keyboard-hint, .decorative {
+            display: none;
+        }
+    }
+
+    /* Extremely short (landscape phones, < 500px height) */
+    @media (max-height: 500px) {
+        :root {
+            --slide-padding: clamp(0.4rem, 2vw, 1rem);
+            --title-size: clamp(1rem, 3.5vw, 1.5rem);
+            --h2-size: clamp(0.9rem, 2.5vw, 1.25rem);
+            --body-size: clamp(0.65rem, 1vw, 0.85rem);
+        }
+    }
+
+    /* Narrow viewports (< 600px width) */
+    @media (max-width: 600px) {
+        :root {
+            --title-size: clamp(1.25rem, 7vw, 2.5rem);
+        }
+
+        /* Stack grids vertically */
+        .grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* ===========================================
+       REDUCED MOTION
+       Respect user preferences
+       =========================================== */
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.2s !important;
+        }
+
+        html {
+            scroll-behavior: auto;
+        }
+    }
+
+    /* === GLOBAL DECOR / LAYOUT === */
+    .slide {
+      background:
+        radial-gradient(circle at 88% 10%, rgba(41, 128, 185, 0.12), transparent 36%),
+        radial-gradient(circle at 12% 90%, rgba(26, 82, 118, 0.12), transparent 34%),
+        linear-gradient(170deg, var(--bg-primary), var(--bg-secondary));
+    }
+    .slide::after {
+      content: "";
+      position: absolute;
+      width: min(28vw, 300px);
+      aspect-ratio: 1;
+      right: calc(-1 * clamp(35px, 6vw, 90px));
+      top: calc(-1 * clamp(25px, 4vw, 70px));
+      background: radial-gradient(circle, rgba(214, 234, 248, 0.85), transparent 70%);
+      filter: blur(clamp(8px, 1.5vw, 16px));
+      pointer-events: none;
+    }
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--element-gap);
+      font-size: var(--small-size);
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: var(--content-gap);
+    }
+    .slide h1, .slide h2 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+      margin-bottom: clamp(0.4rem, 1.2vh, 0.8rem);
+    }
+    .slide h1 { font-size: var(--title-size); }
+    .slide h2 { font-size: var(--h2-size); }
+    .lead {
+      font-size: clamp(0.9rem, 1.8vw, 1.25rem);
+      color: var(--text-secondary);
+      max-width: 72ch;
+      line-height: 1.45;
+      margin-bottom: var(--content-gap);
+    }
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: clamp(0.35rem, 0.8vh, 0.7rem);
+      max-width: min(92vw, 1050px);
+    }
+    .bullet-list li {
+      font-size: var(--body-size);
+      line-height: 1.38;
+      color: var(--text-primary);
+      padding: clamp(0.34rem, 0.75vh, 0.65rem) clamp(0.5rem, 1.1vw, 0.95rem);
+      border-left: 2px solid var(--card-border);
+      background: var(--card-bg);
+      border-radius: 0 clamp(4px, 1vw, 10px) clamp(4px, 1vw, 10px) 0;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(0.45rem, 1vw, 0.95rem);
+      margin-top: clamp(0.35rem, 0.8vh, 0.8rem);
+    }
+    .kpi {
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      border-radius: clamp(8px, 1vw, 14px);
+      padding: clamp(0.55rem, 1.2vw, 1rem);
+      min-height: clamp(80px, 12vh, 145px);
+    }
+    .kpi strong {
+      display: block;
+      font-size: clamp(0.95rem, 2vw, 1.5rem);
+      color: var(--accent-gold);
+      margin-bottom: clamp(0.15rem, 0.4vh, 0.4rem);
+    }
+    .kpi span { font-size: var(--small-size); color: var(--text-secondary); line-height: 1.35; }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(0.5rem, 1.4vw, 1.2rem);
+      align-items: stretch;
+      max-height: min(68vh, 540px);
+    }
+    .panel {
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      border-radius: clamp(8px, 1vw, 14px);
+      padding: clamp(0.55rem, 1.2vw, 1rem);
+      overflow: hidden;
+    }
+    .panel h3 {
+      font-size: var(--h3-size);
+      color: var(--accent-gold);
+      margin-bottom: clamp(0.3rem, 0.8vh, 0.65rem);
+      font-family: var(--font-display);
+      font-weight: 600;
+    }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(0.3rem, 0.8vw, 0.6rem);
+      margin-top: clamp(0.4rem, 0.8vh, 0.7rem);
+    }
+    .badge {
+      padding: clamp(0.2rem, 0.5vh, 0.4rem) clamp(0.4rem, 0.8vw, 0.7rem);
+      border-radius: 999px;
+      border: 1px solid var(--card-border);
+      font-size: var(--small-size);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .danger { color: var(--danger); }
+    .footer-note {
+      margin-top: clamp(0.35rem, 0.8vh, 0.7rem);
+      font-size: var(--small-size);
+      color: var(--muted);
+    }
+
+    /* === REVEAL ANIMATIONS === */
+    .reveal {
+      opacity: 0;
+      transform: translateY(clamp(6px, 1.6vh, 18px));
+      transition: opacity 0.58s var(--ease-out-expo), transform 0.58s var(--ease-out-expo);
+    }
+    .slide.visible .reveal {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .delay-1 { transition-delay: 0.08s; }
+    .delay-2 { transition-delay: 0.16s; }
+    .delay-3 { transition-delay: 0.24s; }
+    .delay-4 { transition-delay: 0.32s; }
+    .delay-5 { transition-delay: 0.4s; }
+
+    /* === PROGRESS + NAV DOTS === */
+    .progress {
+      position: fixed;
+      inset: 0 0 auto 0;
+      height: clamp(3px, 0.5vh, 5px);
+      background: rgba(255, 255, 255, 0.08);
+      z-index: 9998;
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-warm), var(--accent-pink));
+      transition: width 220ms ease;
+    }
+    .nav-dots {
+      position: fixed;
+      right: clamp(8px, 1.2vw, 16px);
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: clamp(6px, 0.8vh, 10px);
+      z-index: 9997;
+    }
+    .nav-dots button {
+      width: clamp(8px, 1vw, 11px);
+      height: clamp(8px, 1vw, 11px);
+      border-radius: 50%;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      padding: 0;
+    }
+    .nav-dots button.active { background: var(--accent-warm); transform: scale(1.15); }
+
+    /* === INLINE EDITING UI === */
+    .edit-hotzone {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 80px;
+      height: 80px;
+      z-index: 10000;
+      cursor: pointer;
+    }
+    .edit-toggle {
+      position: fixed;
+      top: clamp(8px, 1.2vw, 16px);
+      left: clamp(8px, 1.2vw, 16px);
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.6);
+      color: var(--text-primary);
+      padding: clamp(0.35rem, 0.8vw, 0.55rem) clamp(0.45rem, 1vw, 0.75rem);
+      border-radius: 999px;
+      font-size: var(--small-size);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 10001;
+    }
+    .edit-toggle.show,
+    .edit-toggle.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .editing [contenteditable="true"] {
+      outline: 1px dashed rgba(232, 180, 184, 0.65);
+      outline-offset: 2px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .edit-toolbar {
+      position: fixed;
+      bottom: clamp(8px, 1.2vw, 16px);
+      left: clamp(8px, 1.2vw, 16px);
+      display: flex;
+      gap: clamp(6px, 0.8vw, 10px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10001;
+    }
+    .editing .edit-toolbar {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .edit-toolbar button {
+      border: 1px solid var(--card-border);
+      background: rgba(0, 0, 0, 0.65);
+      color: var(--text-primary);
+      padding: clamp(0.3rem, 0.7vw, 0.5rem) clamp(0.45rem, 1vw, 0.75rem);
+      border-radius: 999px;
+      font-size: var(--small-size);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- === PROGRESS + NAV === -->
+  <div class="progress" aria-hidden="true"><span id="progressFill"></span></div>
+  <nav class="nav-dots" id="navDots" aria-label="Slide navigation"></nav>
+
+  <!-- === INLINE EDITING CONTROLS === -->
+  <div class="edit-hotzone" aria-hidden="true"></div>
+  <button class="edit-toggle" id="editToggle" title="Edit mode (E)">Edit (E)</button>
+  <div class="edit-toolbar" aria-label="Editing actions">
+    <button id="saveBtn" title="Save content to browser storage (Ctrl/Cmd+S)">Save</button>
+    <button id="exportBtn" title="Export edited HTML">Export</button>
+  </div>
+
+  <!-- === SLIDE 1: TITLE === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Reliadb Training <span>01 / 24</span></div>
+      <h1 class="reveal delay-1">MySQL 8.0.37 to 8.4 LTS Upgrade Best Practices</h1>
+      <p class="lead reveal delay-2">Self-managed and on-prem production upgrade playbook for DBAs, SREs, and application teams.</p>
+      <div class="badge-row reveal delay-3">
+        <span class="badge">Prepared: April 2026</span>
+        <span class="badge danger">8.0 EOL: April 6, 2026</span>
+        <span class="badge">Document Version 2.0</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- === SLIDE 2: AGENDA === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Roadmap <span>02 / 24</span></div>
+      <h2 class="reveal delay-1">Today’s Upgrade Curriculum</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Why this upgrade is urgent and what changed in 8.4 LTS</li>
+        <li class="reveal delay-2">Pre-upgrade controls: backups, compatibility checks, config cleanup</li>
+        <li class="reveal delay-3">Testing model: pt-upgrade, dry-runs, and canary validation</li>
+        <li class="reveal delay-4">Execution options: replication-based, in-place, rolling replica</li>
+        <li class="reveal delay-5">Rollback, post-upgrade validation, and operational governance</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 3: WHY NOW === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Executive Context <span>03 / 24</span></div>
+      <h2 class="reveal delay-1">Why Upgrade Now</h2>
+      <div class="kpi-grid">
+        <div class="kpi reveal delay-1"><strong>Support Risk</strong><span>MySQL 8.0 no longer receives standard fixes after EOL.</span></div>
+        <div class="kpi reveal delay-2"><strong>Security Risk</strong><span>Unpatched CVEs and compliance exposure increase over time.</span></div>
+        <div class="kpi reveal delay-3"><strong>Operational Risk</strong><span>8.4 introduces breaking behavior in auth, SQL, and configuration.</span></div>
+      </div>
+      <p class="footer-note reveal delay-4">Treat this as a controlled release program, not a routine maintenance patch.</p>
+    </div>
+  </section>
+
+  <!-- === SLIDE 4: KEY CHANGES === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Compatibility Delta <span>04 / 24</span></div>
+      <h2 class="reveal delay-1">High-Impact 8.0 to 8.4 Changes</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1"><strong class="danger">Auth:</strong> `mysql_native_password` removed; migrate users to `caching_sha2_password`</li>
+        <li class="reveal delay-2"><strong>AUTO_INCREMENT:</strong> no longer supported on `FLOAT/DOUBLE`; schema changes required</li>
+        <li class="reveal delay-3"><strong>SQL semantics:</strong> stricter `sql_mode`; implicit `GROUP BY` sorting removed</li>
+        <li class="reveal delay-4"><strong>Replication syntax:</strong> MASTER/SLAVE commands fully removed; use SOURCE/REPLICA</li>
+        <li class="reveal delay-5"><strong>Config hygiene:</strong> removed params in `my.cnf` can block startup completely</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 5: SUCCESS FORMULA === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Program Design <span>05 / 24</span></div>
+      <h2 class="reveal delay-1">Upgrade Success Formula</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1"><strong>Prepare:</strong> backups + restore proof + checker remediation</li>
+        <li class="reveal delay-2"><strong>Validate:</strong> replay production workload and full dry-run in staging</li>
+        <li class="reveal delay-3"><strong>Execute:</strong> prefer replication-based cutover for minimal downtime</li>
+        <li class="reveal delay-4"><strong>Protect:</strong> pre-approved rollback path with measured recovery time</li>
+        <li class="reveal delay-5"><strong>Stabilize:</strong> 48-hour monitoring and post-upgrade housekeeping</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 6: BACKUP === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Pre-Upgrade <span>06 / 24</span></div>
+      <h2 class="reveal delay-1">Backup Strategy: Two Layers Minimum</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1"><strong>Logical backup:</strong> `mysqldump`, `mydumper`, or `util.dumpInstance`</li>
+        <li class="reveal delay-2"><strong>Physical backup:</strong> XtraBackup, LVM snapshot, or cold file copy</li>
+        <li class="reveal delay-3"><strong class="warn">Non-negotiable:</strong> restore test on a separate server before production upgrade</li>
+        <li class="reveal delay-4"><strong>Evidence:</strong> capture backup duration and restore duration for runbook accuracy</li>
+        <li class="reveal delay-5"><strong>Goal:</strong> guarantee recoverability before any binary/package changes</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 7: DISK PLANNING === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Pre-Upgrade <span>07 / 24</span></div>
+      <h2 class="reveal delay-1">Disk Space Planning Rules</h2>
+      <div class="kpi-grid">
+        <div class="kpi reveal delay-1"><strong>2.5x Datadir</strong><span>Recommended free space baseline before major upgrade starts.</span></div>
+        <div class="kpi reveal delay-2"><strong>+10-20%</strong><span>Temporary working space for dictionary and redo transitions.</span></div>
+        <div class="kpi reveal delay-3"><strong>Rollback Window</strong><span>Retain binlogs long enough to recover pre-cutover writes.</span></div>
+      </div>
+      <p class="footer-note reveal delay-4">Large datasets magnify rollback time; space planning is a reliability control, not capacity trivia.</p>
+    </div>
+  </section>
+
+  <!-- === SLIDE 8: INTEGRITY + CHECKER === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Pre-Upgrade <span>08 / 24</span></div>
+      <h2 class="reveal delay-1">Data Integrity and Upgrade Checker</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Run `mysqlcheck --all-databases --check` and fix corruption before upgrade day</li>
+        <li class="reveal delay-2">Use MySQL Shell `checkForServerUpgrade` against target 8.4.x and your real `my.cnf`</li>
+        <li class="reveal delay-3"><strong class="danger">Gate:</strong> zero unresolved checker errors before Go decision</li>
+        <li class="reveal delay-4">Address warnings for keywords, auth plugins, charset, temporal formats, and constraints</li>
+        <li class="reveal delay-5">Store reports in the change ticket as audit evidence</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 9: CONFIG + SQL MODE === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Compatibility <span>09 / 24</span></div>
+      <h2 class="reveal delay-1">Configuration and SQL Behavior Changes</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Remove deprecated parameters (`default_authentication_plugin`, `expire_logs_days`, and others)</li>
+        <li class="reveal delay-2">Explicitly set changed defaults (`innodb_flush_method`, `innodb_io_capacity`, AHI, log buffer)</li>
+        <li class="reveal delay-3">Audit zero-date usage and `ONLY_FULL_GROUP_BY` query behavior in application SQL</li>
+        <li class="reveal delay-4">Rewrite scripts using old replication terminology and command forms</li>
+        <li class="reveal delay-5">Prevent startup failures by testing final `my.cnf` in staging first</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 10: AUTH + PROXYSQL === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Authentication <span>10 / 24</span></div>
+      <h2 class="reveal delay-1">Auth Migration and ProxySQL Dependencies</h2>
+      <div class="split">
+        <div class="panel reveal delay-1">
+          <h3>User Account Migration</h3>
+          <ul class="bullet-list">
+            <li>Migrate legacy users to `caching_sha2_password`.</li>
+            <li>Validate connector versions for Java, Python, Node, Go, and PHP.</li>
+            <li>Use `mysql_native_password = ON` only as a short transition bridge.</li>
+          </ul>
+        </div>
+        <div class="panel reveal delay-2">
+          <h3>ProxySQL Path</h3>
+          <ul class="bullet-list">
+            <li>Upgrade ProxySQL to 2.5.4+ before MySQL cutover.</li>
+            <li>Enable TLS or RSA public key exchange on backend auth path.</li>
+            <li>Test full chain: App -> ProxySQL -> MySQL 8.4 in staging.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === SLIDE 11: TESTING OVERVIEW === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Testing Strategy <span>11 / 24</span></div>
+      <h2 class="reveal delay-1">Testing Is the Main Risk Reduction Investment</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Mirror production with two environments: 8.0 baseline and 8.4 target</li>
+        <li class="reveal delay-2">Replay real peak-hour workload, not synthetic-only traffic</li>
+        <li class="reveal delay-3">Test read-only and read-write paths independently</li>
+        <li class="reveal delay-4">Validate ecosystem tools: PMM, Toolkit, XtraBackup, Orchestrator, connectors</li>
+        <li class="reveal delay-5">Use findings to update cutover sequencing and fallback triggers</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 12: PT-UPGRADE === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Testing Strategy <span>12 / 24</span></div>
+      <h2 class="reveal delay-1">pt-upgrade Workflow</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Capture 1-3 hours of representative production slow logs during peak periods</li>
+        <li class="reveal delay-2">Build digest and replay side-by-side against 8.0 and 8.4 targets</li>
+        <li class="reveal delay-3">Review query errors, row-count differences, and latency regressions</li>
+        <li class="reveal delay-4">Run both RO and RW modes for broader semantic coverage</li>
+        <li class="reveal delay-5">Classify and remediate all critical deltas before deployment approval</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 13: DRY-RUN + CANARY === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Testing Strategy <span>13 / 24</span></div>
+      <h2 class="reveal delay-1">Dry-Run and Canary Validation</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Execute full end-to-end upgrade on staging with exact runbook commands</li>
+        <li class="reveal delay-2">Measure actual timing against planned maintenance window constraints</li>
+        <li class="reveal delay-3">For critical workloads, route 5-10% read traffic to 8.4 canary replica first</li>
+        <li class="reveal delay-4">Observe correctness, latency, and error rates for 24-48 hours</li>
+        <li class="reveal delay-5">Promote only after canary confidence and app-team signoff</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 14: APPROACH MATRIX === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Execution Paths <span>14 / 24</span></div>
+      <h2 class="reveal delay-1">Choose the Upgrade Approach by Risk Profile</h2>
+      <div class="kpi-grid">
+        <div class="kpi reveal delay-1"><strong>Replication-Based</strong><span class="ok">Best for production-critical systems: minutes downtime, fastest rollback.</span></div>
+        <div class="kpi reveal delay-2"><strong>Rolling Replica</strong><span>Great for existing replica topologies, moderate complexity, low disruption.</span></div>
+        <div class="kpi reveal delay-3"><strong>In-Place</strong><span class="warn">Lower hardware cost, but highest downtime and rollback burden.</span></div>
+      </div>
+      <p class="footer-note reveal delay-4">Default recommendation: replication-based approach for large or revenue-critical environments.</p>
+    </div>
+  </section>
+
+  <!-- === SLIDE 15: REPLICATION-BASED === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Execution Paths <span>15 / 24</span></div>
+      <h2 class="reveal delay-1">Approach 1: Replication-Based Upgrade</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Build fresh 8.4 server, restore from 8.0 backup, and start replication</li>
+        <li class="reveal delay-2">Validate app behavior against replica while source remains authoritative</li>
+        <li class="reveal delay-3">At cutover: set source read-only, wait for zero lag, stop replica channel</li>
+        <li class="reveal delay-4">Switch application endpoint to 8.4 and run smoke tests immediately</li>
+        <li class="reveal delay-5"><strong class="ok">Rollback:</strong> redirect traffic back to untouched 8.0 source if needed</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 16: IN-PLACE === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Execution Paths <span>16 / 24</span></div>
+      <h2 class="reveal delay-1">Approach 2: In-Place Upgrade (High Caution)</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Enforce clean shutdown with `innodb_fast_shutdown = 0` before package replacement</li>
+        <li class="reveal delay-2">On Debian/Ubuntu use `apt-get remove`, never `purge`, to protect datadir</li>
+        <li class="reveal delay-3">Install 8.4 binaries, update `my.cnf`, and start using existing data directory</li>
+        <li class="reveal delay-4">Review error logs for dictionary/redo issues and plugin incompatibilities</li>
+        <li class="reveal delay-5"><strong class="danger">Rollback:</strong> restore backup (potentially 10-20+ hours on large datasets)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 17: ROLLING REPLICA === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Execution Paths <span>17 / 24</span></div>
+      <h2 class="reveal delay-1">Approach 3: Rolling Replica Upgrade</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Upgrade replicas one by one; monitor each for stability 24-48 hours</li>
+        <li class="reveal delay-2">Keep original source unmodified as rollback anchor during transition</li>
+        <li class="reveal delay-3">After confidence, promote upgraded replica to source</li>
+        <li class="reveal delay-4">Upgrade former source last to complete topology convergence</li>
+        <li class="reveal delay-5">Ideal when extra hardware is limited but replication topology already exists</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 18: ROLLBACK === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Recovery Planning <span>18 / 24</span></div>
+      <h2 class="reveal delay-1">Rollback Playbook</h2>
+      <div class="split">
+        <div class="panel reveal delay-1">
+          <h3>Preferred Path</h3>
+          <ul class="bullet-list">
+            <li>Replication-based cutovers can revert by traffic redirection.</li>
+            <li>Original 8.0 source remains canonical until confidence achieved.</li>
+            <li>Near-zero data risk when rollback is immediate.</li>
+          </ul>
+        </div>
+        <div class="panel reveal delay-2">
+          <h3>Fallback Path</h3>
+          <ul class="bullet-list">
+            <li>In-place failure requires full restore from pre-upgrade backup.</li>
+            <li>8.4-generated writes cannot be replayed back to 8.0 safely.</li>
+            <li>Rollback duration scales with data size; plan worst-case windows.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- === SLIDE 19: FIRST 30 MIN === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Validation <span>19 / 24</span></div>
+      <h2 class="reveal delay-1">First 30 Minutes After Cutover</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Confirm version, startup health, and authentication across all service users</li>
+        <li class="reveal delay-2">Inspect error log warnings and replication status (if applicable)</li>
+        <li class="reveal delay-3">Run smoke tests for critical application transactions</li>
+        <li class="reveal delay-4">Refresh optimizer statistics on key tables to reduce plan drift</li>
+        <li class="reveal delay-5">Enable intensified monitoring on latency p95/p99 and error budgets</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 20: CHANGE MGMT === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Operations <span>20 / 24</span></div>
+      <h2 class="reveal delay-1">Change Management Essentials</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Define clear Go/No-Go criteria with owners before maintenance starts</li>
+        <li class="reveal delay-2">Collect explicit sign-off from DBA, app lead, SRE, and change manager</li>
+        <li class="reveal delay-3">Send milestone communication: pre-window, start, cutover complete, all-clear</li>
+        <li class="reveal delay-4">Track actual vs planned durations to improve future upgrade programs</li>
+        <li class="reveal delay-5">Close with PIR: lessons learned, issues, and permanent runbook updates</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 21: TIMELINE === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Planning <span>21 / 24</span></div>
+      <h2 class="reveal delay-1">Typical Project Timeline</h2>
+      <div class="kpi-grid">
+        <div class="kpi reveal delay-1"><strong>81-123 hrs</strong><span>Full workflow with strong testing and dry-run discipline.</span></div>
+        <div class="kpi reveal delay-2"><strong>40-60 hrs</strong><span class="warn">Compressed path if pt-upgrade is skipped (higher risk).</span></div>
+        <div class="kpi reveal delay-3"><strong>Data-size Driven</strong><span>Restore/rollback time dominates schedule for multi-TB estates.</span></div>
+      </div>
+      <p class="footer-note reveal delay-4">Project duration is usually cheaper than an unplanned multi-hour outage and emergency rollback.</p>
+    </div>
+  </section>
+
+  <!-- === SLIDE 22: PITFALLS === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Troubleshooting <span>22 / 24</span></div>
+      <h2 class="reveal delay-1">Common Failure Patterns to Avoid</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Startup blocked by removed parameters left in `my.cnf`</li>
+        <li class="reveal delay-2">Redo-log incompatibility from unclean shutdown pre-upgrade</li>
+        <li class="reveal delay-3">Datadir loss from package purge on Debian/Ubuntu</li>
+        <li class="reveal delay-4">Post-cutover auth failures due to unmigrated legacy users</li>
+        <li class="reveal delay-5">Query regressions from SQL mode and optimizer behavior shifts</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 23: CHECKLIST === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Execution Control <span>23 / 24</span></div>
+      <h2 class="reveal delay-1">Upgrade Checklist (Fast Read)</h2>
+      <ul class="bullet-list">
+        <li class="reveal delay-1">Backups done + restore tested + space validated</li>
+        <li class="reveal delay-2">Upgrade checker errors resolved; warnings reviewed</li>
+        <li class="reveal delay-3">Auth migration and deprecated syntax remediation complete</li>
+        <li class="reveal delay-4">Staging dry-run and app-team signoff complete</li>
+        <li class="reveal delay-5">Rollback rehearsal timed and documented</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- === SLIDE 24: CLOSING === -->
+  <section class="slide">
+    <div class="slide-content">
+      <div class="slide-header reveal">Closeout <span>24 / 24</span></div>
+      <h2 class="reveal delay-1">Key Takeaway</h2>
+      <p class="lead reveal delay-2">The safest path to MySQL 8.4 is a disciplined, test-heavy migration with a pre-proven rollback. Reliability is designed before the maintenance window begins.</p>
+      <div class="badge-row reveal delay-3">
+        <span class="badge">Questions</span>
+        <span class="badge">Runbook Review</span>
+        <span class="badge">Cutover Planning Session</span>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    /* === PRESENTATION CONTROLLER === */
+    class SlidePresentation {
+      constructor() {
+        this.slides = Array.from(document.querySelectorAll(".slide"));
+        this.currentSlide = 0;
+        this.progressFill = document.getElementById("progressFill");
+        this.navDots = document.getElementById("navDots");
+        this.isProgrammaticScroll = false;
+
+        this.buildNavDots();
+        this.setupIntersectionObserver();
+        this.setupKeyboardNav();
+        this.setupWheelNav();
+        this.setupTouchNav();
+        this.updateUI(0);
+      }
+
+      buildNavDots() {
+        this.navDots.innerHTML = "";
+        this.slides.forEach((_, i) => {
+          const dot = document.createElement("button");
+          dot.setAttribute("aria-label", `Go to slide ${i + 1}`);
+          dot.addEventListener("click", () => this.goToSlide(i));
+          this.navDots.appendChild(dot);
+        });
+      }
+
+      setupIntersectionObserver() {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+              const idx = this.slides.indexOf(entry.target);
+              if (idx >= 0) this.updateUI(idx);
+            }
+          });
+        }, { threshold: 0.55 });
+        this.slides.forEach((slide) => observer.observe(slide));
+      }
+
+      setupKeyboardNav() {
+        document.addEventListener("keydown", (e) => {
+          const activeEditable = e.target && e.target.getAttribute && e.target.getAttribute("contenteditable") === "true";
+          if (activeEditable) return;
+          if (["ArrowDown", "PageDown", " ", "j"].includes(e.key)) {
+            e.preventDefault();
+            this.goToSlide(Math.min(this.currentSlide + 1, this.slides.length - 1));
+          }
+          if (["ArrowUp", "PageUp", "k"].includes(e.key)) {
+            e.preventDefault();
+            this.goToSlide(Math.max(this.currentSlide - 1, 0));
+          }
+          if (e.key === "Home") this.goToSlide(0);
+          if (e.key === "End") this.goToSlide(this.slides.length - 1);
+        });
+      }
+
+      setupWheelNav() {
+        let wheelLock = false;
+        window.addEventListener("wheel", (e) => {
+          if (this.isProgrammaticScroll || wheelLock) return;
+          if (Math.abs(e.deltaY) < 18) return;
+          wheelLock = true;
+          const direction = e.deltaY > 0 ? 1 : -1;
+          this.goToSlide(Math.max(0, Math.min(this.currentSlide + direction, this.slides.length - 1)));
+          setTimeout(() => { wheelLock = false; }, 320);
+        }, { passive: true });
+      }
+
+      setupTouchNav() {
+        let startY = 0;
+        window.addEventListener("touchstart", (e) => { startY = e.touches[0].clientY; }, { passive: true });
+        window.addEventListener("touchend", (e) => {
+          const dy = startY - e.changedTouches[0].clientY;
+          if (Math.abs(dy) < 40) return;
+          if (dy > 0) this.goToSlide(Math.min(this.currentSlide + 1, this.slides.length - 1));
+          else this.goToSlide(Math.max(this.currentSlide - 1, 0));
+        }, { passive: true });
+      }
+
+      goToSlide(index) {
+        if (index < 0 || index >= this.slides.length) return;
+        this.isProgrammaticScroll = true;
+        this.slides[index].scrollIntoView({ behavior: "smooth", block: "start" });
+        this.updateUI(index);
+        setTimeout(() => { this.isProgrammaticScroll = false; }, 500);
+      }
+
+      updateUI(index) {
+        this.currentSlide = index;
+        const progress = ((index + 1) / this.slides.length) * 100;
+        this.progressFill.style.width = `${progress}%`;
+        [...this.navDots.children].forEach((dot, i) => dot.classList.toggle("active", i === index));
+      }
+    }
+
+    /* === INLINE EDITOR === */
+    class InlineEditor {
+      constructor() {
+        this.isActive = false;
+        this.storageKey = "mysql-upgrade-84-training-edits-v1";
+        this.editables = [];
+        this.editToggle = document.getElementById("editToggle");
+        this.saveBtn = document.getElementById("saveBtn");
+        this.exportBtn = document.getElementById("exportBtn");
+        this.hotzone = document.querySelector(".edit-hotzone");
+        this.hideTimeout = null;
+      }
+
+      init() {
+        this.collectEditables();
+        this.loadDraft();
+        this.bindUI();
+      }
+
+      collectEditables() {
+        const nodes = document.querySelectorAll("h1, h2, h3, p, li, .badge, .footer-note, .slide-header");
+        this.editables = Array.from(nodes).filter((el) => !el.closest(".nav-dots"));
+        this.editables.forEach((el, idx) => {
+          el.dataset.editId = `ed-${idx}`;
+          el.setAttribute("spellcheck", "true");
+        });
+      }
+
+      bindUI() {
+        this.editToggle.addEventListener("click", () => this.toggleEditMode());
+        this.hotzone.addEventListener("click", () => this.toggleEditMode());
+        this.saveBtn.addEventListener("click", () => this.saveDraft(true));
+        this.exportBtn.addEventListener("click", () => this.exportHtml());
+
+        this.hotzone.addEventListener("mouseenter", () => {
+          clearTimeout(this.hideTimeout);
+          this.editToggle.classList.add("show");
+        });
+        this.hotzone.addEventListener("mouseleave", () => {
+          this.hideTimeout = setTimeout(() => {
+            if (!this.isActive) this.editToggle.classList.remove("show");
+          }, 400);
+        });
+        this.editToggle.addEventListener("mouseenter", () => clearTimeout(this.hideTimeout));
+        this.editToggle.addEventListener("mouseleave", () => {
+          this.hideTimeout = setTimeout(() => {
+            if (!this.isActive) this.editToggle.classList.remove("show");
+          }, 400);
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if ((e.key === "e" || e.key === "E") && e.target.getAttribute("contenteditable") !== "true") {
+            e.preventDefault();
+            this.toggleEditMode();
+          }
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+            e.preventDefault();
+            this.saveDraft(true);
+          }
+        });
+      }
+
+      toggleEditMode() {
+        this.isActive = !this.isActive;
+        document.body.classList.toggle("editing", this.isActive);
+        this.editToggle.classList.toggle("active", this.isActive);
+        this.editables.forEach((el) => {
+          if (this.isActive) el.setAttribute("contenteditable", "true");
+          else el.removeAttribute("contenteditable");
+        });
+      }
+
+      saveDraft(showFeedback) {
+        const payload = {};
+        this.editables.forEach((el) => {
+          payload[el.dataset.editId] = el.innerHTML;
+        });
+        localStorage.setItem(this.storageKey, JSON.stringify(payload));
+        if (showFeedback) {
+          const original = this.saveBtn.textContent;
+          this.saveBtn.textContent = "Saved";
+          setTimeout(() => { this.saveBtn.textContent = original; }, 900);
+        }
+      }
+
+      loadDraft() {
+        const raw = localStorage.getItem(this.storageKey);
+        if (!raw) return;
+        try {
+          const payload = JSON.parse(raw);
+          this.editables.forEach((el) => {
+            if (payload[el.dataset.editId] !== undefined) el.innerHTML = payload[el.dataset.editId];
+          });
+        } catch (_) {
+          localStorage.removeItem(this.storageKey);
+        }
+      }
+
+      exportHtml() {
+        this.saveDraft(false);
+        const blob = new Blob([document.documentElement.outerHTML], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "mysql-upgrade-8.4-training-edited.html";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    const presentation = new SlidePresentation();
+    const editor = new InlineEditor();
+    editor.init();
+  </script>
+</body>
+</html>

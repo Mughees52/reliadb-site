@@ -1,0 +1,1158 @@
+
+
+
+
+MySQL Upgrade Best Practices
+Version 8.0.37 to 8.4 LTS
+On-Premise / Self-Managed Environments
+
+
+
+Comprehensive Guide
+Prepared: April 2026
+MySQL 8.0 End of Life: April 6, 2026
+
+
+Document Version: 2.0
+
+Table of Contents
+Table of Contents	2
+1. Executive Summary	4
+1.1 Scope and Audience	4
+1.2 Key Differences: MySQL 8.0 vs 8.4 LTS	4
+2. Pre-Upgrade Preparation	6
+2.1 Backup Strategy	6
+2.2 Disk Space Planning	6
+2.3 Table Integrity Check	7
+2.4 MySQL Shell Upgrade Checker Utility	7
+2.5 Removed and Changed Configuration Parameters	8
+2.6 sql_mode Changes	9
+2.7 Authentication Plugin Migration	10
+2.8 Transitional Option: Temporarily Re-enabling mysql_native_password	10
+2.9 ProxySQL Considerations	11
+2.10 Schema Compatibility Checks	12
+2.11 SQL Syntax and Terminology Changes	13
+3. Upgrade Testing	14
+3.1 Test Environment Setup	14
+3.2 Query Compatibility Testing with pt-upgrade	14
+3.3 Full Dry-Run Upgrade	15
+3.4 Application and Tool Compatibility Testing	15
+3.5 Canary Testing (Optional but Recommended)	16
+4. Upgrade Execution	17
+4.1 Choosing Your Upgrade Approach	17
+4.2 Approach 1: Replication-Based Upgrade (Recommended)	17
+4.3 Approach 2: In-Place Upgrade	19
+4.4 Approach 3: Rolling Replica Upgrade	21
+4.5 Configuration File Template for MySQL 8.4	22
+5. Rollback Strategy	24
+5.1 Recommended: Replication-Based Rollback (Approach 1 / Approach 3)	24
+5.2 Logical Backup Rollback (Approach 2: In-Place)	24
+5.3 Not Recommended Approaches	24
+6. Post-Upgrade Validation	26
+6.1 Immediate Checks (First 30 Minutes)	26
+6.2 Replication Validation (If Applicable)	26
+6.3 Refresh Optimizer Statistics	26
+6.4 Application and Performance Monitoring	27
+6.5 Post-Upgrade Housekeeping	27
+7. Change Management and Operational Planning	28
+7.1 Change Ticket Requirements	28
+7.2 Go / No-Go Criteria	28
+7.3 Maintenance Window Monitoring	28
+7.4 Communication Template	29
+8. Time Estimates and Project Planning	30
+8.1 Full Upgrade Project Timeline	30
+8.2 Time Estimates by Data Size	30
+8.3 Simplified Timeline (If Skipping pt-upgrade Testing)	30
+9. Common Pitfalls and Troubleshooting	32
+9.1 Server Refuses to Start: Removed Parameters in my.cnf	32
+9.2 Redo Log Incompatibility	32
+9.3 Data Directory Deleted on Debian/Ubuntu	32
+9.4 Authentication Failures After Upgrade	32
+9.5 InnoDB Storage Engine Error for System Tables	32
+9.6 Deprecated Plugin Errors	33
+9.7 Query Failures from sql_mode Changes	33
+9.8 View and Routine Warnings	33
+10. Upgrade Checklist	34
+11. References and Resources	36
+
+
+1. Executive Summary
+This document provides a comprehensive best practice guide for upgrading MySQL from version 8.0.37 to 8.4 LTS on self-managed, on-premise infrastructure. It consolidates knowledge from real-world upgrade projects, training materials, and lessons learned from production deployments.
+MySQL 8.0 reached End of Life (EOL) on April 6, 2026. After that, Oracle will no longer provide standard support, security updates, or bug fixes. Upgrading to MySQL 8.4 LTS ensures continued long-term support, security patches, and access to performance improvements.
+CRITICAL: This is a MAJOR version upgrade (not a minor patch). MySQL 8.0 to 8.4 introduces breaking changes in authentication, SQL syntax, configuration parameters, and data type handling. Thorough testing is mandatory.
+
+1.1 Scope and Audience
+This guide is intended for Database Administrators (DBAs) performing the upgrade on self-managed MySQL or Percona Server installations. It covers both Oracle MySQL Community/Enterprise and Percona Server for MySQL. Where package commands differ between the two, both variants are shown explicitly.
+
+1.2 Key Differences: MySQL 8.0 vs 8.4 LTS
+Area
+Change in MySQL 8.4
+Impact
+Authentication
+mysql_native_password plugin removed
+All users must use caching_sha2_password or other supported plugins
+AUTO_INCREMENT
+No longer supported on FLOAT/DOUBLE columns
+Tables using float/double AUTO_INCREMENT must be altered
+Foreign Keys
+Stricter foreign key validation
+Existing FK definitions may fail validation checks
+Reserved Keywords
+New reserved keywords (e.g., MANUAL, QUALIFY, INTERSECT)
+Tables/columns using new keywords need backtick quoting
+SQL Terminology
+MASTER/SLAVE commands fully removed
+Must use SOURCE/REPLICA; old syntax will ERROR, not just warn
+Removed Parameters
+default_authentication_plugin, master_info_repository, relay_log_info_repository, binlog_transaction_dependency_tracking, plus others
+Must remove from my.cnf or server will refuse to start
+Default Values
+innodb_adaptive_hash_index, innodb_flush_method, innodb_io_capacity, innodb_log_buffer_size
+Behavior changes silently if not explicitly set
+sql_mode
+Stricter defaults for SQL mode enforcement
+Queries valid in 8.0 may fail or return different results in 8.4
+GROUP BY
+Implicit sorting by GROUP BY fully removed
+Queries relying on GROUP BY sort order must add explicit ORDER BY
+
+2. Pre-Upgrade Preparation
+Pre-upgrade preparation is the most critical phase. A well-prepared upgrade dramatically reduces risk and downtime. This section covers every step that must be completed before touching production systems.
+
+2.1 Backup Strategy
+BEST PRACTICE: Always take BOTH a logical backup AND a physical backup before any upgrade activity. Test your restore procedure on a separate server before proceeding.
+A reliable, tested backup is your only safety net. Without it, a failed upgrade could result in catastrophic, unrecoverable data loss.
+
+Logical Backup Options:
+	•	mysqldump: Full logical dump including routines, triggers, and events
+	•	mydumper / myloader: Multi-threaded logical backup and restore for large datasets
+	•	MySQL Shell Dump Utility (util.dumpInstance): Modern parallel dump with compression
+
+Physical Backup Options:
+	•	Percona XtraBackup: Hot, non-blocking backup for InnoDB (use version matching your MySQL)
+	•	LVM Snapshots: Instant filesystem-level snapshot (requires clean InnoDB shutdown or flush with lock)
+	•	File system copy (tar/gzip): Cold backup after clean shutdown with innodb_fast_shutdown=0
+
+Sample mysqldump Command:
+mysqldump -u root -p --all-databases --single-transaction --routines \
+  --triggers --events --set-gtid-purged=OFF > full_backup_pre_upgrade.sql
+
+Sample XtraBackup Commands:
+xtrabackup --backup --target-dir=/backup/full_pre_upgrade \
+  --user=root --password=<password>
+xtrabackup --prepare --target-dir=/backup/full_pre_upgrade
+
+WARNING: Always verify your backup by performing a test restore on a separate server BEFORE beginning the upgrade. An untested backup is not a backup.
+
+2.2 Disk Space Planning
+A major version upgrade requires significant free disk space. Plan for the following:
+Item
+Space Required
+Notes
+Logical backup (mysqldump)
+1x database size (uncompressed)
+Compressed: ~30-50% of raw size
+Physical backup (XtraBackup)
+1x database size + redo logs
+Stores raw InnoDB data files
+Data directory copy (in-place upgrade)
+1x datadir size
+cp -a /var/lib/mysql for safety copy
+Temporary upgrade space
+10-20% of datadir
+InnoDB DD upgrade, redo log rebuild
+Binary log retention
+Varies
+Ensure binlog_expire_logs_seconds covers rollback window
+
+BEST PRACTICE: As a rule of thumb, ensure at least 2.5x your current datadir size is available as free disk space before starting the upgrade. For a 1TB database, plan for at least 2.5TB free.
+
+2.3 Table Integrity Check
+Identify and repair any corrupted tables before upgrading. Upgrading with corrupted data can cause the new version to fail to start or cause silent data corruption.
+Run Table Checks:
+mysqlcheck -u root -p --all-databases --check
+
+Auto-Repair Corrupted Tables (only after confirming backup):
+mysqlcheck -u root -p --all-databases --auto-repair
+
+Also check for orphan InnoDB files and data dictionary inconsistencies:
+-- Check for orphaned tablespace files:
+SELECT * FROM information_schema.INNODB_TABLESPACES
+WHERE NAME NOT IN (SELECT CONCAT(TABLE_SCHEMA,'/',TABLE_NAME)
+  FROM information_schema.TABLES WHERE ENGINE='InnoDB');
+
+WARNING: Large table repairs can be extremely time-consuming and lock the table. Schedule repairs during a maintenance window.
+
+2.4 MySQL Shell Upgrade Checker Utility
+The MySQL Shell Upgrade Checker is the single most important pre-upgrade tool. It analyzes your current instance against 24+ compatibility metrics and reports errors, warnings, and notices.
+
+Run the Upgrade Checker (targeting 8.4.8):
+mysqlsh -- util checkForServerUpgrade root@localhost:3306 \
+  --target-version=8.4.8 \
+  --config-path=/etc/mysql/mysql.conf.d/mysqld.cnf
+
+Alternative JavaScript syntax within MySQL Shell:
+util.checkForServerUpgrade("root@localhost:3306",
+  {targetVersion: "8.4.8",
+   configPath: "/etc/mysql/mysql.conf.d/mysqld.cnf"})
+
+The Upgrade Checker examines:
+	•	Usage of removed or deprecated system variables
+	•	Usage of new reserved keywords as identifiers (table/column names)
+	•	Deprecated utf8 (utf8mb3) character set usage
+	•	Tables with temporal columns in pre-5.6.4 format
+	•	Partitioned tables with unsupported engines
+	•	Foreign key constraint naming conflicts
+	•	Column definitions exceeding maximum lengths
+	•	Zero date/datetime values (0000-00-00) violating strict mode
+	•	Authentication plugin compatibility
+	•	Orphan data dictionary entries and inconsistencies
+
+CRITICAL: All ERRORS reported by the Upgrade Checker MUST be resolved before proceeding. Warnings should also be addressed. Ignoring these will lead to failed upgrades or production outages.
+
+NOTE: If you encounter a 'No database selected' error, include the database in the connection string: mysqlsh user@localhost:3306/mysql -- util check-for-server-upgrade
+
+2.5 Removed and Changed Configuration Parameters
+MySQL 8.4 removes several parameters that were deprecated in 8.0. If any of these remain in your my.cnf, the server will refuse to start.
+
+Parameters Removed in MySQL 8.4 (must remove from my.cnf):
+Parameter
+Action Required
+default_authentication_plugin
+Remove. Use authentication_policy system variable instead.
+master_info_repository
+Remove. Always uses TABLE in 8.4.
+relay_log_info_repository
+Remove. Always uses TABLE in 8.4.
+binlog_transaction_dependency_tracking
+Remove. No longer available.
+avoid_temporal_upgrade
+Remove. Temporal columns always use new format.
+show_old_temporals
+Remove. No longer available.
+log_bin_use_v1_row_events
+Remove. v2 row events are always used.
+expire_logs_days
+Remove. Use binlog_expire_logs_seconds instead.
+old_alter_table
+Remove. No longer available.
+group_replication_recovery_complete_at
+Remove if using Group Replication.
+
+NOTE: This is not exhaustive. Run the Upgrade Checker (Section 2.4) against your specific my.cnf to get the complete list of incompatible parameters for your configuration.
+
+Parameters with Changed Default Values in 8.4:
+Parameter
+8.0 Default
+8.4 Default
+Recommendation
+innodb_adaptive_hash_index
+ON
+OFF
+Explicitly set based on your workload benchmarks
+innodb_flush_method
+fsync
+O_DIRECT
+O_DIRECT is better for most Linux + SSD/NVMe setups; use fsync for ZFS or NFS
+innodb_io_capacity
+200
+10000
+200 for spinning disks, 2000-5000 for SSD, 10000+ for NVMe
+innodb_log_buffer_size
+16M
+64M
+64M is fine for most workloads; reduce only if memory-constrained
+
+BEST PRACTICE: Before upgrading, explicitly set any parameters whose defaults change if you rely on the 8.0 behavior. Silent default changes are one of the biggest sources of unexpected post-upgrade performance shifts.
+
+2.6 sql_mode Changes
+MySQL 8.4 enforces stricter sql_mode defaults. This is one of the most common sources of silent breakage where queries that worked in 8.0 fail or return different results in 8.4.
+
+Key sql_mode Changes:
+	•	ONLY_FULL_GROUP_BY is enforced by default: SELECT columns not in GROUP BY or aggregate functions will error
+	•	NO_ZERO_IN_DATE and NO_ZERO_DATE: Dates like '0000-00-00' or '2024-00-15' are rejected
+	•	Implicit GROUP BY sorting removed: Queries relying on GROUP BY producing sorted output must add explicit ORDER BY clauses
+
+Check your current sql_mode:
+SELECT @@GLOBAL.sql_mode;
+
+Find tables with zero-date values:
+-- Example for a specific table:
+SELECT COUNT(*) FROM your_table
+WHERE date_column = '0000-00-00' OR date_column = '0000-00-00 00:00:00';
+
+WARNING: If your application relies on zero-date values or implicit GROUP BY sorting, these must be fixed before upgrading, or you must explicitly set sql_mode in my.cnf to match your 8.0 behavior. However, carrying forward legacy modes is technical debt that should be addressed.
+
+2.7 Authentication Plugin Migration
+CRITICAL: The mysql_native_password plugin is REMOVED in MySQL 8.4. Any user account still using this plugin will be unable to authenticate after upgrade unless the transitional option is used.
+
+Identify affected users:
+SELECT user, host, plugin, password_expired
+FROM mysql.user WHERE plugin = 'mysql_native_password';
+
+Migrate users to caching_sha2_password:
+ALTER USER 'username'@'host' IDENTIFIED WITH caching_sha2_password BY 'new_password';
+
+Also verify that all application connection libraries and drivers support caching_sha2_password. Older MySQL connectors (pre-8.0) may not support the new authentication plugin. Common connectors that need updating:
+	•	MySQL Connector/J: version 8.0.12+ required
+	•	MySQL Connector/Python: version 8.0.11+ required
+	•	PHP mysqlnd: PHP 7.4+ with mysqlnd supports it natively
+	•	Go sql driver (go-sql-driver/mysql): version 1.4+ required
+	•	Node.js mysql2: version 1.6+ required (mysql package does NOT support it)
+
+2.8 Transitional Option: Temporarily Re-enabling mysql_native_password
+If an immediate migration of all users and applications to caching_sha2_password is not feasible, MySQL 8.4 provides a transitional option. Add the following to your my.cnf:
+[mysqld]
+mysql_native_password = ON
+
+This loads the plugin at startup so existing accounts using mysql_native_password can still authenticate. It does not make it the default for new accounts. This is strictly a temporary measure to allow a phased migration.
+
+WARNING: The mysql_native_password plugin is deprecated and will be permanently removed in a future MySQL release. Using the transitional option only buys time. Plan to complete migration to caching_sha2_password within 30 days of upgrade.
+
+Recommended Migration Sequence:
+	•	Add mysql_native_password = ON to my.cnf for the 8.4 upgrade
+	•	Upgrade MySQL from 8.0.37 to 8.4
+	•	Verify all applications and users can connect successfully
+	•	Migrate user accounts to caching_sha2_password in batches:
+ALTER USER 'app_user'@'%' IDENTIFIED WITH caching_sha2_password BY 'password';
+	•	After all accounts are migrated, remove mysql_native_password = ON from my.cnf
+	•	Restart MySQL and verify all connections still work
+
+2.9 ProxySQL Considerations
+If your environment uses ProxySQL for connection pooling, load balancing, or query routing, the authentication plugin change requires special attention.
+
+CRITICAL: ProxySQL version 2.5.4 or later is required for caching_sha2_password support on the backend side. Upgrade ProxySQL BEFORE upgrading MySQL.
+
+Key Considerations:
+	•	ProxySQL handles frontend (app-to-ProxySQL) and backend (ProxySQL-to-MySQL) authentication separately. Both paths must support caching_sha2_password.
+	•	caching_sha2_password requires either TLS or RSA public key exchange for the initial handshake. Without TLS between ProxySQL and MySQL, the first authentication will fail.
+	•	Configure GET_SOURCE_PUBLIC_KEY=1 in ProxySQL mysql_servers, or enable TLS between ProxySQL and MySQL backends.
+
+Recommended Upgrade Order for ProxySQL Environments:
+	•	Upgrade ProxySQL to version 2.5.4+ (no disruption to existing 8.0 traffic)
+	•	Configure TLS or RSA key exchange between ProxySQL and MySQL backends
+	•	Test caching_sha2_password connectivity through ProxySQL in staging
+	•	Proceed with MySQL 8.0.37 to 8.4 upgrade (with mysql_native_password=ON as transitional)
+	•	Migrate user accounts to caching_sha2_password in batches, validating through ProxySQL
+	•	Remove mysql_native_password = ON from my.cnf once fully migrated
+
+BEST PRACTICE: Always test the full authentication chain (Application -> ProxySQL -> MySQL 8.4) in staging before production cutover. Authentication failures through ProxySQL are one of the most common post-upgrade issues.
+
+2.10 Schema Compatibility Checks
+AUTO_INCREMENT on FLOAT/DOUBLE Columns:
+MySQL 8.4 removes AUTO_INCREMENT support on FLOAT or DOUBLE columns. Identify and alter affected tables:
+SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE
+FROM information_schema.COLUMNS
+WHERE EXTRA LIKE '%auto_increment%'
+  AND DATA_TYPE IN ('float', 'double');
+
+Fix by altering the column to INT or BIGINT:
+ALTER TABLE table_name MODIFY COLUMN id BIGINT AUTO_INCREMENT;
+
+New Reserved Keywords:
+MySQL 8.4 adds reserved keywords including MANUAL, QUALIFY, INTERSECT, and others. If any identifiers use these keywords, they must be backtick-quoted:
+-- This will FAIL in 8.4:
+CREATE TABLE manual (id INT);
+-- Fix:
+CREATE TABLE `manual` (id INT);
+
+Foreign Key Validation:
+MySQL 8.4 enforces stricter foreign key validation. The Upgrade Checker identifies problematic FK constraints. Common issues include mismatched column types between parent and child tables, and FK names that conflict with reserved identifiers.
+
+Character Set Considerations (utf8mb3 to utf8mb4):
+While not a hard blocker, utf8 (utf8mb3) is deprecated. Converting to utf8mb4 changes byte widths from 3 to 4 bytes per character, which may violate index length limits (767 bytes for compact/redundant, 3072 for dynamic/compressed). Always check index sizes before converting:
+SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, CHARACTER_SET_NAME
+FROM information_schema.COLUMNS
+WHERE CHARACTER_SET_NAME IN ('utf8', 'utf8mb3');
+
+2.11 SQL Syntax and Terminology Changes
+MySQL 8.4 fully removes deprecated replication-related SQL syntax. In 8.0, these produced warnings. In 8.4, they produce ERRORS. All scripts, monitoring tools, and automation must be updated.
+
+Removed Syntax (8.0)
+Required Replacement (8.4)
+SHOW SLAVE STATUS
+SHOW REPLICA STATUS
+SHOW MASTER STATUS
+SHOW BINARY LOG STATUS
+CHANGE MASTER TO ...
+CHANGE REPLICATION SOURCE TO ...
+RESET MASTER
+RESET BINARY LOGS AND GTIDS
+STOP SLAVE / START SLAVE
+STOP REPLICA / START REPLICA
+RESET SLAVE / RESET SLAVE ALL
+RESET REPLICA / RESET REPLICA ALL
+
+WARNING: Audit ALL application code, stored procedures, monitoring scripts (PMM custom queries, Nagios/Zabbix checks, cron jobs), ProxySQL query rules, and automation tools for deprecated syntax. These commands will produce hard errors in MySQL 8.4.
+
+3. Upgrade Testing
+Testing is the most time-consuming but most valuable phase of the upgrade process. Skipping testing for a major version upgrade carries extreme risk. For large datasets (multi-terabyte), a failed untested upgrade could result in 10-20+ hours of downtime for rollback alone.
+
+3.1 Test Environment Setup
+Set up a test environment that mirrors production as closely as possible. You need two instances for pt-upgrade comparison testing:
+
+Instance
+Version
+Purpose
+Test Instance A
+MySQL 8.0.37
+Baseline matching production (control)
+Test Instance B
+MySQL 8.4.8
+Upgrade target (test candidate)
+
+Setup Steps:
+	•	Restore both instances from a recent production backup
+	•	Ensure both instances have identical data at the same point-in-time
+	•	Configure the 8.4 instance with your planned my.cnf (cleaned of removed parameters)
+	•	Apply binary logs to both so data matches the start of your slow query log capture window
+	•	Verify both instances are healthy and serving queries
+
+Estimated Time: 15-20 hours
+
+3.2 Query Compatibility Testing with pt-upgrade
+pt-upgrade (Percona Toolkit) replays your actual production workload against both MySQL versions side-by-side and reports differences in query results, errors, or performance.
+
+Step-by-step process:
+	•	Enable slow query logging on the production source to capture workload:
+SET GLOBAL slow_query_log = ON;
+SET GLOBAL long_query_time = 0;  -- Capture ALL queries
+	•	Collect 1-3 hours of production traffic during peak hours
+	•	Disable slow query logging and copy the log:
+SET GLOBAL slow_query_log = OFF;
+cp /var/lib/mysql/*-slow.log /root/pt-upgrade-workload.log
+	•	Create a query digest for structured replay:
+pt-query-digest /root/pt-upgrade-workload.log --output slowlog \
+  > /root/pt-upgrade-digest.out
+	•	Run pt-upgrade (read-only test):
+pt-upgrade h=test_80_host,u=user,p=pass \
+         h=test_84_host,u=user,p=pass \
+         --max-examples=1 /root/pt-upgrade-digest.out \
+         1> pt-upgrade_RO.out 2> pt-upgrade_RO.err
+	•	Run pt-upgrade (read-write test):
+pt-upgrade h=test_80_host,u=user,p=pass \
+         h=test_84_host,u=user,p=pass \
+         --no-read-only --max-examples=1 /root/pt-upgrade-digest.out \
+         1> pt-upgrade_RW.out 2> pt-upgrade_RW.err
+	•	Analyze results for query failures, row count differences, and performance regressions
+
+Estimated Time: 20-25 hours (including collection, RO test, RW test, and analysis)
+
+BEST PRACTICE: Percona strongly recommends performing both compatibility checks and pt-upgrade testing. The risk of skipping testing on large datasets is a failed upgrade requiring 10-20+ hours of rollback downtime, far exceeding the testing investment.
+
+3.3 Full Dry-Run Upgrade
+Beyond query testing, perform the entire upgrade procedure end-to-end on a staging replica before touching production. This validates:
+	•	The complete upgrade procedure works without errors
+	•	The my.cnf changes are correct and MySQL starts cleanly
+	•	The upgrade duration matches your maintenance window estimates
+	•	Your rollback procedure works if needed
+	•	Your monitoring and alerting detects the upgraded instance correctly
+
+BEST PRACTICE: A dry-run on staging is standard DBA practice for major version upgrades. It catches issues that query-level testing cannot, such as package dependency conflicts, file permission problems, and systemd service configuration changes.
+
+3.4 Application and Tool Compatibility Testing
+Verify that all ecosystem components work with MySQL 8.4:
+Component
+Minimum Version for 8.4
+Verification Steps
+Percona Toolkit (pt-*)
+3.5+
+Run pt-table-checksum and pt-online-schema-change on test
+PMM
+Latest release
+Verify metrics collection from 8.4 instance
+ProxySQL
+2.5.4+
+Test auth chain and query routing
+Percona XtraBackup
+8.4.x matching target
+Take and restore a test backup on 8.4
+MySQL Shell
+8.4.x
+Run upgrade checker and dump utilities
+Orchestrator
+Verify SOURCE/REPLICA support
+Test failover on staging
+Application Connectors
+See Section 2.7
+End-to-end CRUD tests
+
+3.5 Canary Testing (Optional but Recommended)
+For critical production databases, consider canary testing before full cutover:
+	•	Set up the 8.4 instance as a replica receiving real production traffic
+	•	Configure ProxySQL or your load balancer to route a small percentage (5-10%) of read traffic to the 8.4 replica
+	•	Monitor error rates, query latency, and result correctness for 24-48 hours
+	•	Gradually increase traffic percentage if no issues are found
+	•	Proceed to full cutover once confident
+
+This approach catches subtle issues under real production load patterns that synthetic testing may miss.
+
+4. Upgrade Execution
+Three primary approaches exist for performing the upgrade. Use the decision flowchart below to choose the right one for your environment.
+
+4.1 Choosing Your Upgrade Approach
+
+
+Approach
+Downtime
+Rollback
+Hardware
+Best For
+Replication-Based
+Minutes (cutover only)
+Instant (redirect to 8.0)
+Requires extra server
+Production-critical, large datasets
+Rolling Replica
+Minutes per node
+Un-upgraded source available
+Uses existing replicas
+Replicated topologies
+In-Place
+Hours (full duration)
+Restore from backup (hours)
+No extra hardware
+Dev/QA, small datasets, budget-constrained
+
+4.2 Approach 1: Replication-Based Upgrade (Recommended)
+The replication-based approach provides minimal downtime, a natural testing period, and a straightforward rollback path. It requires additional hardware.
+
+
+Step-by-Step Procedure:
+	•	Install MySQL 8.4.8 on a new dedicated server
+	•	Configure the 8.4 server with cleaned-up my.cnf
+	•	Take a consistent backup from the MySQL 8.0 source:
+# Using XtraBackup:
+xtrabackup --backup --target-dir=/backup/for_84 --user=root --password=<pw>
+# Or using mysqldump:
+mysqldump --all-databases --single-transaction --routines --triggers \
+  --events --source-data=2 > backup_for_84.sql
+	•	Restore the backup on the MySQL 8.4 server
+	•	Set up replication from 8.0 (source) to 8.4 (replica):
+
+For GTID-based replication (recommended):
+CHANGE REPLICATION SOURCE TO
+  SOURCE_HOST = '8.0_source_ip',
+  SOURCE_USER = 'repl_user',
+  SOURCE_PASSWORD = 'repl_password',
+  SOURCE_AUTO_POSITION = 1,
+  GET_SOURCE_PUBLIC_KEY = 1;
+START REPLICA;
+
+For binary log position-based replication:
+CHANGE REPLICATION SOURCE TO
+  SOURCE_HOST = '8.0_source_ip',
+  SOURCE_USER = 'repl_user',
+  SOURCE_PASSWORD = 'repl_password',
+  SOURCE_LOG_FILE = 'binlog.000XXX',
+  SOURCE_LOG_POS = XXXXXXX,
+  GET_SOURCE_PUBLIC_KEY = 1;
+START REPLICA;
+
+	•	Monitor replication lag until Seconds_Behind_Source = 0
+	•	Run application validation tests against the 8.4 replica
+	•	Schedule maintenance window for cutover
+	•	During cutover:
+	•	Set 8.0 source to read-only to drain writes gracefully:
+SET GLOBAL read_only = 1;
+SET GLOBAL super_read_only = 1;
+	•	Verify 8.4 replica is fully caught up (Seconds_Behind_Source = 0)
+	•	Stop replication on the 8.4 server: STOP REPLICA;
+	•	Redirect application connections to the MySQL 8.4 server
+	•	Verify application functionality with smoke tests
+
+Estimated Time by Phase:
+Phase
+Estimated Hours
+Install and configure MySQL 8.4
+3-5
+Backup and restore from 8.0 to 8.4
+5-15 (depends on data size)
+Setup replication and sync
+2-4
+Monitoring and validation period
+8-24
+Cutover activity
+2-5
+Post-cutover monitoring
+4-8
+
+4.3 Approach 2: In-Place Upgrade
+The in-place upgrade replaces MySQL binaries on the same server. This requires less hardware but carries higher risk and longer downtime.
+
+
+WARNING: In-place upgrades have NO easy rollback. If the upgrade fails, you must restore from backup, which for large datasets can take 10-20+ hours.
+
+Step-by-Step Procedure:
+	•	Take full backup (both logical and physical) and verify restore works
+	•	Ensure binary log retention covers your rollback window:
+SET GLOBAL binlog_expire_logs_seconds = 259200;  -- 3 days
+	•	Record the current binary log position and GTID state
+	•	Stop MySQL 8.0 cleanly:
+SET GLOBAL innodb_fast_shutdown = 0;  -- Clean shutdown (CRITICAL)
+systemctl stop mysqld
+	•	Back up the configuration file and data directory:
+cp /etc/my.cnf /etc/my.cnf.bak_8037
+# Option A: LVM snapshot (preferred for large datasets):
+lvcreate --size 100G --snapshot --name mysql_snap /dev/vg0/mysql_data
+# Option B: File copy (slower, requires disk space):
+cp -a /var/lib/mysql /var/lib/mysql.bak_8037
+	•	Remove MySQL 8.0 packages:
+
+For Percona Server:
+# RHEL/CentOS:
+yum remove percona-server-server percona-server-client
+# Debian/Ubuntu (use remove, NEVER purge):
+apt-get remove percona-server-server percona-server-client
+
+For Oracle MySQL:
+# RHEL/CentOS:
+yum remove mysql-community-server mysql-community-client
+# Debian/Ubuntu (use remove, NEVER purge):
+apt-get remove mysql-server mysql-client
+
+CRITICAL: On Debian/Ubuntu, NEVER use 'apt-get purge' instead of 'apt-get remove'. Purge deletes configuration files AND can trigger data directory cleanup, destroying your data. Always use 'remove' and verify /var/lib/mysql is intact before proceeding.
+
+	•	Install MySQL 8.4 packages:
+
+For Percona Server:
+# RHEL/CentOS:
+yum install percona-server-server percona-server-client
+# Debian/Ubuntu:
+apt-get install percona-server-server percona-server-client
+
+For Oracle MySQL:
+# RHEL/CentOS:
+yum install mysql-community-server mysql-community-client
+# Debian/Ubuntu:
+apt-get install mysql-server mysql-client
+
+	•	Update my.cnf: remove all deprecated parameters, set explicit defaults
+	•	Start MySQL 8.4 with the existing data directory:
+systemctl start mysqld
+	•	Review the error log for upgrade messages and any issues:
+tail -500 /var/log/mysql/mysqld.log
+	•	The server automatically upgrades the data dictionary and system tables on first start
+
+CRITICAL: Always set innodb_fast_shutdown = 0 before stopping MySQL 8.0. Using innodb_fast_shutdown = 2 leaves redo logs in a crash-like state. MySQL 8.4 cannot safely process these logs and will refuse to start. Recovery requires a full restore from backup.
+
+4.4 Approach 3: Rolling Replica Upgrade
+For environments with an existing source-replica replication topology, upgrade replicas first, then failover. This combines the benefits of minimal downtime with no extra hardware requirement.
+
+
+Procedure:
+	•	Upgrade Replica 1: Stop replication, perform in-place upgrade to 8.4 (per Section 4.3), restart replication
+	•	Monitor Replica 1 for stability, replication health, and query correctness (24-48 hours)
+	•	Upgrade Replica 2 using the same procedure
+	•	Once all replicas are on 8.4 and stable, perform a planned failover: promote an 8.4 replica as the new source
+	•	Upgrade the old source (now demoted to replica) to 8.4
+
+NOTE: During the rolling upgrade, the un-upgraded source remains your rollback point. If any upgraded replica shows issues, you can remove it from the pool and rebuild. Only after promoting an 8.4 replica to source is the rollback path more complex.
+
+4.5 Configuration File Template for MySQL 8.4
+Below is a recommended baseline my.cnf template, cleaned of all removed parameters and with explicit values for changed defaults. Adjust all values to match your hardware and workload.
+[mysqld]
+
+# ── Basic Settings ──
+datadir                = /var/lib/mysql
+port                   = 3306
+server-id              = 1001
+log-error              = /var/log/mysql/mysqld.log
+
+# ── InnoDB (set explicitly to avoid silent default changes) ──
+innodb_adaptive_hash_index = OFF     # 8.4 default; set ON only if benchmarks justify
+innodb_flush_method        = O_DIRECT # 8.4 default; use fsync for ZFS/NFS
+innodb_io_capacity         = 5000     # SSDs: 2000-5000, NVMe: 10000+, HDD: 200
+innodb_log_buffer_size     = 64M      # 8.4 default; reduce if memory-constrained
+innodb_page_cleaners       = 4
+
+# ── Binary Logging ──
+binlog_expire_logs_seconds = 259200   # 3 days; set to cover rollback window
+
+# ── Authentication ──
+# Transitional: uncomment to temporarily allow legacy auth during migration
+# mysql_native_password = ON
+
+# ── REMOVED in 8.4 - DO NOT INCLUDE ──
+# default_authentication_plugin  (use authentication_policy)
+# master_info_repository         (always TABLE)
+# relay_log_info_repository      (always TABLE)
+# binlog_transaction_dependency_tracking
+# expire_logs_days               (use binlog_expire_logs_seconds)
+# avoid_temporal_upgrade
+# show_old_temporals
+
+5. Rollback Strategy
+CRITICAL: Always have a tested rollback plan before beginning any upgrade. MySQL does NOT support downgrading from 8.4 back to 8.0 using the data directory. The only paths are: redirect traffic (replication approach) or restore from backup.
+
+5.1 Recommended: Replication-Based Rollback (Approach 1 / Approach 3)
+If you used the replication-based or rolling replica upgrade approach, rollback is straightforward:
+	•	Redirect application connections back to the original MySQL 8.0 source
+	•	The 8.0 source was untouched and continues to hold the authoritative data
+	•	Stop and decommission the 8.4 instance(s)
+
+BEST PRACTICE: This is the primary advantage of the replication-based approach: instant rollback with zero data loss. This is why it is the recommended approach for production systems.
+
+5.2 Logical Backup Rollback (Approach 2: In-Place)
+If the in-place upgrade fails, you must restore from the pre-upgrade backup:
+	•	Stop the failed MySQL 8.4 instance
+	•	Install a fresh MySQL 8.0.37 instance (on same or different server)
+	•	Restore the logical backup taken before the upgrade:
+mysql -u root -p < full_backup_pre_upgrade.sql
+	•	If you need to recover writes between the backup time and the upgrade start, apply the 8.0-era binary logs:
+mysqlbinlog --start-position=XXX binlog.000YYY | mysql -u root -p
+	•	Redirect application connections back to the 8.0 instance
+
+CRITICAL: Binary logs generated by the 8.4 instance CANNOT be applied to an 8.0 instance due to format incompatibilities. Any writes that occurred on MySQL 8.4 after cutover are LOST in a rollback to 8.0. This is why minimizing the cutover window and validating quickly is essential.
+
+WARNING: Rollback time depends on data size. For a 10TB dataset, a full logical restore could take 10-20+ hours. Plan your maintenance window to accommodate the worst-case rollback duration.
+
+5.3 Not Recommended Approaches
+Reverse Replication (8.4 to 8.0):
+Not officially supported by Oracle. Binary log format differences between major versions can cause replication failures or silent data corruption. Do not rely on this.
+
+Physical Backup + Binary Log Replay:
+Technically possible but complex, error-prone, and not officially supported as a downgrade path. Carries significant risk of data inconsistency. Use logical backup restore instead.
+
+6. Post-Upgrade Validation
+After a successful upgrade, thorough validation ensures the system is healthy and production-ready.
+
+6.1 Immediate Checks (First 30 Minutes)
+	•	Verify MySQL version:
+SELECT VERSION();  -- Expected: 8.4.8
+	•	Review the error log for warnings or errors:
+tail -500 /var/log/mysql/mysqld.log
+grep -i 'error\|warning' /var/log/mysql/mysqld.log | tail -50
+	•	Verify all system tables upgraded successfully:
+mysqlcheck -u root -p --all-databases --check
+	•	Verify all user accounts can authenticate:
+SELECT user, host, plugin FROM mysql.user ORDER BY plugin;
+	•	Run the Upgrade Checker to confirm no remaining issues:
+mysqlsh -- util checkForServerUpgrade root@localhost:3306 --target-version=8.4.8
+
+6.2 Replication Validation (If Applicable)
+	•	Verify replication status:
+SHOW REPLICA STATUS\G
+-- Verify: Replica_IO_Running = Yes
+-- Verify: Replica_SQL_Running = Yes
+-- Verify: Seconds_Behind_Source = 0
+	•	Verify GTID consistency (if using GTID):
+SELECT @@gtid_executed;
+	•	Test failover procedures in a controlled manner
+
+6.3 Refresh Optimizer Statistics
+After a major version upgrade, the query optimizer may use different cost models. Refreshing statistics on key tables prevents query plan regressions:
+-- For specific critical tables:
+ANALYZE TABLE schema.important_table;
+
+-- For all tables (run during low-traffic period):
+mysqlcheck -u root -p --all-databases --analyze
+
+BEST PRACTICE: Monitor slow query log closely for 48 hours after upgrade. Compare query execution plans (EXPLAIN) for your top queries against pre-upgrade baselines to catch optimizer regressions early.
+
+6.4 Application and Performance Monitoring
+	•	Run full application test suites / smoke tests
+	•	Monitor query performance via slow query log and PMM dashboards
+	•	Watch for optimizer plan changes causing performance regressions
+	•	Verify all scheduled events and cron jobs execute correctly
+	•	Test backup procedures (mysqldump, XtraBackup) on the 8.4 instance
+	•	Validate PMM metrics collection from the 8.4 instance
+
+6.5 Post-Upgrade Housekeeping
+	•	Update monitoring dashboards and alerting rules for new metric names and thresholds
+	•	Update all runbooks, SOPs, and documentation to reflect 8.4 command syntax
+	•	Update all scripts using deprecated MASTER/SLAVE terminology
+	•	Archive pre-upgrade backups per your retention policy
+	•	Document the upgrade completion: date, duration, issues encountered, and resolutions
+	•	Close the change ticket with a post-implementation review (PIR)
+
+7. Change Management and Operational Planning
+A major version upgrade is not just a technical task. Proper change management ensures organizational readiness and reduces risk.
+
+7.1 Change Ticket Requirements
+Your change ticket (ServiceNow, Jira, or equivalent) should include:
+	•	Change description: MySQL major version upgrade from 8.0.37 to 8.4 LTS
+	•	Business justification: MySQL 8.0 EOL (April 6, 2026), security patching requirement
+	•	Risk assessment: Major version upgrade with potential for application compatibility issues
+	•	Impact assessment: Expected downtime window, affected applications, affected users
+	•	Rollback plan: Detailed steps with estimated rollback duration
+	•	Go/No-Go criteria: Checklist of conditions that must be met before proceeding
+	•	Communication plan: Who to notify before, during, and after the upgrade
+
+7.2 Go / No-Go Criteria
+Define clear criteria before entering the maintenance window. If any criterion is not met, postpone the upgrade.
+Criterion
+Required State
+Checked By
+Backups completed and verified
+Logical + Physical backup, restore tested
+DBA
+Upgrade Checker errors resolved
+Zero errors, warnings reviewed
+DBA
+pt-upgrade testing completed
+No critical query failures
+DBA
+Staging dry-run successful
+Full procedure validated
+DBA
+Application team sign-off
+App testing passed on staging
+App Team Lead
+Rollback procedure tested
+Restore tested with time estimate
+DBA
+Monitoring dashboards ready
+PMM/Grafana configured for 8.4
+DBA / SRE
+Stakeholders notified
+Change window communicated
+Change Manager
+
+7.3 Maintenance Window Monitoring
+During the cutover window, monitor these metrics in real-time:
+	•	Replication lag (Seconds_Behind_Source) on all replicas
+	•	Active connections count (SHOW PROCESSLIST or performance_schema)
+	•	Error log (tail -f /var/log/mysql/mysqld.log)
+	•	Application error rates from your APM tool
+	•	Query latency (p50, p95, p99) from slow query log or PMM
+	•	InnoDB buffer pool hit ratio and I/O metrics
+
+7.4 Communication Template
+Send notifications at these milestones:
+	•	Pre-upgrade (1 week before): Scheduled maintenance notification with date, time, expected duration, and affected services
+	•	Maintenance start: "Maintenance window has begun. [Service] may experience brief connectivity interruptions."
+	•	Cutover complete: "Database upgrade complete. Services restored. Monitoring for stability."
+	•	All-clear (24-48 hours later): "Upgrade verified stable. Maintenance window closed."
+
+8. Time Estimates and Project Planning
+Actual times vary significantly based on data size, complexity, team experience, and hardware. The estimates below are based on real-world upgrade projects.
+
+8.1 Full Upgrade Project Timeline
+Phase
+Activity
+Estimated Hours
+1. Test Env Setup
+Restore 2 instances from production backup
+15-20
+2. Upgrade Testing
+Slow log collection, pt-upgrade RO/RW tests, analysis, upgrade checker
+20-25
+3. Fix Issues
+Remediate all errors and warnings
+5-15
+4. Staging Dry-Run
+Complete upgrade procedure on staging
+8-12
+5. Architecture Setup
+Restore 8.4 from fresh backup, setup replication, monitoring
+20-25
+6. Cutover
+Cutover planning and execution
+5-10
+7. Post-Upgrade Monitoring
+Monitor production for stability
+8-16
+TOTAL
+
+81-123
+
+8.2 Time Estimates by Data Size
+The most variable component is backup/restore time, which is heavily dependent on data size:
+Database Size
+Logical Backup (mysqldump)
+Logical Restore
+XtraBackup
+XtraBackup Restore
+< 100 GB
+30-60 min
+1-2 hours
+15-30 min
+15-30 min
+100 GB - 1 TB
+1-4 hours
+4-12 hours
+30-90 min
+30-90 min
+1 TB - 5 TB
+4-12 hours
+12-36 hours
+1-4 hours
+1-4 hours
+5 TB - 10 TB+
+12-24+ hours
+24-72+ hours
+4-12+ hours
+4-12+ hours
+
+WARNING: For datasets over 5TB, the rollback window using logical backup restore can exceed 24 hours. This makes the replication-based upgrade approach essential, not optional, for large production databases.
+
+8.3 Simplified Timeline (If Skipping pt-upgrade Testing)
+If hardware constraints prevent a full compatibility test, the project can be reduced to 40-60 hours. This carries significantly higher risk:
+Phase
+Estimated Hours
+Pre-upgrade checks and preparation
+8-12
+Staging dry-run
+5-8
+Upgrade execution
+5-15
+Application testing (customer-led)
+10-20
+Cutover
+5-10
+TOTAL
+33-65
+
+CRITICAL: Skipping pt-upgrade testing means you are accepting the risk that queries may fail or return wrong results in production. For large datasets, this risk includes a rollback that could take 10-20+ hours. This decision must be explicitly acknowledged by stakeholders.
+
+9. Common Pitfalls and Troubleshooting
+
+9.1 Server Refuses to Start: Removed Parameters in my.cnf
+Symptom: mysqld fails to start with 'unknown variable' or 'unknown option' errors.
+Cause: Removed parameters (default_authentication_plugin, master_info_repository, etc.) still present in my.cnf.
+Solution: Remove all parameters listed in Section 2.5. Check the error log for the specific parameter name causing the failure.
+
+9.2 Redo Log Incompatibility
+Symptom: 'This redo log was created with MySQL 8.0.x and it appears logically non empty.'
+Cause: MySQL was shut down with innodb_fast_shutdown = 2 or crashed before upgrade.
+CRITICAL: Do NOT delete redo log files. This causes data loss. You MUST restore from backup.
+Prevention: Always set innodb_fast_shutdown = 0 and perform a clean shutdown before any upgrade.
+
+9.3 Data Directory Deleted on Debian/Ubuntu
+Symptom: /var/lib/mysql is empty or missing after removing MySQL 8.0 packages.
+Cause: Used 'apt-get purge' instead of 'apt-get remove'. Purge removes data directories.
+Solution: Restore from your pre-upgrade backup. Prevention: ALWAYS use 'apt-get remove', never 'apt-get purge'.
+
+9.4 Authentication Failures After Upgrade
+Symptom: Applications or users cannot connect after upgrading to 8.4.
+Cause: mysql_native_password plugin is removed in 8.4.
+Immediate fix: Add mysql_native_password=ON to my.cnf and restart MySQL. Then migrate users per Section 2.7 and 2.8.
+
+9.5 InnoDB Storage Engine Error for System Tables
+Symptom: Error 1726 'Storage engine InnoDB Does Not Support System Tables.'
+Cause: my.cnf forces default_storage_engine = MyISAM. System tables require InnoDB.
+Solution: Remove default_storage_engine = MyISAM from my.cnf, or set it to InnoDB.
+
+9.6 Deprecated Plugin Errors
+Symptom: Errors referencing missing shared libraries (e.g., query_response_time.so).
+Cause: Percona-specific plugins from older versions registered in the data dictionary.
+Solution:
+DELETE FROM mysql.plugin WHERE name = 'QUERY_RESPONSE_TIME';
+DELETE FROM mysql.plugin WHERE name = 'SCALABILITY_METRICS';
+
+9.7 Query Failures from sql_mode Changes
+Symptom: Queries that worked in 8.0 return errors like 'Expression #N of SELECT list is not in GROUP BY clause.'
+Cause: ONLY_FULL_GROUP_BY is enforced in 8.4 default sql_mode.
+Immediate fix: Set sql_mode explicitly in my.cnf to match your 8.0 mode. Long-term fix: Rewrite queries to comply with ONLY_FULL_GROUP_BY.
+
+9.8 View and Routine Warnings
+Symptom: 'View is no more valid to use' warnings in the error log.
+Cause: Views or stored routines reference deprecated syntax or changed objects.
+Solution: Identify affected views with CHECK TABLE, then recreate them.
+
+10. Upgrade Checklist
+Use this checklist to track progress through each phase of the upgrade.
+
+#
+Task
+Owner
+Status
+
+PRE-UPGRADE PREPARATION
+
+
+1
+Take full logical backup (mysqldump/mydumper) and verify restore
+DBA
+
+2
+Take full physical backup (XtraBackup/LVM snapshot) and verify restore
+DBA
+
+3
+Verify sufficient disk space (2.5x datadir free)
+DBA
+
+4
+Run mysqlcheck --all-databases --check for corruption
+DBA
+
+5
+Run MySQL Shell Upgrade Checker targeting 8.4.8
+DBA
+
+6
+Resolve all Upgrade Checker ERRORS
+DBA
+
+7
+Address all Upgrade Checker WARNINGS
+DBA
+
+8
+Identify and migrate mysql_native_password users (or plan transitional)
+DBA
+
+9
+Identify and fix AUTO_INCREMENT on FLOAT/DOUBLE columns
+DBA
+
+10
+Audit my.cnf: remove all deprecated/removed parameters
+DBA
+
+11
+Set explicit values for parameters with changed defaults
+DBA
+
+12
+Review and fix sql_mode-dependent queries (GROUP BY, zero dates)
+DBA / Dev
+
+13
+Audit all scripts/code for MASTER/SLAVE syntax
+DBA / Dev
+
+14
+Upgrade ProxySQL to 2.5.4+ (if applicable)
+DBA
+
+15
+Test auth chain through ProxySQL in staging (if applicable)
+DBA
+
+16
+Verify all tool versions are 8.4-compatible (PMM, XtraBackup, etc.)
+DBA
+
+
+TESTING
+
+
+17
+Set up test environment (8.0 baseline + 8.4 target)
+DBA
+
+18
+Collect slow query log from production (1-3 hours peak)
+DBA
+
+19
+Run pt-upgrade read-only test and analyze results
+DBA
+
+20
+Run pt-upgrade read-write test and analyze results
+DBA
+
+21
+Run application test suites against 8.4 test instance
+App Team
+
+22
+Load test 8.4 instance and compare performance
+DBA / QA
+
+23
+Complete full dry-run upgrade on staging
+DBA
+
+24
+Canary test with partial traffic (optional)
+DBA / SRE
+
+
+CHANGE MANAGEMENT
+
+
+25
+Create and approve change ticket
+DBA / Manager
+
+26
+Schedule maintenance window with stakeholders
+Change Mgr
+
+27
+Send pre-upgrade notification (1 week prior)
+DBA
+
+28
+Confirm Go/No-Go criteria met
+All
+
+
+EXECUTION
+
+
+29
+Take final pre-upgrade backup
+DBA
+
+30
+Execute upgrade (replication-based, rolling, or in-place)
+DBA
+
+31
+Verify MySQL 8.4 starts and runs without errors
+DBA
+
+
+POST-UPGRADE VALIDATION
+
+
+32
+Verify version: SELECT VERSION()
+DBA
+
+33
+Review error log for warnings
+DBA
+
+34
+Run mysqlcheck on all databases
+DBA
+
+35
+Run ANALYZE TABLE on key tables
+DBA
+
+36
+Verify replication health (if applicable)
+DBA
+
+37
+Run application smoke tests
+App Team
+
+38
+Monitor performance for 24-48 hours
+DBA / SRE
+
+39
+Update monitoring, scripts, and documentation
+DBA
+
+40
+Archive pre-upgrade backups per retention policy
+DBA
+
+41
+Close change ticket with post-implementation review
+DBA
+
+
+11. References and Resources
+
+	•	MySQL 8.4 Release Notes: https://dev.mysql.com/doc/relnotes/mysql/8.4/en/
+	•	MySQL 8.4 What Is New: https://dev.mysql.com/doc/refman/8.4/en/mysql-nutshell.html
+	•	MySQL Shell Upgrade Checker: https://dev.mysql.com/doc/mysql-shell/8.4/en/mysql-shell-utilities-upgrade.html
+	•	Percona Toolkit (pt-upgrade): https://docs.percona.com/percona-toolkit/pt-upgrade.html
+	•	Percona Server for MySQL 8.4 Documentation: https://docs.percona.com/percona-server/8.4/
+	•	ProxySQL Documentation: https://proxysql.com/documentation/
+	•	MySQL Upgrade Masterclass: 8.0 to 8.4 LTS by Sri Sakthivel M.D.
+	•	Percona Support Knowledge Base: MySQL Upgrades articles
+
+
+End of Document

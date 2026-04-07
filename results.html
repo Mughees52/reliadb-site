@@ -36,6 +36,18 @@ permalink: /results.html
       gap: 24px;
       text-align: center;
     }
+    .metric-item {
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      border: 1px solid #e3ebf3;
+      border-radius: 14px;
+      padding: 18px 14px;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .metric-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 28px rgba(26, 82, 118, 0.12);
+    }
     .metric-item .metric-num {
       font-size: 2.5rem;
       font-weight: 800;
@@ -54,6 +66,12 @@ permalink: /results.html
       max-width: 1000px;
       margin: 0 auto;
       padding: 0 24px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      border: 1px solid #e3ebf3;
+      border-radius: 18px;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+      padding-top: 32px;
+      padding-bottom: 32px;
     }
 
     .case-header {
@@ -86,12 +104,13 @@ permalink: /results.html
       flex-wrap: wrap;
     }
     .result-pill {
-      background: #1A5276;
+      background: linear-gradient(135deg, #1A5276 0%, #2980B9 100%);
       color: #fff;
       border-radius: 12px;
       padding: 16px 24px;
       text-align: center;
       min-width: 120px;
+      box-shadow: 0 8px 18px rgba(26, 82, 118, 0.25);
     }
     .result-pill .pill-num { font-size: 1.6rem; font-weight: 800; display: block; }
     .result-pill .pill-label { font-size: 0.78rem; opacity: 0.85; }
@@ -111,6 +130,12 @@ permalink: /results.html
       margin-bottom: 12px;
     }
     .case-block p { color: #555; line-height: 1.75; margin-bottom: 12px; font-size: 0.97rem; }
+    .case-block {
+      background: #fff;
+      border: 1px solid #e7edf4;
+      border-radius: 12px;
+      padding: 18px;
+    }
 
     .timeline {
       list-style: none;
@@ -125,7 +150,7 @@ permalink: /results.html
       top: 0;
       bottom: 0;
       width: 2px;
-      background: #dde;
+      background: linear-gradient(180deg, #c9d9e8 0%, #9fc0dd 100%);
     }
     .timeline li {
       position: relative;
@@ -150,14 +175,15 @@ permalink: /results.html
 
     .quote-pullout {
       grid-column: 1 / -1;
-      background: #1A5276;
+      background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
       color: #fff;
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 32px 40px;
       font-size: 1.1rem;
       font-style: italic;
       line-height: 1.7;
       position: relative;
+      box-shadow: 0 14px 28px rgba(20, 67, 96, 0.26);
     }
     .quote-pullout::before {
       content: '\201C';
@@ -180,9 +206,10 @@ permalink: /results.html
       background: #EAF2F8;
       color: #1A5276;
       font-size: 0.8rem;
-      font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 4px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #d5e4f1;
     }
 
     .cta-bottom {
@@ -198,6 +225,7 @@ permalink: /results.html
       .metrics-grid { grid-template-columns: repeat(2, 1fr); }
       .case-body { grid-template-columns: 1fr; }
       .quote-pullout { grid-column: auto; }
+      .case-inner { padding-top: 24px; padding-bottom: 24px; }
     }
     @media (max-width: 480px) {
       .metrics-grid { grid-template-columns: 1fr 1fr; }

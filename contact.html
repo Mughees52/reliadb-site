@@ -26,6 +26,11 @@ permalink: /contact.html
       font-weight: 800;
     }
     .contact-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
+    .contact-hero h1,
+    .contact-hero p {
+      animation: fadeUp .6s ease both;
+    }
+    .contact-hero p { animation-delay: .12s; }
 
     .contact-main {
       padding: 80px 0;
@@ -51,6 +56,15 @@ permalink: /contact.html
       gap: 14px;
       padding: 20px 0;
       border-bottom: 1px solid #e5e7eb;
+      transition: transform .2s ease, box-shadow .24s ease, border-color .2s ease;
+      border-radius: 10px;
+    }
+    .contact-method:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px rgba(26,82,118,0.10);
+      border-color: #d9e4ef;
+      padding-left: 10px;
+      padding-right: 10px;
     }
     .contact-method:last-of-type { border-bottom: none; }
     .contact-icon {
@@ -74,6 +88,11 @@ permalink: /contact.html
       border-radius: 10px;
       padding: 16px 20px;
       margin-top: 24px;
+      transition: transform .2s ease, box-shadow .24s ease;
+    }
+    .tz-note:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 20px rgba(41,128,185,0.14);
     }
     .tz-note h5 { font-size: 0.83rem; font-weight: 700; color: #1A5276; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
     .tz-note p { font-size: 0.88rem; color: #555; line-height: 1.6; margin: 0; }
@@ -84,6 +103,11 @@ permalink: /contact.html
       border-radius: 16px;
       padding: 40px;
       box-shadow: 0 4px 24px rgba(26,82,118,0.08);
+      transition: transform .22s ease, box-shadow .25s ease;
+    }
+    .contact-form-wrap:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px rgba(26,82,118,0.14);
     }
     .contact-form-wrap h2 { font-size: 1.3rem; color: #1a1a2e; margin-bottom: 4px; }
     .contact-form-wrap .form-sub { font-size: 0.9rem; color: #888; margin-bottom: 28px; }
@@ -117,6 +141,11 @@ permalink: /contact.html
       border-color: #2980B9;
     }
     .form-group textarea { height: 120px; resize: vertical; }
+    .form-group input:hover,
+    .form-group select:hover,
+    .form-group textarea:hover {
+      border-color: #bfd4e8;
+    }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
     .form-submit {
@@ -173,6 +202,53 @@ permalink: /contact.html
     }
     .step-item h4 { font-size: 1rem; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
     .step-item p { font-size: 0.88rem; color: #666; line-height: 1.6; margin: 0; }
+    .step-item {
+      background: #fff;
+      border: 1px solid #e6ebf2;
+      border-radius: 12px;
+      padding: 20px 18px;
+      box-shadow: 0 8px 20px rgba(15,23,42,0.05);
+      transition: transform .22s ease, box-shadow .24s ease, border-color .2s ease;
+    }
+    .step-item:hover {
+      transform: translateY(-3px);
+      border-color: #d5e1ee;
+      box-shadow: 0 14px 26px rgba(26,82,118,0.12);
+    }
+
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity .55s ease, transform .55s cubic-bezier(.2,.65,.2,1);
+      will-change: transform, opacity;
+    }
+    .reveal-on-scroll.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-stagger-1 { transition-delay: .08s; }
+    .reveal-stagger-2 { transition-delay: .16s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .contact-hero h1,
+      .contact-hero p,
+      .reveal-on-scroll,
+      .contact-method,
+      .tz-note,
+      .contact-form-wrap,
+      .step-item,
+      .form-submit {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+        opacity: 1 !important;
+      }
+    }
 
     @media (max-width: 768px) {
       .contact-grid { grid-template-columns: 1fr; }
@@ -248,7 +324,7 @@ permalink: /contact.html
           </div>
           <div class="contact-method-text">
             <h4>LinkedIn</h4>
-            <a href="https://linkedin.com/in/mughees-reliadb" target="_blank" rel="noopener">linkedin.com/in/mughees-reliadb</a>
+            <a href="https://www.linkedin.com/company/reliadb" target="_blank" rel="noopener">linkedin.com/company/reliadb</a>
             <div class="detail">Connect and message our team directly</div>
           </div>
         </div>
@@ -358,5 +434,36 @@ permalink: /contact.html
   {% include "footer.njk" %}
 
   <script src="js/main.js"></script>
+  <script>
+    (function () {
+      const targets = [
+        ...document.querySelectorAll('.contact-info h2, .contact-info .sub, .contact-method, .tz-note'),
+        ...document.querySelectorAll('.contact-form-wrap'),
+        ...document.querySelectorAll('.what-inner h2, .what-inner .sub, .step-item')
+      ];
+
+      targets.forEach((el, index) => {
+        el.classList.add('reveal-on-scroll');
+        if (index % 3 === 1) el.classList.add('reveal-stagger-1');
+        if (index % 3 === 2) el.classList.add('reveal-stagger-2');
+      });
+
+      if (!('IntersectionObserver' in window)) {
+        targets.forEach(el => el.classList.add('is-visible'));
+        return;
+      }
+
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
+
+      targets.forEach(el => io.observe(el));
+    })();
+  </script>
 </body>
 </html>

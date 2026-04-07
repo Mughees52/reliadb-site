@@ -32,6 +32,42 @@
     .post-body pre { background: #1a1a2e; color: #e8f4f8; padding: 20px 24px; border-radius: 10px; overflow-x: auto; margin-bottom: 24px; font-size: 0.88rem; line-height: 1.65; }
     .post-body pre code { background: none; color: inherit; padding: 0; }
     .post-body blockquote { border-left: 4px solid #2980B9; margin: 24px 0; padding: 12px 20px; background: #f0f7ff; border-radius: 0 8px 8px 0; color: #444; font-style: italic; }
+    .post-body table { width: 100%; border-collapse: collapse; margin: 18px 0 24px; font-size: 0.92rem; }
+    .post-body th { background: #1A5276; color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+    .post-body td { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; color: #444; }
+    .post-body tr:nth-child(even) { background: #f8fafc; }
+    .post-body .callout { background: #EAF2F8; border-left: 4px solid #1A5276; border-radius: 0 10px 10px 0; padding: 18px 22px; margin: 24px 0; }
+    .post-body .callout strong { color: #1A5276; }
+    .post-body .callout p { margin: 0; color: #444; }
+    .post-body .callout-warning { background: #FFF3E0; border-left: 4px solid #E67E22; border-radius: 0 10px 10px 0; padding: 18px 22px; margin: 24px 0; }
+    .post-body .callout-warning strong { color: #E67E22; }
+    .post-body .callout-warning p { margin: 0; color: #444; }
+    .post-body .callout-danger { background: #FDEDEC; border-left: 4px solid #C0392B; border-radius: 0 10px 10px 0; padding: 18px 22px; margin: 24px 0; }
+    .post-body .callout-danger strong { color: #C0392B; }
+    .post-body .callout-danger p { margin: 0; color: #444; }
+    .post-body .series-nav { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; padding: 22px; margin: 32px 0; }
+    .post-body .series-nav h4 { font-size: 0.95rem; color: #1a1a2e; margin-bottom: 12px; }
+    .post-body .series-nav ol { padding-left: 20px; margin: 0; }
+    .post-body .series-nav li { font-size: 0.9rem; margin-bottom: 4px; }
+    .post-body .series-nav a { color: #2980B9; text-decoration: none; }
+    .post-body .series-nav .current { font-weight: 700; color: #1A5276; }
+    .post-body .checklist { list-style: none; padding-left: 0; }
+    .post-body .checklist li { padding: 6px 0 6px 28px; position: relative; }
+    .post-body .checklist li::before { content: "\2610"; position: absolute; left: 0; color: #1A5276; font-size: 1.1em; }
+    .post-body figure { margin: 24px 0; text-align: center; }
+    .post-body figure img { max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .post-body figcaption { font-size: 0.85rem; color: #777; margin-top: 8px; font-style: italic; }
+    .post-cta-inline { background: #1A5276; color: #fff; border-radius: 12px; padding: 28px 32px; margin: 40px 0; }
+    .post-cta-inline h4 { font-size: 1.1rem; margin-bottom: 8px; color: #fff; }
+    .post-cta-inline p { font-size: 0.92rem; color: rgba(255,255,255,0.82); margin-bottom: 16px; }
+    .post-cta-inline .btn { background: #E67E22; border-color: #E67E22; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block; }
+    .post-body .related-posts { margin-top: 48px; }
+    .post-body .related-posts h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; color: #1a1a2e; }
+    .related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .related-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; text-decoration: none; transition: box-shadow 0.15s; display: block; }
+    .related-card:hover { box-shadow: 0 4px 16px rgba(26,82,118,0.08); }
+    .related-card .rc-cat { font-size: 0.72rem; font-weight: 700; color: #2980B9; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .related-card h4 { font-size: 0.9rem; color: #1a1a2e; line-height: 1.4; margin: 0; }
     .author-box { display: flex; align-items: flex-start; gap: 16px; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-top: 48px; }
     .author-avatar { width: 56px; height: 56px; border-radius: 50%; background: #1A5276; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 800; color: #fff; flex-shrink: 0; }
     .author-info h4 { font-size: 1rem; color: #1a1a2e; margin-bottom: 4px; }
@@ -47,7 +83,7 @@
     .sidebar-cta-box h3 { color: #fff; border-bottom-color: rgba(255,255,255,0.15); }
     .sidebar-cta-box p { font-size: 0.85rem; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 14px; }
     .sidebar-cta-box .btn { background: #E67E22; border-color: #E67E22; font-size: 0.85rem; padding: 10px 16px; }
-    @media (max-width: 880px) { .post-layout { grid-template-columns: 1fr; } .post-sidebar { position: static; } }
+    @media (max-width: 880px) { .post-layout { grid-template-columns: 1fr; } .post-sidebar { position: static; } .related-grid { grid-template-columns: 1fr; } .post-body table { font-size: 0.82rem; } .post-body th, .post-body td { padding: 8px 10px; } }
   </style>
 </head>
 <body>
