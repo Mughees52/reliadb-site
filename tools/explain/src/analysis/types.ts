@@ -33,16 +33,33 @@ export interface IndexRecommendation {
   ddl: string
 }
 
+export interface QueryRewrite {
+  title: string
+  description: string
+  original: string
+  rewritten: string
+  reason: string
+}
+
+export interface SchemaIssue {
+  table: string
+  column: string
+  issue: string
+  ddl: string
+}
+
 export interface AnalysisResult {
   issues: Issue[]
   indexRecommendations: IndexRecommendation[]
   queryHints: QueryHint[]
+  queryRewrites: QueryRewrite[]
+  schemaIssues: SchemaIssue[]
   summary: {
     critical: number
     warnings: number
     info: number
     good: number
-    score: number // 0-100 performance score
+    score: number
   }
 }
 

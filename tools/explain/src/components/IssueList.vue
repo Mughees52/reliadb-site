@@ -6,7 +6,7 @@ defineProps<{
   analysis: AnalysisResult
 }>()
 
-const activeTab = ref<'issues' | 'indexes' | 'hints'>('issues')
+const activeTab = ref<'issues' | 'indexes' | 'hints' | 'rewrites' | 'schema'>('issues')
 const copiedDDL = ref('')
 
 function severityDot(s: Issue['severity']): string {
@@ -38,7 +38,13 @@ function copyDDL(ddl: string) {
         Indexes <span class="il-count">({{ analysis.indexRecommendations.length }})</span>
       </button>
       <button v-if="analysis.queryHints.length" @click="activeTab = 'hints'" :class="activeTab === 'hints' ? 'tab-active' : 'tab-inactive'" class="il-tab">
-        Query Hints <span class="il-count">({{ analysis.queryHints.length }})</span>
+        Hints <span class="il-count">({{ analysis.queryHints.length }})</span>
+      </button>
+      <button v-if="analysis.queryRewrites.length" @click="activeTab = 'rewrites'" :class="activeTab === 'rewrites' ? 'tab-active' : 'tab-inactive'" class="il-tab">
+        Rewrites <span class="il-count">({{ analysis.queryRewrites.length }})</span>
+      </button>
+      <button v-if="analysis.schemaIssues.length" @click="activeTab = 'schema'" :class="activeTab === 'schema' ? 'tab-active' : 'tab-inactive'" class="il-tab">
+        Schema <span class="il-count">({{ analysis.schemaIssues.length }})</span>
       </button>
     </div>
 
@@ -102,6 +108,41 @@ function copyDDL(ddl: string) {
         <a v-if="hint.docLink" :href="hint.docLink" target="_blank" rel="noopener" class="il-link">MySQL Docs &rarr;</a>
       </div>
     </div>
+
+    <!-- Query Rewrites Tab -->
+    <div v-show="activeTab === 'rewrites'" class="il-body">
+      <div v-for="(rw, i) in analysis.queryRewrites" :key="i" class="il-item">
+        <div class="il-item-title">{{ rw.title }}</div>
+        <p class="il-item-desc">{{ rw.description }}</p>
+        <div class="il-rewrite-section">
+          <div class="il-rewrite-label">Original:</div>
+          <code class="il-ddl il-rewrite-code">{{ rw.original }}</code>
+        </div>
+        <div class="il-rewrite-section">
+          <div class="il-rewrite-label il-rewrite-label-new">Rewrite:</div>
+          <div class="il-ddl-wrap">
+            <code class="il-ddl il-rewrite-new">{{ rw.rewritten }}</code>
+            <button @click="copyDDL(rw.rewritten)" class="il-copy">{{ copiedDDL === rw.rewritten ? 'Copied!' : 'Copy' }}</button>
+          </div>
+        </div>
+        <p class="il-impact">{{ rw.reason }}</p>
+      </div>
+    </div>
+
+    <!-- Schema Issues Tab -->
+    <div v-show="activeTab === 'schema'" class="il-body">
+      <div v-for="(si, i) in analysis.schemaIssues" :key="i" class="il-item">
+        <div class="il-item-title-row">
+          <span class="il-item-title">{{ si.table }}.{{ si.column }}</span>
+          <span class="badge-warning" style="font-size:0.65rem;text-transform:uppercase">nullable</span>
+        </div>
+        <p class="il-item-desc">{{ si.issue }}</p>
+        <div class="il-ddl-wrap">
+          <code class="il-ddl">{{ si.ddl }}</code>
+          <button @click="copyDDL(si.ddl)" class="il-copy">{{ copiedDDL === si.ddl ? 'Copied!' : 'Copy' }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -136,4 +177,10 @@ function copyDDL(ddl: string) {
 .il-impact { font-size: 0.75rem; color: var(--text-lt); font-style: italic; margin-top: 6px; }
 .il-link { font-size: 0.75rem; color: var(--accent); display: inline-block; margin-top: 4px; }
 .il-link:hover { text-decoration: underline; }
+.il-rewrite-section { margin-top: 8px; }
+.il-rewrite-label { font-size: 0.7rem; font-weight: 700; color: var(--text-lt); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+.il-rewrite-label-new { color: #1e8449; }
+.il-rewrite-code { max-height: 80px; font-size: 0.72rem; background: #f4f6f8; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+.il-rewrite-new { background: #1a1a2e; color: #27ae60; white-space: pre-wrap; word-break: break-all; }
+.il-tabs { flex-wrap: wrap; }
 </style>
