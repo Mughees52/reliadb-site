@@ -598,6 +598,70 @@ const efficientRangeScan: RuleFn = (node) => {
 }
 
 // ============================================================
+// MySQL 8.0+ SPECIFIC RULES
+// ============================================================
+
+const hashJoinDetected: RuleFn = (node) => {
+  if (!node.extra?.some(e => /hash join/i.test(e))) return null
+  const rows = node.actualRows ?? node.estimatedRows
+
+  return issue(node, rows > 10000 ? 'warning' : 'info', 'join',
+    `Hash join${node.condition ? ` on (${node.condition.slice(0, 50)})` : ''}`,
+    `MySQL is using a hash join — builds a hash table from one input and probes it with the other. ${rows > 10000 ? 'With ' + rows.toLocaleString() + ' rows, this uses significant memory.' : 'Efficient for this data size.'}`,
+    rows > 10000
+      ? `Consider adding an index on the join column to enable a nested loop join, which may use less memory.`
+      : `Hash joins are efficient when no suitable index exists. Adding an index would allow a nested loop join instead.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/hash-joins.html' },
+  )
+}
+
+const windowFunctionDetected: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Window function/i.test(e))) return null
+
+  const isBuffered = node.operation.toLowerCase().includes('buffering')
+  return issue(node, isBuffered ? 'warning' : 'info', 'sort',
+    `Window function${isBuffered ? ' (buffered)' : ''}`,
+    `${isBuffered ? 'This window function requires row buffering — all rows must be stored before processing. Memory-intensive for large result sets.' : 'Window function processing. Rows are streamed through the window calculation.'}`,
+    isBuffered
+      ? `Consider reducing the result set with WHERE filters before the window function, or use LIMIT on the outer query.`
+      : `Acceptable — streaming window functions process rows efficiently.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/window-functions-usage.html' },
+  )
+}
+
+const zeroRowsDetected: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Impossible WHERE/i.test(e))) return null
+
+  return issue(node, 'warning', 'general',
+    `Zero rows — impossible WHERE`,
+    `The optimizer determined this query can never return rows. The WHERE condition contradicts itself or references a const table with no matching row.`,
+    `Check the WHERE conditions for logical errors, contradictory predicates, or empty const tables.`,
+  )
+}
+
+const skipScanUsed: RuleFn = (node) => {
+  if (!node.extra?.some(e => /skip scan/i.test(e))) return null
+
+  return issue(node, 'good', 'index',
+    `Index skip scan on \`${node.table ?? 'unknown'}\``,
+    `MySQL is using skip scan — scanning distinct values of the first index column and applying the range condition on later columns. This works when the first column has few distinct values.`,
+    `Good — skip scan avoids a full table scan when the leading index column isn't in the WHERE.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/range-optimization.html#range-access-skip-scan' },
+  )
+}
+
+const antijoinUsed: RuleFn = (node) => {
+  if (!node.extra?.some(e => /antijoin/i.test(e))) return null
+
+  return issue(node, 'good', 'join',
+    `Antijoin optimization`,
+    `MySQL converted a NOT IN / NOT EXISTS subquery into an efficient antijoin. This avoids re-executing the subquery for each outer row.`,
+    `Good — antijoin is the optimal execution strategy for this pattern.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/subquery-optimization-with-exists.html' },
+  )
+}
+
+// ============================================================
 // MARIADB-SPECIFIC RULES
 // ============================================================
 
@@ -724,12 +788,16 @@ const allRules: RuleFn[] = [
   smallTableScanOk,
   coveringIndexScan,
   indexMergeUsed,
+  // MySQL 8.0+ (3)
+  hashJoinDetected,
+  windowFunctionDetected,
+  zeroRowsDetected,
   // MariaDB-specific (7)
   mariadbActualVsEstimate,
   mariadbLowRFiltered,
   mariadbDuplicateWeedout,
   mariadbHashJoin,
-  // Good (7)
+  // Good (9)
   usingCoveringIndex,
   optimalAccess,
   indexConditionPushdown,
@@ -737,6 +805,8 @@ const allRules: RuleFn[] = [
   rowidFilterActive,
   mariadbFirstMatch,
   mariadbLooseScan,
+  skipScanUsed,
+  antijoinUsed,
 ]
 
 export function runRules(node: PlanNode, root: PlanNode, stats: PlanStats): Issue[] {
