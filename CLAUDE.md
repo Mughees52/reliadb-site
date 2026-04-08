@@ -50,7 +50,7 @@ Key facts:
 - **Supports MariaDB**: ANALYZE table format (r_rows/r_filtered), ANALYZE FORMAT=JSON (r_total_time_ms, filesort.temporary_table nesting), compound access types (eq_ref|filter)
 - **Handles pasted terminal output**: auto-strips SQL prompts (`-> SELECT`, `-> GROUP BY`), MySQL/MariaDB result wrappers (`| ... |` borders), `+---+` borders, `N rows in set` lines
 - **Analysis engine (all phases complete)**:
-  - 44 detection rules (8 critical, 20 warning, 5 info, 7 good, 4 MariaDB-specific)
+  - 49 detection rules (8 critical, 20 warning, 5 info, 7 good, 4 MariaDB-specific, 5 MySQL 8.0+ specific)
   - 24 SQL query hint patterns
   - 7 query rewrite generators (YEAR→range, subquery→JOIN, NOT IN→LEFT JOIN, GROUP BY fix, SELECT *, OFFSET→keyset, RAND())
   - DDL parser with FK-without-index, redundant index, NOT NULL suggestions
@@ -163,6 +163,7 @@ Push to `main` → Netlify auto-builds and deploys.
 - **Phase 2**: Complete — DDL parser, 37 rules, PEV2 viz, cost chart, comparison, query-aware index advisor
 - **Phase 3**: Complete — query rewrite engine, NOT NULL suggestions, index deduplication
 - **MariaDB**: Complete — ANALYZE table + JSON parsing, 7 MariaDB rules, wrapper detection
+- **MySQL 8.4 tree enhancements**: Complete — 40+ node types (hash joins, window functions, CTEs, skip scans, antijoins, index merge, etc.)
 - **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, index impact simulator, embeddable widget, PWA, launch blog post (LAST)
 
 ### Brand
