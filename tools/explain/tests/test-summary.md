@@ -9,7 +9,7 @@
 | Metric | Count |
 |--------|-------|
 | Issues detected | 102 |
-| Index recommendations | 42 |
+| Index recommendations | 53 |
 | Impact simulations | 23 |
 | Query hints | 40 |
 | Query rewrites | 8 |
@@ -24,11 +24,11 @@
 | 3 | Full scan with LIKE prefix pattern | 77 | 2 | 1 | 1 | 0 | 0 |
 | 4 | Full scan on large table no WHERE | 77 | 2 | 0 | 0 | 1 | 1 |
 | 5 | Filter on non-indexed column | 95 | 1 | 1 | 0 | 0 | 0 |
-| 6 | Simple two-table join | 97 | 2 | 0 | 0 | 0 | 0 |
-| 7 | Three-table join with aggregation | 82 | 1 | 0 | 0 | 1 | 0 |
+| 6 | Simple two-table join | 97 | 2 | 1 | 0 | 0 | 0 |
+| 7 | Three-table join with aggregation | 82 | 1 | 2 | 0 | 1 | 0 |
 | 8 | Join with filter on both tables | 97 | 2 | 2 | 1 | 0 | 0 |
 | 9 | Left join with NULL check | 94 | 4 | 0 | 0 | 0 | 0 |
-| 10 | Multi-join order pipeline | 79 | 3 | 0 | 0 | 1 | 0 |
+| 10 | Multi-join order pipeline | 79 | 3 | 3 | 0 | 1 | 0 |
 | 11 | GROUP BY without composite index | 82 | 1 | 1 | 0 | 1 | 0 |
 | 12 | GROUP BY with HAVING | 90 | 2 | 1 | 1 | 2 | 0 |
 | 13 | GROUP BY on non-indexed column | 82 | 1 | 1 | 0 | 1 | 0 |
@@ -44,16 +44,16 @@
 | 23 | NOT IN subquery (anti-join pattern) | 86 | 5 | 1 | 1 | 3 | 1 |
 | 24 | Scalar subquery in SELECT | 97 | 2 | 0 | 0 | 1 | 0 |
 | 25 | EXISTS subquery | 72 | 3 | 1 | 1 | 1 | 0 |
-| 26 | Join needing covering index | 82 | 1 | 1 | 0 | 1 | 0 |
+| 26 | Join needing covering index | 82 | 1 | 2 | 0 | 1 | 0 |
 | 27 | Lookup with extra columns | 95 | 1 | 1 | 0 | 1 | 0 |
 | 28 | Count with filter — covering candidate | 100 | 0 | 1 | 0 | 1 | 0 |
 | 29 | Date range scan | 77 | 2 | 0 | 0 | 0 | 0 |
 | 30 | BETWEEN on non-indexed column | 77 | 2 | 1 | 1 | 0 | 0 |
 | 31 | Range + equality composite | 77 | 2 | 2 | 1 | 0 | 0 |
-| 32 | SELECT * with join | 97 | 2 | 0 | 0 | 1 | 1 |
+| 32 | SELECT * with join | 97 | 2 | 1 | 0 | 1 | 1 |
 | 33 | SELECT * from large table with filter | 77 | 2 | 2 | 2 | 1 | 1 |
 | 34 | Revenue by country — full pipeline | 79 | 3 | 2 | 0 | 1 | 0 |
-| 35 | Top products by review score | 82 | 1 | 1 | 0 | 2 | 0 |
+| 35 | Top products by review score | 82 | 1 | 2 | 0 | 2 | 0 |
 | 36 | Customer lifetime value with tiers | 76 | 3 | 1 | 0 | 3 | 0 |
 | 37 | Inventory health — low stock products | 90 | 2 | 1 | 1 | 0 | 0 |
 | 38 | Order fulfillment time analysis | 82 | 1 | 1 | 1 | 0 | 0 |
@@ -66,7 +66,7 @@
 | 45 | UNION vs UNION ALL | 95 | 1 | 1 | 0 | 1 | 0 |
 | 46 | Bad estimate — skewed data distribution | 95 | 1 | 1 | 0 | 0 | 0 |
 | 47 | Join with filtered rows — estimate test | 97 | 2 | 2 | 1 | 0 | 0 |
-| 48 | Deeply nested join — 5 tables | 97 | 2 | 1 | 0 | 0 | 0 |
+| 48 | Deeply nested join — 5 tables | 97 | 2 | 3 | 0 | 0 | 0 |
 | 49 | Self-referencing category tree | 77 | 2 | 0 | 0 | 0 | 0 |
 | 50 | Cross-table aggregation with CASE | 82 | 1 | 1 | 1 | 0 | 0 |
 
@@ -88,13 +88,31 @@
 - **products**(brand, is_active) — high
   Composite index: WHERE on `brand`, `is_active` — eliminates scan and avoids temporary table/filesort
 
+### Q6: Simple two-table join
+- **orders**(status, customer_id) — high
+  Composite index: WHERE on `status` + JOIN on `customer_id` — eliminates scan and avoids temporary table/filesort
+
+### Q7: Three-table join with aggregation
+- **payments**(status, order_id) — high
+  Composite index: WHERE on `status` + JOIN on `order_id` — eliminates scan and avoids temporary table/filesort
+- **orders**(customer_id, total_amount) — high
+  Composite index: JOIN on `customer_id` + covers `id`, `total_amount` for index-only scan — eliminates scan and avoids temporary table/filesort
+
 ### Q8: Join with filter on both tables
 - **orders**(quantity, id, status) — high
   `idx_status` reads 24.7K rows — a composite covering index (`quantity`, `id`, `status`) would be more selective and avoid table lookups
   **Impact**: index-only scan
   - Index lookup + table data read (random I/O) → Index-only scan (no table access)
-- **order_items**(quantity) — high
-  Composite index: WHERE on `quantity` — eliminates scan and avoids temporary table/filesort
+- **order_items**(quantity, order_id) — high
+  Composite index: WHERE on `quantity` + JOIN on `order_id` — eliminates scan and avoids temporary table/filesort
+
+### Q10: Multi-join order pipeline
+- **orders**(status, customer_id) — high
+  Composite index: WHERE on `status` + JOIN on `customer_id` — eliminates scan and avoids temporary table/filesort
+- **payments**(status, order_id) — high
+  Composite index: WHERE on `status` + JOIN on `order_id` — eliminates scan and avoids temporary table/filesort
+- **shipping_events**(order_id, event_at) — high
+  Composite index: JOIN on `order_id` + ORDER BY on `event_at` — eliminates scan and avoids temporary table/filesort
 
 ### Q11: GROUP BY without composite index
 - **orders**(status, customer_id, total_amount) — high
@@ -112,11 +130,10 @@
   Composite index: WHERE on `status` + GROUP BY on `country_code` — eliminates scan and avoids temporary table/filesort
 
 ### Q14: GROUP BY with ORDER BY different column
-- **products**(is_active, brand, inventory_value) — high
-  Composite index: WHERE on `is_active` + GROUP BY on `brand` + ORDER BY on `inventory_value` — eliminates scan and avoids temporary table/filesort
-  **Impact**: eliminates full scan, eliminates filesort
+- **products**(is_active, brand) — high
+  Composite index: WHERE on `is_active` + GROUP BY on `brand` — eliminates scan and avoids temporary table/filesort
+  **Impact**: eliminates full scan
   - Full table scan (index) → Index lookup (ref)
-  - Filesort required (rows sorted in memory/disk) → Index delivers rows in sorted order
 
 ### Q16: ORDER BY on non-indexed column
 - **customers**(status, created_at) — high
@@ -132,11 +149,10 @@
   - Filesort required (rows sorted in memory/disk) → Index delivers rows in sorted order
 
 ### Q18: ORDER BY RAND()
-- **products**(is_active, RAND) — high
-  Composite index: WHERE on `is_active` + ORDER BY on `RAND` — eliminates scan and avoids temporary table/filesort
-  **Impact**: eliminates full scan, eliminates filesort
+- **products**(is_active) — high
+  Column `is_active` used in filter/join on `products` has no index
+  **Impact**: eliminates full scan
   - Full table scan (ALL) → Index lookup (ref)
-  - Filesort required (rows sorted in memory/disk) → Index delivers rows in sorted order
 
 ### Q19: Multi-column ORDER BY
 - **orders**(shipping_country, status) — high
@@ -159,15 +175,16 @@
   - Full table scan (index) → Index lookup (range)
 
 ### Q25: EXISTS subquery
-- **products**(rating, id, name) — high
-  Covering index for `products` — filter on `rating` + covers `id`, `name` without table lookup
-  **Impact**: eliminates full scan, index-only scan
+- **products**(rating) — high
+  Full table scan on `p` (6,960 rows) with filter on `rating`
+  **Impact**: eliminates full scan
   - Full table scan (ALL) → Index lookup (ref)
-  - Index lookup + table data read (random I/O) → Index-only scan (no table access)
 
 ### Q26: Join needing covering index
 - **orders**(status, ordered_at) — high
   Composite index: WHERE on `status` + GROUP BY on `ordered_at` — eliminates scan and avoids temporary table/filesort
+- **order_items**(order_id, line_total) — high
+  Composite index: JOIN on `order_id` + covers `line_total` for index-only scan — eliminates scan and avoids temporary table/filesort
 
 ### Q27: Lookup with extra columns
 - **inventory_log**(warehouse_id, reason, product_id, change_qty) — high
@@ -191,6 +208,10 @@
 - **payments**(amount) — medium
   Filesort detected — consider a composite index matching WHERE + ORDER BY columns
 
+### Q32: SELECT * with join
+- **orders**(status, customer_id) — high
+  Composite index: WHERE on `status` + JOIN on `customer_id` — eliminates scan and avoids temporary table/filesort
+
 ### Q33: SELECT * from large table with filter
 - **shipping_events**(carrier, event_type) — high
   Full table scan on `shipping_events` (4,286 rows) with filter on `carrier`, `event_type`
@@ -202,14 +223,16 @@
   - Full table scan (ALL) → Index lookup (ref)
 
 ### Q34: Revenue by country — full pipeline
-- **payments**(status, amount) — high
-  Composite index: WHERE on `status` + covers `amount` for index-only scan — eliminates scan and avoids temporary table/filesort
+- **payments**(status, order_id, amount) — high
+  Composite index: WHERE on `status` + JOIN on `order_id` + covers `amount` for index-only scan — eliminates scan and avoids temporary table/filesort
 - **orders**(ordered_at, shipping_country) — high
   Composite index: WHERE on `ordered_at` + GROUP BY on `shipping_country` + covers `id` for index-only scan — eliminates scan and avoids temporary table/filesort
 
 ### Q35: Top products by review score
 - **products**(is_active, name, brand) — high
   Composite index: WHERE on `is_active` + GROUP BY on `name`, `brand` — eliminates scan and avoids temporary table/filesort
+- **reviews**(product_id, rating) — high
+  Composite index: JOIN on `product_id` + covers `rating`, `id` for index-only scan — eliminates scan and avoids temporary table/filesort
 
 ### Q36: Customer lifetime value with tiers
 - **customers**(tier) — high
@@ -228,12 +251,12 @@
   - Filesort required (rows sorted in memory/disk) → Index delivers rows in sorted order
 
 ### Q39: Abandoned cart pattern — pending old orders
-- **orders**(status, ordered_at) — high
-  Composite index: WHERE on `status`, `ordered_at` + ORDER BY on `ordered_at` — eliminates scan and avoids temporary table/filesort
+- **orders**(status, ordered_at, customer_id) — high
+  Composite index: WHERE on `status`, `ordered_at` + JOIN on `customer_id` + ORDER BY on `ordered_at` — eliminates scan and avoids temporary table/filesort
 
 ### Q40: Payment reconciliation — mismatched amounts
-- **payments**(status, amount) — high
-  Composite index: WHERE on `status` + covers `amount` for index-only scan — eliminates scan and avoids temporary table/filesort
+- **payments**(status, order_id, amount) — high
+  Composite index: WHERE on `status` + JOIN on `order_id` + covers `amount` for index-only scan — eliminates scan and avoids temporary table/filesort
 - **orders**(total_amount) — high
   Composite index: GROUP BY on `total_amount` — eliminates scan and avoids temporary table/filesort
 
@@ -267,12 +290,16 @@
   `idx_status` reads 1,054 rows — a composite covering index (`discount_pct`, `id`, `status`) would be more selective and avoid table lookups
   **Impact**: index-only scan
   - Index lookup + table data read (random I/O) → Index-only scan (no table access)
-- **order_items**(discount_pct) — high
-  Composite index: WHERE on `discount_pct` — eliminates scan and avoids temporary table/filesort
+- **order_items**(discount_pct, order_id) — high
+  Composite index: WHERE on `discount_pct` + JOIN on `order_id` — eliminates scan and avoids temporary table/filesort
 
 ### Q48: Deeply nested join — 5 tables
 - **customers**(tier) — high
   Composite index: WHERE on `tier` — eliminates scan and avoids temporary table/filesort
+- **orders**(status, customer_id) — high
+  Composite index: WHERE on `status` + JOIN on `customer_id` — eliminates scan and avoids temporary table/filesort
+- **order_items**(order_id, product_id) — high
+  Composite index: JOIN on `order_id`, `product_id` — eliminates scan and avoids temporary table/filesort
 
 ### Q50: Cross-table aggregation with CASE
 - **products**(is_active, brand) — high
