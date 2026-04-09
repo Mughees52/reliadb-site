@@ -4,6 +4,7 @@ import { runRules } from './rules'
 import { generateIndexRecommendations } from './index-advisor'
 import { analyzeQuery } from './query-hints'
 import { generateRewrites } from './query-rewriter'
+import { simulateIndexImpact } from './index-impact'
 import { parseDDL, getForeignKeysWithoutIndex, getRedundantIndexes, isColumnNullable, type ParsedTable } from '../parsers/ddl-parser'
 
 export function analyze(
@@ -83,6 +84,13 @@ export function analyze(
   // Generate index recommendations + deduplicate overlapping indexes
   const rawRecs = generateIndexRecommendations(root, stats, ddl, query)
   const indexRecommendations = deduplicateIndexes(rawRecs)
+
+  // Simulate structural impact of each recommended index
+  const impacts = simulateIndexImpact(root, stats, indexRecommendations, query)
+  for (const impact of impacts) {
+    const rec = indexRecommendations.find(r => r.table === impact.recommendation.table && r.columns.join(',') === impact.recommendation.columns.join(','))
+    if (rec) rec.simulatedImpact = impact
+  }
 
   // Analyze query patterns
   const queryHints = query ? analyzeQuery(query) : []

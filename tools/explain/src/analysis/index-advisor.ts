@@ -81,12 +81,21 @@ export function generateIndexRecommendations(
     }
 
     // Rule 2: Filesort -> suggest ORDER BY index
+    // Only if the condition references this node's table (not a cross-table condition)
     if (node.extra?.some(e => /filesort/i.test(e)) && node.table && !node.table.startsWith('<')) {
       const condCols = extractColumnsFromCondition(node.condition)
-      if (condCols.length > 0) {
+      // Filter to columns that belong to this node's table (skip cross-table refs like o.col on table p)
+      const ownCols = condCols.filter(col => {
+        if (!node.condition) return true
+        // If condition has "alias.col" and alias != this table, skip it
+        const qualifiedMatch = node.condition.match(new RegExp(`(\\w+)\\.${col}\\b`, 'i'))
+        if (qualifiedMatch && qualifiedMatch[1] !== node.table) return false
+        return true
+      })
+      if (ownCols.length > 0) {
         addRecommendation(recommendations, seen, tables, {
           table: resolvedTable ?? node.table!,
-          columns: condCols,
+          columns: ownCols,
           reason: `Filesort detected — consider a composite index matching WHERE + ORDER BY columns`,
           impact: 'medium',
           note: 'Add ORDER BY columns after the WHERE columns in the index',
@@ -278,18 +287,20 @@ export function generateIndexRecommendations(
     recommendations.push(...coveringRecs)
   }
 
-  return deduplicateRecommendations(recommendations)
+  return deduplicateRecommendations(recommendations, ddl)
 }
 
 function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<string>): IndexRecommendation[] {
   const recs: IndexRecommendation[] = []
 
-  // Extract clauses
-  const whereMatch = query.match(/\bWHERE\s+([\s\S]*?)(?:\bGROUP\b|\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
+  // Extract clauses from the outermost query level
+  // Strip subqueries in parentheses to avoid matching inner GROUP BY / ORDER BY
+  const outerQuery = stripSubqueries(query)
+  const whereMatch = outerQuery.match(/\bWHERE\s+([\s\S]*?)(?:\bGROUP\b|\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
   const whereClause = whereMatch?.[1] ?? ''
-  const groupMatch = query.match(/\bGROUP\s+BY\s+([\s\S]*?)(?:\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
+  const groupMatch = outerQuery.match(/\bGROUP\s+BY\s+([\s\S]*?)(?:\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
   const groupClause = groupMatch?.[1] ?? ''
-  const orderMatch = query.match(/\bORDER\s+BY\s+([\s\S]*?)(?:\bLIMIT\b|;|$)/i)
+  const orderMatch = outerQuery.match(/\bORDER\s+BY\s+([\s\S]*?)(?:\bLIMIT\b|;|$)/i)
   const orderClause = orderMatch?.[1] ?? ''
 
   // Extract column refs per clause
@@ -356,27 +367,41 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
   for (const [tableName, cols] of byTable) {
     const table = tables.find(t => t.name.toLowerCase() === tableName.toLowerCase())
 
-    // Skip GROUP BY columns if PK is already in GROUP BY
-    let groupToUse = cols.group
-    if (table) {
-      const pk = table.indexes.find(idx => idx.primary)
-      if (pk && cols.group.some(c => pk.columns.some(pc => pc.toLowerCase() === c.toLowerCase()))) {
-        groupToUse = []
-      }
-    }
+    // Skip derived tables / subquery aliases — can't create indexes on them
+    if (!table) continue
+
+    // Get PK columns to filter them out of recommendations
+    const pk = table.indexes.find(idx => idx.primary)
+    const pkCols = pk ? pk.columns.map(c => c.toLowerCase()) : []
+
+    // Filter PK columns from GROUP BY — PK is already the clustered index
+    // But keep non-PK GROUP BY columns as they still benefit from an index
+    const groupToUse = cols.group.filter(c => !pkCols.includes(c.toLowerCase()))
 
     // Build composite: WHERE → GROUP BY → ORDER BY → aggregate (covering)
+    // Filter out PK columns — the clustered index already covers them
     const composite: string[] = []
-    for (const c of cols.where) if (!composite.includes(c)) composite.push(c)
-    for (const c of groupToUse) if (!composite.includes(c)) composite.push(c)
-    for (const c of cols.order) if (!composite.includes(c)) composite.push(c)
-    for (const c of cols.agg) if (!composite.includes(c)) composite.push(c)
+    for (const c of cols.where) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
+    for (const c of groupToUse) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
+    for (const c of cols.order) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
+    for (const c of cols.agg) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
 
     if (composite.length === 0) continue
     // Aggregate-only columns don't warrant a standalone index — they only help as trailing
     // columns in a composite with WHERE/GROUP BY/ORDER BY
     if (cols.where.length === 0 && groupToUse.length === 0 && cols.order.length === 0) continue
     if (composite.length > 6) composite.length = 6
+
+    // Skip if first column is PK — InnoDB clustered index already covers it
+    if (composite.length > 0 && pkCols.includes(composite[0].toLowerCase())) continue
+
+    // Skip single-column recs where that index already exists
+    if (composite.length === 1 && table) {
+      const existing = table.indexes.some(idx =>
+        idx.columns[0]?.toLowerCase() === composite[0].toLowerCase()
+      )
+      if (existing) continue
+    }
 
     // Check if a suitable index already exists (prefix match)
     if (table) {
@@ -410,6 +435,18 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
   }
 
   return recs
+}
+
+/** Strip parenthesized subqueries to extract only outer-level clauses */
+function stripSubqueries(query: string): string {
+  let result = ''
+  let depth = 0
+  for (const ch of query) {
+    if (ch === '(') depth++
+    else if (ch === ')') { depth--; if (depth < 0) depth = 0 }
+    else if (depth === 0) result += ch
+  }
+  return result
 }
 
 /** Extract columns for a specific table alias from a clause string */
@@ -598,6 +635,24 @@ function addRecommendation(
 ) {
   const key = `${input.table}:${input.columns.join(',')}`
   if (seen.has(key)) return
+
+  if (input.columns.length > 0) {
+    const table = findTable(tables, input.table)
+    if (table) {
+      // Skip if the first column is PK — InnoDB clustered index already covers it
+      const pk = table.indexes.find(idx => idx.primary)
+      if (pk && pk.columns[0]?.toLowerCase() === input.columns[0].toLowerCase()) return
+
+      // Skip if it's a single-column rec and that index already exists
+      if (input.columns.length === 1) {
+        const existing = table.indexes.some(idx =>
+          idx.columns[0]?.toLowerCase() === input.columns[0].toLowerCase()
+        )
+        if (existing) return
+      }
+    }
+  }
+
   seen.add(key)
 
   // Check if index already exists in DDL
@@ -658,10 +713,44 @@ function extractColumnsFromCondition(condition?: string): string[] {
   return columns
 }
 
-/** Remove indexes that are a prefix of a wider index on the same table */
-function deduplicateRecommendations(recs: IndexRecommendation[]): IndexRecommendation[] {
+/** Remove indexes that are a prefix of a wider index on the same table,
+ *  and filter out recs where the first column is already a PK */
+function deduplicateRecommendations(recs: IndexRecommendation[], ddl?: string): IndexRecommendation[] {
+  // Parse DDL to check PKs
+  let tables: ParsedTable[] = []
+  if (ddl) {
+    try { tables = parseDDL(ddl) } catch { /* ignore */ }
+  }
+
   return recs.filter((rec, i) => {
     if (rec.columns.length === 0) return true
+
+    // Skip if first column is PK — InnoDB clustered index already handles it
+    if (tables.length > 0) {
+      const table = findTable(tables, rec.table)
+      if (table) {
+        const pk = table.indexes.find(idx => idx.primary)
+        if (pk && pk.columns[0]?.toLowerCase() === rec.columns[0].toLowerCase()) return false
+
+        // Skip single-column recs where that exact index already exists
+        if (rec.columns.length === 1) {
+          const existing = table.indexes.some(idx =>
+            idx.columns[0]?.toLowerCase() === rec.columns[0].toLowerCase()
+          )
+          if (existing) return false
+        }
+      }
+    }
+
+    // Remove exact duplicates (keep first) and prefix subsets of wider indexes
+    const isDuplicate = recs.some((other, j) =>
+      j < i &&
+      other.table.toLowerCase() === rec.table.toLowerCase() &&
+      rec.columns.length === other.columns.length &&
+      rec.columns.every((col, idx) => other.columns[idx]?.toLowerCase() === col.toLowerCase())
+    )
+    if (isDuplicate) return false
+
     return !recs.some((other, j) =>
       i !== j &&
       other.table.toLowerCase() === rec.table.toLowerCase() &&

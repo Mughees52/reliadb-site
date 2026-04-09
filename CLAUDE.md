@@ -55,6 +55,7 @@ Key facts:
   - 7 query rewrite generators (YEAR→range, subquery→JOIN, NOT IN→LEFT JOIN, GROUP BY fix, SELECT *, OFFSET→keyset, RAND())
   - DDL parser with FK-without-index, redundant index, NOT NULL suggestions
   - Query-aware index advisor: extracts WHERE/GROUP BY/ORDER BY from SQL, resolves table aliases, suggests composite covering indexes, detects suboptimal index choice on range scans, skips GROUP BY index when PK present, deduplicates overlapping recommendations
+  - Index impact simulator: predicts structural plan changes per index (access type, row reduction, covering scan, filesort/temp table elimination, join reorder)
   - Scopes all recommendations to plan-relevant tables only
   - Weighted scoring: plan issues full penalty, DDL reduced, good = bonus
   - Tested against 20 real queries on 680K-row MySQL 8.0 + MariaDB 10.11 databases
@@ -100,6 +101,7 @@ reliadb-site/
 │   │   │   ├── index-advisor.ts # Query-aware, alias-resolving, composite covering, PK-aware GROUP BY
 │   │   │   ├── query-hints.ts   # 24 patterns
 │   │   │   ├── query-rewriter.ts # 7 executable SQL rewrite generators
+│   │   │   ├── index-impact.ts  # Structural impact simulator for index recommendations
 │   │   │   └── types.ts
 │   │   ├── storage/             # url-codec.ts, history.ts
 │   │   ├── utils/               # formatting.ts, samples.ts (5 MySQL + 2 MariaDB)
@@ -164,7 +166,8 @@ Push to `main` → Netlify auto-builds and deploys.
 - **Phase 3**: Complete — query rewrite engine, NOT NULL suggestions, index deduplication
 - **MariaDB**: Complete — ANALYZE table + JSON parsing, 7 MariaDB rules, wrapper detection
 - **MySQL 8.4 tree enhancements**: Complete — 40+ node types (hash joins, window functions, CTEs, skip scans, antijoins, index merge, etc.)
-- **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, index impact simulator, embeddable widget, PWA, launch blog post (LAST)
+- **Index impact simulator**: Complete — structural plan change predictions per index recommendation
+- **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, embeddable widget, PWA, launch blog post (LAST)
 
 ### Brand
 
