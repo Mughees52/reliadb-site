@@ -38,28 +38,41 @@ export function generateIndexRecommendations(
           impact: rows > 1000 ? 'high' : rows > 100 ? 'medium' : 'low',
         })
 
-        // Suggest covering index if we can identify aggregate/select columns from query
-        // The covering index should be: [filter cols, join cols, aggregate cols]
+        // Suggest covering index: [filter cols, GROUP BY cols, ORDER BY cols, remaining SELECT/agg cols]
         if (query && rows > 500) {
           const resolved = resolveTableAlias(query, node.table)
-          const tableColRegex = new RegExp(`\\b${node.table}\\.(\\w+)\\b`, 'gi')
-          const selectCols: string[] = []
+          const alias = node.table
+          const tableColRegex = new RegExp(`\\b${alias}\\.(\\w+)\\b`, 'gi')
+          const allQueryCols: string[] = []
           let m
           while ((m = tableColRegex.exec(query)) !== null) {
-            if (!columns.includes(m[1]) && !selectCols.includes(m[1])) selectCols.push(m[1])
+            if (!allQueryCols.includes(m[1])) allQueryCols.push(m[1])
           }
-          if (selectCols.length > 0) {
-            const coveringCols = [...columns, ...selectCols]
+
+          // Extract GROUP BY and ORDER BY columns for this table to order them correctly
+          const groupByMatch = query.match(/\bGROUP\s+BY\s+([\s\S]*?)(?:\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
+          const orderByMatch = query.match(/\bORDER\s+BY\s+([\s\S]*?)(?:\bLIMIT\b|;|$)/i)
+          const groupByCols = groupByMatch ? extractTableColumns(groupByMatch[1], alias) : []
+          const orderByCols = orderByMatch ? extractTableColumns(orderByMatch[1], alias) : []
+
+          // Build optimal column order: filter → GROUP BY → ORDER BY → remaining
+          const orderedCols = [...columns]
+          for (const c of groupByCols) if (!orderedCols.includes(c)) orderedCols.push(c)
+          for (const c of orderByCols) if (!orderedCols.includes(c)) orderedCols.push(c)
+          for (const c of allQueryCols) if (!orderedCols.includes(c)) orderedCols.push(c)
+
+          const coveringCols = orderedCols.filter(c => !EXCLUDE_WORDS.has(c.toLowerCase()))
+          if (coveringCols.length > columns.length && coveringCols.length <= 6) {
             const key = `${resolved}:covering:${coveringCols.join(',')}`
-            if (!seen.has(key) && coveringCols.length <= 6) {
+            if (!seen.has(key)) {
               seen.add(key)
               const idxName = `idx_${resolved}_covering`.slice(0, 64)
               recommendations.push({
                 table: resolved,
                 columns: coveringCols,
-                reason: `Covering index for \`${resolved}\` — range scan on ${columns.map(c => `\`${c}\``).join(', ')} + covers ${selectCols.map(c => `\`${c}\``).join(', ')} without table lookup`,
+                reason: `Covering index for \`${resolved}\` — filter on ${columns.map(c => `\`${c}\``).join(', ')} + covers ${coveringCols.filter(c => !columns.includes(c)).map(c => `\`${c}\``).join(', ')} without table lookup`,
                 impact: 'high',
-                ddl: `-- Covering index: filter/range cols first, then join/select cols\nALTER TABLE \`${resolved}\` ADD INDEX \`${idxName}\` (${coveringCols.map(c => `\`${c}\``).join(', ')});`,
+                ddl: `-- Covering index: filter cols first, then GROUP BY/ORDER BY, then SELECT cols\nALTER TABLE \`${resolved}\` ADD INDEX \`${idxName}\` (${coveringCols.map(c => `\`${c}\``).join(', ')});`,
               })
             }
           }
@@ -112,7 +125,7 @@ export function generateIndexRecommendations(
                 columns: allCols,
                 reason: `Non-unique lookup on \`${node.table}\` returns ~${rowsPerLoop} rows × ${node.loops} loops. A covering index avoids table row reads.`,
                 impact: 'medium',
-                ddl: `-- Covering index (adjust column order: equality cols first, then range, then SELECT cols):\nALTER TABLE \`${node.table}\` ADD INDEX \`idx_${node.table}_covering\` (${allCols.map(c => `\`${c}\``).join(', ')});`,
+                ddl: `-- Covering index (adjust column order: equality cols first, then range, then SELECT cols):\nALTER TABLE \`${resolvedTable ?? node.table}\` ADD INDEX \`idx_${resolvedTable ?? node.table}_covering\` (${allCols.map(c => `\`${c}\``).join(', ')});`,
               })
             }
           }
@@ -132,7 +145,7 @@ export function generateIndexRecommendations(
             columns: joinCols,
             reason: `All ${node.loops} lookups on \`${node.table}\` returned 0 rows — likely orphaned foreign key values. Fix data integrity first, then add index.`,
             impact: 'high',
-            ddl: `-- 1. Find orphaned rows:\nSELECT DISTINCT ${joinCols[0]} FROM source_table WHERE ${joinCols[0]} NOT IN (SELECT id FROM \`${node.table}\`);\n\n-- 2. After fixing data, add FK constraint:\n-- ALTER TABLE source_table ADD CONSTRAINT fk_${node.table} FOREIGN KEY (${joinCols[0]}) REFERENCES \`${node.table}\`(id);`,
+            ddl: `-- 1. Find orphaned rows:\nSELECT DISTINCT ${joinCols[0]} FROM source_table WHERE ${joinCols[0]} NOT IN (SELECT id FROM \`${resolvedTable ?? node.table}\`);\n\n-- 2. After fixing data, add FK constraint:\n-- ALTER TABLE source_table ADD CONSTRAINT fk_${resolvedTable ?? node.table} FOREIGN KEY (${joinCols[0]}) REFERENCES \`${resolvedTable ?? node.table}\`(id);`,
           })
         }
       }
@@ -265,148 +278,171 @@ export function generateIndexRecommendations(
     recommendations.push(...coveringRecs)
   }
 
-  return recommendations
+  return deduplicateRecommendations(recommendations)
 }
 
 function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<string>): IndexRecommendation[] {
   const recs: IndexRecommendation[] = []
 
-  // Extract WHERE columns with their table context
+  // Extract clauses
   const whereMatch = query.match(/\bWHERE\s+([\s\S]*?)(?:\bGROUP\b|\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
   const whereClause = whereMatch?.[1] ?? ''
-
-  // Extract GROUP BY columns
   const groupMatch = query.match(/\bGROUP\s+BY\s+([\s\S]*?)(?:\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
-  const groupCols = groupMatch ? extractColumnRefs(groupMatch[1]) : []
-
-  // Extract ORDER BY columns
+  const groupClause = groupMatch?.[1] ?? ''
   const orderMatch = query.match(/\bORDER\s+BY\s+([\s\S]*?)(?:\bLIMIT\b|;|$)/i)
-  const orderCols = orderMatch ? extractColumnRefs(orderMatch[1]) : []
+  const orderClause = orderMatch?.[1] ?? ''
 
-  // Extract WHERE column refs
+  // Extract column refs per clause
   const whereCols = whereClause ? extractColumnRefs(whereClause) : []
+  const groupCols = groupClause ? extractColumnRefs(groupClause) : []
+  const orderCols = orderClause ? extractColumnRefs(orderClause) : []
 
-  // For each table scan in the plan, suggest composite indexes based on query structure
-  // WHERE columns: suggest composite index (equality cols first, then range, then GROUP BY, then ORDER BY)
-  if (whereCols.length > 0) {
-    // Group by table
-    const byTable = new Map<string, string[]>()
-    for (const ref of whereCols) {
-      const t = ref.table || '_unknown'
-      if (!byTable.has(t)) byTable.set(t, [])
-      if (!byTable.get(t)!.includes(ref.column)) byTable.get(t)!.push(ref.column)
+  // Extract aggregate columns from SELECT for covering indexes
+  const aggCols = extractAggregateColumns(query)
+
+  // Group all columns by resolved table name
+  interface TableCols {
+    where: string[]
+    group: string[]
+    order: string[]
+    agg: string[]
+  }
+  const byTable = new Map<string, TableCols>()
+
+  function getEntry(resolved: string): TableCols {
+    if (!byTable.has(resolved)) byTable.set(resolved, { where: [], group: [], order: [], agg: [] })
+    return byTable.get(resolved)!
+  }
+
+  function addCol(tableName: string, col: string, clause: keyof TableCols) {
+    const resolved = resolveTableAlias(query, tableName)
+    const entry = getEntry(resolved)
+    if (!entry[clause].includes(col)) entry[clause].push(col)
+  }
+
+  // Resolve unaliased columns: try single-table FROM or DDL column matching
+  function resolveUnaliased(col: string, clause: keyof TableCols) {
+    const singleTable = query.match(/\bFROM\s+`?(\w+)`?(?:\s+WHERE\b)/i)
+    if (singleTable) {
+      addCol(singleTable[1], col, clause)
+      return
     }
-
-    for (const [tableName, cols] of byTable) {
-      let resolved: string
-      if (tableName === '_unknown') {
-        // Try to infer table from single-table queries: "FROM tablename WHERE ..."
-        const singleTable = query.match(/\bFROM\s+`?(\w+)`?(?:\s+WHERE\b)/i)
-        if (singleTable) {
-          resolved = singleTable[1]
-        } else {
-          continue
-        }
-      } else {
-        resolved = resolveTableAlias(query, tableName)
-      }
-      const table = tables.find(t => t.name.toLowerCase() === resolved.toLowerCase())
-      if (!table) continue
-
-      // Check if a useful composite index exists
-      const hasIndex = table.indexes.some(idx =>
-        cols.every(c => idx.columns.some(ic => ic.toLowerCase() === c.toLowerCase()))
-      )
-      if (!hasIndex && cols.length > 0) {
-        const key = `${resolved}:${cols.join(',')}`
-        if (!seen.has(key)) {
-          seen.add(key)
-          const idxName = `idx_${resolved}_${cols.join('_')}`.slice(0, 64)
-          recs.push({
-            table: resolved,
-            columns: cols,
-            reason: `WHERE clause filters on ${cols.map(c => `\`${c}\``).join(', ')} — a composite index would eliminate the full table scan`,
-            impact: 'high',
-            ddl: `ALTER TABLE \`${resolved}\` ADD INDEX \`${idxName}\` (${cols.map(c => `\`${c}\``).join(', ')});`,
-          })
-        }
+    for (const t of tables) {
+      if (t.columns.some(c => c.name.toLowerCase() === col.toLowerCase())) {
+        addCol(t.name, col, clause)
       }
     }
   }
 
-  // GROUP BY index suggestion — skip when PK is already in GROUP BY
-  if (groupCols.length > 0) {
-    const byTable = new Map<string, string[]>()
-    for (const ref of groupCols) {
-      const t = ref.table || '_unknown'
-      if (!byTable.has(t)) byTable.set(t, [])
-      if (!byTable.get(t)!.includes(ref.column)) byTable.get(t)!.push(ref.column)
-    }
+  for (const ref of whereCols) {
+    if (ref.table) addCol(ref.table, ref.column, 'where')
+    else resolveUnaliased(ref.column, 'where')
+  }
+  for (const ref of groupCols) {
+    if (ref.table) addCol(ref.table, ref.column, 'group')
+    else resolveUnaliased(ref.column, 'group')
+  }
+  for (const ref of orderCols) {
+    if (ref.table) addCol(ref.table, ref.column, 'order')
+    else resolveUnaliased(ref.column, 'order')
+  }
+  for (const ref of aggCols) {
+    if (ref.table) addCol(ref.table, ref.column, 'agg')
+    else resolveUnaliased(ref.column, 'agg')
+  }
 
-    for (const [tableName, cols] of byTable) {
-      const resolved = tableName === '_unknown' ? null : resolveTableAlias(query, tableName)
-      const table = resolved
-        ? tables.find(t => t.name.toLowerCase() === resolved.toLowerCase())
-        : null
+  // For each table, build optimal composite index:
+  // [WHERE equality cols] + [GROUP BY cols] + [ORDER BY cols] + [aggregate cols for covering]
+  for (const [tableName, cols] of byTable) {
+    const table = tables.find(t => t.name.toLowerCase() === tableName.toLowerCase())
 
-      // Skip if GROUP BY already includes the PK — the PK uniquely identifies rows,
-      // so additional GROUP BY columns don't need indexes
-      if (table) {
-        const pk = table.indexes.find(idx => idx.primary)
-        if (pk && cols.some(c => pk.columns.some(pc => pc.toLowerCase() === c.toLowerCase()))) {
-          continue // PK in GROUP BY — no extra index needed
-        }
-      }
-
-      if (tableName === '_unknown') {
-        for (const t2 of tables) {
-          // Same PK check for unaliased columns
-          const pk = t2.indexes.find(idx => idx.primary)
-          if (pk && cols.some(c => pk.columns.some(pc => pc.toLowerCase() === c.toLowerCase()))) continue
-
-          for (const col of cols) {
-            const hasCol = t2.columns.some(c => c.name.toLowerCase() === col.toLowerCase())
-            const hasIdx = t2.indexes.some(idx => idx.columns[0]?.toLowerCase() === col.toLowerCase())
-            if (hasCol && !hasIdx) {
-              const key = `${t2.name}:${col}`
-              if (!seen.has(key)) {
-                seen.add(key)
-                recs.push({
-                  table: t2.name,
-                  columns: [col],
-                  reason: `GROUP BY uses \`${col}\` — an index enables Loose Index Scan and avoids temporary table`,
-                  impact: 'medium',
-                  ddl: `ALTER TABLE \`${t2.name}\` ADD INDEX \`idx_${t2.name}_${col}\` (\`${col}\`);`,
-                })
-              }
-            }
-          }
-        }
-        continue
-      }
-
-      if (!table) continue
-
-      for (const col of cols) {
-        const hasIdx = table.indexes.some(idx => idx.columns[0]?.toLowerCase() === col.toLowerCase())
-        if (!hasIdx) {
-          const key = `${resolved}:${col}`
-          if (!seen.has(key)) {
-            seen.add(key)
-            recs.push({
-              table: resolved!,
-              columns: [col],
-              reason: `GROUP BY uses \`${resolved}\`.\`${col}\` — an index enables Loose Index Scan and avoids temporary table`,
-              impact: 'medium',
-              ddl: `ALTER TABLE \`${resolved}\` ADD INDEX \`idx_${resolved}_${col}\` (\`${col}\`);`,
-            })
-          }
-        }
+    // Skip GROUP BY columns if PK is already in GROUP BY
+    let groupToUse = cols.group
+    if (table) {
+      const pk = table.indexes.find(idx => idx.primary)
+      if (pk && cols.group.some(c => pk.columns.some(pc => pc.toLowerCase() === c.toLowerCase()))) {
+        groupToUse = []
       }
     }
+
+    // Build composite: WHERE → GROUP BY → ORDER BY → aggregate (covering)
+    const composite: string[] = []
+    for (const c of cols.where) if (!composite.includes(c)) composite.push(c)
+    for (const c of groupToUse) if (!composite.includes(c)) composite.push(c)
+    for (const c of cols.order) if (!composite.includes(c)) composite.push(c)
+    for (const c of cols.agg) if (!composite.includes(c)) composite.push(c)
+
+    if (composite.length === 0) continue
+    // Aggregate-only columns don't warrant a standalone index — they only help as trailing
+    // columns in a composite with WHERE/GROUP BY/ORDER BY
+    if (cols.where.length === 0 && groupToUse.length === 0 && cols.order.length === 0) continue
+    if (composite.length > 6) composite.length = 6
+
+    // Check if a suitable index already exists (prefix match)
+    if (table) {
+      const hasIndex = table.indexes.some(idx =>
+        composite.length <= idx.columns.length &&
+        composite.every((c, i) => idx.columns[i]?.toLowerCase() === c.toLowerCase())
+      )
+      if (hasIndex) continue
+    }
+
+    const key = `${tableName}:composite:${composite.join(',')}`
+    if (seen.has(key)) continue
+    seen.add(key)
+
+    const idxName = `idx_${tableName}_${composite.join('_')}`.slice(0, 64)
+
+    // Build descriptive reason
+    const parts: string[] = []
+    if (cols.where.length > 0) parts.push(`WHERE on ${cols.where.map(c => `\`${c}\``).join(', ')}`)
+    if (groupToUse.length > 0) parts.push(`GROUP BY on ${groupToUse.map(c => `\`${c}\``).join(', ')}`)
+    if (cols.order.length > 0) parts.push(`ORDER BY on ${cols.order.map(c => `\`${c}\``).join(', ')}`)
+    if (cols.agg.length > 0) parts.push(`covers ${cols.agg.map(c => `\`${c}\``).join(', ')} for index-only scan`)
+
+    recs.push({
+      table: tableName,
+      columns: composite,
+      reason: `Composite index: ${parts.join(' + ')} — eliminates scan and avoids temporary table/filesort`,
+      impact: 'high',
+      ddl: `ALTER TABLE \`${tableName}\` ADD INDEX \`${idxName}\` (${composite.map(c => `\`${c}\``).join(', ')});`,
+    })
   }
 
   return recs
+}
+
+/** Extract columns for a specific table alias from a clause string */
+function extractTableColumns(clause: string, alias: string): string[] {
+  const cols: string[] = []
+  const regex = new RegExp(`\\b${alias}\\.(\\w+)\\b`, 'gi')
+  let match
+  while ((match = regex.exec(clause)) !== null) {
+    if (!cols.includes(match[1]) && !EXCLUDE_WORDS.has(match[1].toLowerCase())) cols.push(match[1])
+  }
+  // Also match bare column names (unqualified)
+  const bareRegex = /(?:^|,)\s*`?(\w+)`?\s*(?:ASC|DESC)?(?:\s*,|\s*$)/gi
+  while ((match = bareRegex.exec(clause)) !== null) {
+    const col = match[1]
+    if (!cols.includes(col) && !EXCLUDE_WORDS.has(col.toLowerCase())) cols.push(col)
+  }
+  return cols
+}
+
+/** Extract columns from aggregate functions: SUM(t.col), COUNT(t.col), etc. */
+function extractAggregateColumns(query: string): ColumnRef[] {
+  const refs: ColumnRef[] = []
+  const aggRegex = /\b(?:SUM|COUNT|AVG|MIN|MAX)\s*\(\s*(?:DISTINCT\s+)?(?:(\w+)\.)?(\w+)\s*\)/gi
+  let match
+  while ((match = aggRegex.exec(query)) !== null) {
+    const table = match[1]
+    const col = match[2]
+    if (col === '*') continue
+    if (!refs.some(r => r.table === table && r.column === col)) {
+      refs.push({ table, column: col })
+    }
+  }
+  return refs
 }
 
 interface ColumnRef {
@@ -620,6 +656,19 @@ function extractColumnsFromCondition(condition?: string): string[] {
   }
 
   return columns
+}
+
+/** Remove indexes that are a prefix of a wider index on the same table */
+function deduplicateRecommendations(recs: IndexRecommendation[]): IndexRecommendation[] {
+  return recs.filter((rec, i) => {
+    if (rec.columns.length === 0) return true
+    return !recs.some((other, j) =>
+      i !== j &&
+      other.table.toLowerCase() === rec.table.toLowerCase() &&
+      rec.columns.length < other.columns.length &&
+      rec.columns.every((col, idx) => other.columns[idx]?.toLowerCase() === col.toLowerCase())
+    )
+  })
 }
 
 function walkNodes(node: PlanNode, fn: (node: PlanNode) => void) {
