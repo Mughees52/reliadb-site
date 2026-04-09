@@ -230,16 +230,36 @@ function extractIndex(op: string): string | undefined {
 function inferAccessType(op: string): PlanNode['accessType'] {
   const lower = op.toLowerCase()
 
+  // Full table scans
   if (lower.includes('table scan')) return 'ALL'
+  if (lower.includes('sample scan')) return 'ALL'
+
+  // Full index scans
   if (lower.includes('full index scan')) return 'index'
   if (lower.includes('covering index scan')) return 'index'
   if (lower.includes('index scan on')) return 'index'
+
+  // Range scans
   if (lower.includes('index range scan')) return 'range'
+  if (lower.includes('index skip scan')) return 'range'
+  if (lower.includes('skip scan for')) return 'range'
+  if (lower.includes('distance scan')) return 'range'
+
+  // Unique lookups (eq_ref)
   if (lower.includes('single-row index lookup')) return 'eq_ref'
   if (lower.includes('single-row covering')) return 'eq_ref'
+  if (lower.includes('constant row from')) return 'const'
+
+  // Non-unique lookups (ref)
   if (lower.includes('index lookup')) return 'ref'
   if (lower.includes('covering index lookup')) return 'ref'
-  if (lower.includes('fulltext index')) return 'fulltext'
+  if (lower.includes('multi-range index lookup')) return 'range'
+
+  // Fulltext
+  if (lower.includes('full-text index search') || lower.includes('fulltext index')) return 'fulltext'
+
+  // Index merge
+  if (lower.includes('sort-deduplicate by row id') || lower.includes('intersect rows sorted') || lower.includes('deduplicate rows sorted')) return 'index_merge'
 
   return undefined
 }
@@ -275,13 +295,43 @@ function inferExtra(op: string): string[] {
   const extras: string[] = []
   const lower = op.toLowerCase()
 
-  if (lower.includes('filesort') || lower.startsWith('sort:') || lower.startsWith('sort ')) extras.push('Using filesort')
+  // Sort/filesort
+  if (lower.includes('filesort') || /^sort[: ]/.test(lower)) extras.push('Using filesort')
+  if (lower.includes('sort with duplicate removal')) extras.push('Using filesort')
+
+  // Temporary tables
   if (lower.includes('temporary table') || lower.includes('aggregate using temporary')) extras.push('Using temporary')
+  if (lower.includes('weedout')) extras.push('Using temporary')
+
+  // Table scans
   if (lower.includes('table scan') && !lower.includes('<temporary>')) extras.push('Full table scan')
+  if (lower.includes('sample scan')) extras.push('Full table scan')
+
+  // Index usage
   if (lower.includes('covering index')) extras.push('Using index')
-  if (lower.includes('index condition')) extras.push('Using index condition')
-  if (lower.includes('mrr')) extras.push('Using MRR')
-  if (lower.includes('join buffer')) extras.push('Using join buffer')
+  if (lower.includes('index condition') || lower.includes('with index condition')) extras.push('Using index condition')
+  if (lower.includes('mrr') || lower.includes('multi-range')) extras.push('Using MRR')
+  if (lower.includes('join buffer') || lower.includes('batched key access')) extras.push('Using join buffer')
+  if (lower.includes('skip scan')) extras.push('Using index for skip scan')
+
+  // Joins
+  if (lower.includes('hash join') || lower.includes('hash semijoin') || lower.includes('hash antijoin')) extras.push('Using hash join')
+  if (lower.includes('antijoin')) extras.push('Using antijoin')
+  if (lower.includes('semijoin')) extras.push('Using semijoin')
+  if (lower.includes('firstmatch')) extras.push('FirstMatch')
+  if (lower.includes('loosescan')) extras.push('LooseScan')
+
+  // Materialization
+  if (lower.includes('materialize')) extras.push('Materialized')
+
+  // Window functions
+  if (lower.includes('window aggregate') || lower.includes('window multi-pass')) extras.push('Window function')
+
+  // Zero rows
+  if (lower.includes('zero rows') || lower.includes('impossible where')) extras.push('Impossible WHERE')
+
+  // Stream
+  if (lower.includes('stream results')) extras.push('Streaming')
 
   return extras
 }

@@ -31,6 +31,21 @@ export interface IndexRecommendation {
   reason: string
   impact: 'high' | 'medium' | 'low'
   ddl: string
+  simulatedImpact?: IndexImpact
+}
+
+export interface IndexImpact {
+  recommendation: IndexRecommendation
+  changes: ImpactChange[]
+  summary: string
+}
+
+export interface ImpactChange {
+  type: 'access_type' | 'rows' | 'covering' | 'filesort' | 'temp_table' | 'join_order'
+  icon: string
+  before: string
+  after: string
+  explanation: string
 }
 
 export interface QueryRewrite {

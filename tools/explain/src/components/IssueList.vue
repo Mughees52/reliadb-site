@@ -8,6 +8,14 @@ defineProps<{
 
 const activeTab = ref<'issues' | 'indexes' | 'hints' | 'rewrites' | 'schema'>('issues')
 const copiedDDL = ref('')
+const expandedImpact = ref<Set<number>>(new Set())
+
+function toggleImpact(index: number) {
+  const s = new Set(expandedImpact.value)
+  if (s.has(index)) s.delete(index)
+  else s.add(index)
+  expandedImpact.value = s
+}
 
 function severityDot(s: Issue['severity']): string {
   return `dot-${s}`
@@ -93,6 +101,28 @@ function copyDDL(ddl: string) {
         <div class="il-ddl-wrap">
           <code class="il-ddl">{{ rec.ddl }}</code>
           <button @click="copyDDL(rec.ddl)" class="il-copy">{{ copiedDDL === rec.ddl ? 'Copied!' : 'Copy' }}</button>
+        </div>
+
+        <!-- Impact Simulator -->
+        <div v-if="rec.simulatedImpact && rec.simulatedImpact.changes.length > 0" class="il-impact-section">
+          <button @click="toggleImpact(i)" class="il-impact-toggle">
+            <span class="il-impact-toggle-icon">{{ expandedImpact.has(i) ? '▾' : '▸' }}</span>
+            <span class="il-impact-toggle-label">Estimated Impact</span>
+            <span class="il-impact-summary">{{ rec.simulatedImpact.summary }}</span>
+          </button>
+          <div v-if="expandedImpact.has(i)" class="il-impact-panel">
+            <div v-for="(change, ci) in rec.simulatedImpact.changes" :key="ci" class="il-impact-change">
+              <div class="il-impact-change-header">
+                <span class="il-impact-icon">{{ change.icon }}</span>
+                <div class="il-impact-before-after">
+                  <span class="il-impact-before">{{ change.before }}</span>
+                  <span class="il-impact-arrow">→</span>
+                  <span class="il-impact-after">{{ change.after }}</span>
+                </div>
+              </div>
+              <p class="il-impact-explanation">{{ change.explanation }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -183,4 +213,22 @@ function copyDDL(ddl: string) {
 .il-rewrite-code { max-height: 80px; font-size: 0.72rem; background: #f4f6f8; color: var(--text); white-space: pre-wrap; word-break: break-all; }
 .il-rewrite-new { background: #1a1a2e; color: #27ae60; white-space: pre-wrap; word-break: break-all; }
 .il-tabs { flex-wrap: wrap; }
+
+/* Impact Simulator */
+.il-impact-section { margin-top: 10px; }
+.il-impact-toggle { display: flex; align-items: center; gap: 6px; background: none; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-family: inherit; font-size: 0.75rem; color: var(--text-lt); width: 100%; text-align: left; transition: all 0.15s; }
+.il-impact-toggle:hover { border-color: var(--accent); color: var(--accent); background: #f8fbff; }
+.il-impact-toggle-icon { font-size: 0.7rem; width: 12px; flex-shrink: 0; }
+.il-impact-toggle-label { font-weight: 700; color: var(--primary); flex-shrink: 0; }
+.il-impact-summary { color: var(--text-lt); font-size: 0.72rem; margin-left: auto; }
+.il-impact-panel { margin-top: 6px; border: 1px solid #d5e8d4; border-radius: 6px; background: #f6faf6; overflow: hidden; }
+.il-impact-change { padding: 10px 12px; border-bottom: 1px solid #e8f0e8; }
+.il-impact-change:last-child { border-bottom: none; }
+.il-impact-change-header { display: flex; align-items: flex-start; gap: 8px; }
+.il-impact-icon { font-size: 0.85rem; flex-shrink: 0; width: 18px; text-align: center; }
+.il-impact-before-after { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 0.78rem; }
+.il-impact-before { color: #c0392b; text-decoration: line-through; opacity: 0.7; }
+.il-impact-arrow { color: var(--text-lt); font-size: 0.7rem; }
+.il-impact-after { color: #1e8449; font-weight: 600; }
+.il-impact-explanation { font-size: 0.72rem; color: #555; margin: 4px 0 0 26px; line-height: 1.4; }
 </style>

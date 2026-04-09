@@ -4,7 +4,7 @@ import { parsePlan } from './parsers/normalize'
 import { analyze } from './analysis/engine'
 import type { ParseResult, PlanNode } from './parsers/types'
 import type { AnalysisResult } from './analysis/types'
-import { loadFromUrl, getShareUrl } from './storage/url-codec'
+import { loadFromUrl, getShareUrl, encodeToUrl } from './storage/url-codec'
 import { saveToHistory, loadHistory, deleteFromHistory, clearHistory, type HistoryEntry } from './storage/history'
 import { samples } from './utils/samples'
 import InputPanel from './components/InputPanel.vue'
@@ -17,6 +17,9 @@ import PlanHistory from './components/PlanHistory.vue'
 import CostChart from './components/CostChart.vue'
 import EstimateVsActual from './components/EstimateVsActual.vue'
 import CompareView from './components/CompareView.vue'
+
+// Embed mode detection
+const isEmbed = document.documentElement.hasAttribute('data-embed')
 
 // State
 const explainInput = ref('')
@@ -31,6 +34,8 @@ const history = ref<HistoryEntry[]>([])
 const showHistory = ref(false)
 const showCopied = ref(false)
 const showCompare = ref(false)
+const showEmbedCode = ref(false)
+const embedCopied = ref(false)
 
 const hasResult = computed(() => parseResult.value !== null && parseResult.value.stats.nodeCount > 0)
 
@@ -98,6 +103,18 @@ function clearAllHistory() {
   history.value = []
 }
 
+function getEmbedCode(): string {
+  const encoded = encodeToUrl(explainInput.value, queryInput.value, ddlInput.value)
+  return `<iframe src="https://reliadb.com/tools/explain/?embed#p=${encoded}" width="100%" height="700" frameborder="0" style="border:1px solid #e0e0e0;border-radius:8px;" loading="lazy" title="MySQL EXPLAIN Analysis — ReliaDB"></iframe>`
+}
+
+function copyEmbedCode() {
+  navigator.clipboard.writeText(getEmbedCode()).then(() => {
+    embedCopied.value = true
+    setTimeout(() => { embedCopied.value = false }, 2000)
+  })
+}
+
 function reset() {
   explainInput.value = ''
   queryInput.value = ''
@@ -129,7 +146,7 @@ onMounted(() => {
           <h1 class="tool-title">MySQL &amp; MariaDB EXPLAIN Analyzer</h1>
           <span class="tool-subtitle">Free &mdash; 100% in your browser</span>
         </div>
-        <div class="tool-toolbar-right">
+        <div v-if="!isEmbed" class="tool-toolbar-right">
           <div class="sample-dropdown">
             <button @click="showSamples = !showSamples" class="btn-tool">
               Sample Plans
@@ -150,7 +167,7 @@ onMounted(() => {
 
     <main class="tool-main">
       <!-- Privacy Banner -->
-      <div class="privacy-banner">
+      <div v-if="!isEmbed" class="privacy-banner">
         <svg class="privacy-icon" viewBox="0 0 16 16" fill="currentColor">
           <path d="M8 1a3.5 3.5 0 00-3.5 3.5V6H3a1 1 0 00-1 1v7a1 1 0 001 1h10a1 1 0 001-1V7a1 1 0 00-1-1h-1.5V4.5A3.5 3.5 0 008 1zm2 5V4.5a2 2 0 10-4 0V6h4z"/>
         </svg>
@@ -222,21 +239,38 @@ onMounted(() => {
                 <button @click="copyShareUrl" class="btn-tool">
                   {{ showCopied ? 'Copied!' : 'Copy Share Link' }}
                 </button>
-                <button @click="showCompare = !showCompare" class="btn-tool">
+                <button v-if="!isEmbed" @click="showCompare = !showCompare" class="btn-tool">
                   {{ showCompare ? 'Hide Compare' : 'Compare Plans' }}
                 </button>
-                <button @click="showHistory = !showHistory" class="btn-tool">
+                <button v-if="!isEmbed" @click="showHistory = !showHistory" class="btn-tool">
                   History ({{ history.length }})
+                </button>
+                <button v-if="!isEmbed" @click="showEmbedCode = !showEmbedCode" class="btn-tool">
+                  {{ showEmbedCode ? 'Hide Embed' : 'Embed' }}
                 </button>
               </div>
             </div>
 
-            <CompareView v-if="showCompare"
+            <!-- Embed Code Panel -->
+            <div v-if="showEmbedCode && !isEmbed" class="card embed-card">
+              <h3 class="actions-title">Embed This Analysis</h3>
+              <p class="embed-desc">Copy this code to embed the current analysis in your blog, docs, or website.</p>
+              <div class="embed-code-wrap">
+                <code class="embed-code">{{ getEmbedCode() }}</code>
+                <button @click="copyEmbedCode" class="embed-copy-btn">{{ embedCopied ? 'Copied!' : 'Copy' }}</button>
+              </div>
+              <div class="embed-preview-label">Preview (700px height):</div>
+              <div class="embed-preview">
+                <iframe :src="'?embed#p=' + encodeToUrl(explainInput, queryInput, ddlInput)" width="100%" height="400" frameborder="0" style="border:1px solid #e0e0e0;border-radius:8px;" loading="lazy" title="Embed preview"></iframe>
+              </div>
+            </div>
+
+            <CompareView v-if="showCompare && !isEmbed"
               :before-explain="explainInput"
               :before-query="queryInput"
             />
 
-            <PlanHistory v-if="showHistory"
+            <PlanHistory v-if="showHistory && !isEmbed"
               :entries="history"
               @load="loadHistoryEntry"
               @remove="removeHistoryEntry"
@@ -257,6 +291,28 @@ onMounted(() => {
           Try a Sample Plan
         </button>
       </div>
+
+      <!-- Embed mode: powered-by footer -->
+      <div v-if="isEmbed" class="embed-powered-by">
+        Powered by <a href="https://reliadb.com/tools/explain/" target="_blank" rel="noopener">ReliaDB EXPLAIN Analyzer</a>
+      </div>
     </main>
   </div>
 </template>
+
+<style scoped>
+/* Embed code panel */
+.embed-card { margin-top: 12px; }
+.embed-desc { font-size: 0.78rem; color: var(--text-lt); margin: 4px 0 10px; }
+.embed-code-wrap { display: flex; align-items: flex-start; gap: 8px; }
+.embed-code { display: block; flex: 1; font-size: 0.72rem; background: #1a1a2e; color: #27ae60; padding: 10px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 120px; }
+.embed-copy-btn { font-size: 0.75rem; color: var(--text-lt); cursor: pointer; background: none; border: 1px solid #e0e0e0; border-radius: 4px; padding: 6px 12px; font-family: inherit; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+.embed-copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.embed-preview-label { font-size: 0.72rem; color: var(--text-lt); margin: 12px 0 6px; font-weight: 600; }
+.embed-preview { border-radius: 8px; overflow: hidden; }
+
+/* Embed mode: powered-by footer */
+.embed-powered-by { text-align: center; padding: 10px; font-size: 0.72rem; color: var(--text-lt); border-top: 1px solid #f0f0f0; margin-top: 8px; }
+.embed-powered-by a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.embed-powered-by a:hover { text-decoration: underline; }
+</style>

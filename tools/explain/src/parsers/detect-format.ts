@@ -37,8 +37,8 @@ export function detect(input: string): DetectionResult {
   // "-> Limit: 100 row(s)", "-> Table scan on t", "-> Filter: (condition)"
   // SQL continuation: "-> LIMIT 100;", "-> SELECT ..." — followed by SQL, not plan syntax
   // Key difference: tree nodes have "(cost=..." or "(actual time=..." or "on tablename" or ":"
-  const treeNodePattern = /^\s*->\s+(?:Nested loop|Table scan|Index (?:lookup|range|scan)|Filter:|Sort:|Limit:|Aggregate|Single-row|Covering index|Hash|Materialize|Group aggregate|Duplicates|Select #)/i
-  const wrappedTreePattern = /\|\s*->\s+(?:Nested loop|Table scan|Index (?:lookup|range|scan)|Filter:|Sort:|Limit:|Aggregate|Single-row|Covering index|Hash|Materialize|Group aggregate|Duplicates|Select #)/i
+  const treeNodePattern = /^\s*->\s+(?:Nested loop|Table scan|Index (?:lookup|range|scan|skip)|Filter:|Sort[: ]|Limit[:/]|Aggregate|Single-row|Covering index|Hash (?:join|semi|anti)|Inner hash|Left hash|Materialize|Group aggregate|Group \(no|Duplicates|Select #|Window|Stream|Remove duplicate|Zero rows|Constant row|Scan new|Count rows|Rows fetched|Batched key|Full-text|Multi-range|Sample scan|Distance scan|Skip scan|Weedout|Invalidate|Delete from|Update)/i
+  const wrappedTreePattern = /\|\s*->\s+(?:Nested loop|Table scan|Index (?:lookup|range|scan|skip)|Filter:|Sort[: ]|Limit[:/]|Aggregate|Single-row|Covering index|Hash (?:join|semi|anti)|Inner hash|Left hash|Materialize|Group aggregate|Group \(no|Duplicates|Select #|Window|Stream|Remove duplicate|Zero rows|Constant row|Scan new|Count rows|Rows fetched|Batched key|Full-text|Multi-range|Sample scan|Distance scan|Skip scan|Weedout|Invalidate|Delete from|Update)/i
   if (lines.some(line => treeNodePattern.test(line) || wrappedTreePattern.test(line))) {
     return { format: 'tree', engine: 'mysql' }
   }
@@ -92,7 +92,7 @@ function stripResultWrapper(input: string): string {
     // MariaDB/MySQL CLI continuation prompt: "    -> SELECT ...", "    -> u.user_id,"
     // Only skip these when they DON'T look like EXPLAIN ANALYZE tree nodes
     // Tree nodes always have: "-> Limit:" (colon), "-> Table scan on", "-> Filter: (", etc.
-    if (/^\s*->\s/.test(trimmed) && !/^\s*->\s+(?:Nested loop|Table scan|Index (?:lookup|range|scan)|Filter:|Sort:|Limit:|Aggregate|Single-row|Covering index|Hash|Materialize|Group aggregate|Duplicates|Select #)/i.test(trimmed)) continue
+    if (/^\s*->\s/.test(trimmed) && !/^\s*->\s+(?:Nested loop|Table scan|Index (?:lookup|range|scan|skip)|Filter:|Sort[: ]|Limit[:/]|Aggregate|Single-row|Covering index|Hash (?:join|semi|anti)|Inner hash|Left hash|Materialize|Group aggregate|Group \(no|Duplicates|Select #|Window|Stream|Remove duplicate|Zero rows|Constant row|Scan new|Count rows|Rows fetched|Batched key|Full-text|Multi-range|Sample scan|Distance scan|Skip scan|Weedout|Invalidate|Delete from|Update)/i.test(trimmed)) continue
     if (/^\d+\s+rows?\s+in\s+set/.test(trimmed)) continue
     if (/^\d+\s+rows?\s+affected/.test(trimmed)) continue
     if (/^\d+\s+warnings?/.test(trimmed)) continue
