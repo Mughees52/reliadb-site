@@ -167,7 +167,8 @@ Push to `main` → Netlify auto-builds and deploys.
 - **MariaDB**: Complete — ANALYZE table + JSON parsing, 7 MariaDB rules, wrapper detection
 - **MySQL 8.4 tree enhancements**: Complete — 40+ node types (hash joins, window functions, CTEs, skip scans, antijoins, index merge, etc.)
 - **Index impact simulator**: Complete — structural plan change predictions per index recommendation
-- **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, embeddable widget, PWA, launch blog post (LAST)
+- **Embeddable widget**: Complete — iframe embed mode with `?embed` param, "Get Embed Code" button, powered-by footer
+- **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, PWA, launch blog post (LAST)
 
 ### Brand
 
