@@ -1,6 +1,6 @@
 # EXPLAIN Analyzer — Test Report
 
-**Date**: 2026-04-09
+**Date**: 2026-04-10
 **Queries**: 50
 **Errors**: 0
 
@@ -11,7 +11,7 @@
 | Issues detected | 102 |
 | Index recommendations | 53 |
 | Impact simulations | 23 |
-| Query hints | 40 |
+| Query hints | 94 |
 | Query rewrites | 8 |
 | Average score | 86/100 |
 
@@ -19,55 +19,55 @@
 
 | # | Name | Score | Issues | Idx Recs | Impact | Hints | Rewrites |
 |---|------|-------|--------|----------|--------|-------|----------|
-| 1 | Full scan with low-selectivity filter | 95 | 1 | 0 | 0 | 1 | 1 |
-| 2 | Full scan with range filter on unindexed column | 77 | 2 | 1 | 1 | 1 | 1 |
-| 3 | Full scan with LIKE prefix pattern | 77 | 2 | 1 | 1 | 0 | 0 |
-| 4 | Full scan on large table no WHERE | 77 | 2 | 0 | 0 | 1 | 1 |
-| 5 | Filter on non-indexed column | 95 | 1 | 1 | 0 | 0 | 0 |
-| 6 | Simple two-table join | 97 | 2 | 1 | 0 | 0 | 0 |
-| 7 | Three-table join with aggregation | 82 | 1 | 2 | 0 | 1 | 0 |
-| 8 | Join with filter on both tables | 97 | 2 | 2 | 1 | 0 | 0 |
-| 9 | Left join with NULL check | 94 | 4 | 0 | 0 | 0 | 0 |
-| 10 | Multi-join order pipeline | 79 | 3 | 3 | 0 | 1 | 0 |
-| 11 | GROUP BY without composite index | 82 | 1 | 1 | 0 | 1 | 0 |
+| 1 | Full scan with low-selectivity filter | 95 | 1 | 0 | 0 | 3 | 1 |
+| 2 | Full scan with range filter on unindexed column | 77 | 2 | 1 | 1 | 2 | 1 |
+| 3 | Full scan with LIKE prefix pattern | 77 | 2 | 1 | 1 | 1 | 0 |
+| 4 | Full scan on large table no WHERE | 77 | 2 | 0 | 0 | 2 | 1 |
+| 5 | Filter on non-indexed column | 95 | 1 | 1 | 0 | 2 | 0 |
+| 6 | Simple two-table join | 97 | 2 | 1 | 0 | 2 | 0 |
+| 7 | Three-table join with aggregation | 82 | 1 | 2 | 0 | 2 | 0 |
+| 8 | Join with filter on both tables | 97 | 2 | 2 | 1 | 2 | 0 |
+| 9 | Left join with NULL check | 94 | 4 | 0 | 0 | 1 | 0 |
+| 10 | Multi-join order pipeline | 79 | 3 | 3 | 0 | 2 | 0 |
+| 11 | GROUP BY without composite index | 82 | 1 | 1 | 0 | 2 | 0 |
 | 12 | GROUP BY with HAVING | 90 | 2 | 1 | 1 | 2 | 0 |
-| 13 | GROUP BY on non-indexed column | 82 | 1 | 1 | 0 | 1 | 0 |
+| 13 | GROUP BY on non-indexed column | 82 | 1 | 1 | 0 | 2 | 0 |
 | 14 | GROUP BY with ORDER BY different column | 95 | 1 | 1 | 1 | 0 | 0 |
 | 15 | GROUP BY date function (non-sargable) | 84 | 2 | 0 | 0 | 1 | 0 |
-| 16 | ORDER BY on non-indexed column | 95 | 1 | 1 | 1 | 1 | 0 |
-| 17 | ORDER BY with large offset | 89 | 3 | 1 | 1 | 1 | 0 |
+| 16 | ORDER BY on non-indexed column | 95 | 1 | 1 | 1 | 2 | 0 |
+| 17 | ORDER BY with large offset | 89 | 3 | 1 | 1 | 2 | 0 |
 | 18 | ORDER BY RAND() | 89 | 3 | 1 | 1 | 2 | 1 |
-| 19 | Multi-column ORDER BY | 59 | 3 | 1 | 1 | 0 | 0 |
-| 20 | ORDER BY with expression | 95 | 1 | 0 | 0 | 1 | 0 |
+| 19 | Multi-column ORDER BY | 59 | 3 | 1 | 1 | 2 | 0 |
+| 20 | ORDER BY with expression | 95 | 1 | 0 | 0 | 2 | 0 |
 | 21 | Correlated subquery in WHERE | 84 | 4 | 0 | 0 | 1 | 0 |
-| 22 | Subquery with IN | 72 | 3 | 1 | 1 | 1 | 0 |
-| 23 | NOT IN subquery (anti-join pattern) | 86 | 5 | 1 | 1 | 3 | 1 |
-| 24 | Scalar subquery in SELECT | 97 | 2 | 0 | 0 | 1 | 0 |
-| 25 | EXISTS subquery | 72 | 3 | 1 | 1 | 1 | 0 |
-| 26 | Join needing covering index | 82 | 1 | 2 | 0 | 1 | 0 |
+| 22 | Subquery with IN | 72 | 3 | 1 | 1 | 2 | 0 |
+| 23 | NOT IN subquery (anti-join pattern) | 86 | 5 | 1 | 1 | 5 | 1 |
+| 24 | Scalar subquery in SELECT | 97 | 2 | 0 | 0 | 2 | 0 |
+| 25 | EXISTS subquery | 72 | 3 | 1 | 1 | 2 | 0 |
+| 26 | Join needing covering index | 82 | 1 | 2 | 0 | 2 | 0 |
 | 27 | Lookup with extra columns | 95 | 1 | 1 | 0 | 1 | 0 |
-| 28 | Count with filter — covering candidate | 100 | 0 | 1 | 0 | 1 | 0 |
-| 29 | Date range scan | 77 | 2 | 0 | 0 | 0 | 0 |
-| 30 | BETWEEN on non-indexed column | 77 | 2 | 1 | 1 | 0 | 0 |
-| 31 | Range + equality composite | 77 | 2 | 2 | 1 | 0 | 0 |
-| 32 | SELECT * with join | 97 | 2 | 1 | 0 | 1 | 1 |
-| 33 | SELECT * from large table with filter | 77 | 2 | 2 | 2 | 1 | 1 |
-| 34 | Revenue by country — full pipeline | 79 | 3 | 2 | 0 | 1 | 0 |
+| 28 | Count with filter — covering candidate | 100 | 0 | 1 | 0 | 2 | 0 |
+| 29 | Date range scan | 77 | 2 | 0 | 0 | 1 | 0 |
+| 30 | BETWEEN on non-indexed column | 77 | 2 | 1 | 1 | 1 | 0 |
+| 31 | Range + equality composite | 77 | 2 | 2 | 1 | 2 | 0 |
+| 32 | SELECT * with join | 97 | 2 | 1 | 0 | 4 | 1 |
+| 33 | SELECT * from large table with filter | 77 | 2 | 2 | 2 | 3 | 1 |
+| 34 | Revenue by country — full pipeline | 79 | 3 | 2 | 0 | 2 | 0 |
 | 35 | Top products by review score | 82 | 1 | 2 | 0 | 2 | 0 |
 | 36 | Customer lifetime value with tiers | 76 | 3 | 1 | 0 | 3 | 0 |
 | 37 | Inventory health — low stock products | 90 | 2 | 1 | 1 | 0 | 0 |
-| 38 | Order fulfillment time analysis | 82 | 1 | 1 | 1 | 0 | 0 |
-| 39 | Abandoned cart pattern — pending old orders | 99 | 3 | 1 | 0 | 1 | 0 |
-| 40 | Payment reconciliation — mismatched amounts | 82 | 1 | 2 | 0 | 2 | 0 |
+| 38 | Order fulfillment time analysis | 82 | 1 | 1 | 1 | 1 | 0 |
+| 39 | Abandoned cart pattern — pending old orders | 99 | 3 | 1 | 0 | 2 | 0 |
+| 40 | Payment reconciliation — mismatched amounts | 82 | 1 | 2 | 0 | 3 | 0 |
 | 41 | YEAR() on indexed column | 89 | 3 | 0 | 0 | 1 | 1 |
-| 42 | LOWER() on column | 71 | 4 | 0 | 0 | 1 | 0 |
-| 43 | Arithmetic on column in WHERE | 77 | 2 | 1 | 1 | 0 | 0 |
-| 44 | DISTINCT with GROUP BY (redundant) | 89 | 3 | 2 | 2 | 1 | 0 |
-| 45 | UNION vs UNION ALL | 95 | 1 | 1 | 0 | 1 | 0 |
-| 46 | Bad estimate — skewed data distribution | 95 | 1 | 1 | 0 | 0 | 0 |
-| 47 | Join with filtered rows — estimate test | 97 | 2 | 2 | 1 | 0 | 0 |
-| 48 | Deeply nested join — 5 tables | 97 | 2 | 3 | 0 | 0 | 0 |
-| 49 | Self-referencing category tree | 77 | 2 | 0 | 0 | 0 | 0 |
+| 42 | LOWER() on column | 71 | 4 | 0 | 0 | 2 | 0 |
+| 43 | Arithmetic on column in WHERE | 77 | 2 | 1 | 1 | 2 | 0 |
+| 44 | DISTINCT with GROUP BY (redundant) | 89 | 3 | 2 | 2 | 2 | 0 |
+| 45 | UNION vs UNION ALL | 95 | 1 | 1 | 0 | 3 | 0 |
+| 46 | Bad estimate — skewed data distribution | 95 | 1 | 1 | 0 | 2 | 0 |
+| 47 | Join with filtered rows — estimate test | 97 | 2 | 2 | 1 | 2 | 0 |
+| 48 | Deeply nested join — 5 tables | 97 | 2 | 3 | 0 | 1 | 0 |
+| 49 | Self-referencing category tree | 77 | 2 | 0 | 0 | 2 | 0 |
 | 50 | Cross-table aggregation with CASE | 82 | 1 | 1 | 1 | 0 | 0 |
 
 ## Index Recommendations Detail
