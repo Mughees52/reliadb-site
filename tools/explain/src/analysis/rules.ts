@@ -360,7 +360,7 @@ const indexNotUsedDespiteAvailable: RuleFn = (node) => {
 
 const lowFilteredPercentage: RuleFn = (node) => {
   if (node.filtered == null) return null
-  if (node.filtered > 25) return null
+  if (node.filtered > 30) return null
   if (isTempTable(node)) return null
   const rows = node.actualRows ?? node.estimatedRows
   if (rows <= 10) return null

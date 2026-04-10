@@ -20,6 +20,7 @@ coverImage: https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=6
 coverImageAlt: Rows of illuminated server racks in a data center representing
   PostgreSQL database infrastructure during crash recovery
 category: postgresql
+author: "Mughees Ahmed"
 ---
 Your PostgreSQL server just crashed. It's replaying WAL and you're staring at a process list that tells you almost nothing. The phone is ringing. How far along is recovery? When will the database accept connections again?
 
