@@ -10,6 +10,7 @@ categories:
   - postgresql-query-tuning
 read_time: 12
 featured: true
+author: "Mughees Ahmed"
 ---
 
 Your application is slow. Users are complaining. You've checked the app servers, the network, the CDN — everything seems fine. The database is the suspect, but where do you start?

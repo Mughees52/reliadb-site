@@ -8,11 +8,65 @@ permalink: /index.html
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ReliaDB — PostgreSQL & MySQL DBA Consulting</title>
   <meta name="description" content="Senior PostgreSQL & MySQL DBA consulting for growing SaaS and tech companies. Keep your databases fast, reliable, and always on — without hiring a full-time DBA.">
+  <link rel="canonical" href="https://reliadb.com/" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ReliaDB — PostgreSQL & MySQL DBA Consulting" />
+  <meta property="og:description" content="Senior PostgreSQL & MySQL DBA consulting for growing SaaS and tech companies. Database audits, monthly support, emergency response, and migrations." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://reliadb.com/" />
+  <meta property="og:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
+  <meta property="og:site_name" content="ReliaDB" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ReliaDB — PostgreSQL & MySQL DBA Consulting" />
+  <meta name="twitter:description" content="Senior PostgreSQL & MySQL DBA consulting for growing SaaS and tech companies." />
+  <meta name="twitter:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
+
+  <!-- Fonts (non-blocking) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"></noscript>
+
+  <!-- Preload LCP element -->
+  <link rel="preload" href="/images/ReliaDB logo.svg" as="image" fetchpriority="high">
+
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231A5276'/><text y='.9em' font-size='70' x='12' fill='white' font-weight='800'>R</text></svg>">
+
+  <!-- Organization Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ProfessionalService",
+    "name": "ReliaDB",
+    "description": "Senior PostgreSQL & MySQL DBA consulting for growing SaaS and tech companies. Database health audits, monthly support, emergency response, migration projects, and architecture consulting.",
+    "url": "https://reliadb.com",
+    "email": "support@reliadb.com",
+    "logo": "https://reliadb.com/images/ReliaDB-Logo.png",
+    "sameAs": [
+      "https://www.linkedin.com/company/reliadb"
+    ],
+    "areaServed": ["EU", "US"],
+    "serviceType": ["Database Consulting", "PostgreSQL DBA", "MySQL DBA", "Database Migration", "Performance Tuning"],
+    "priceRange": "$$"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "ReliaDB",
+    "url": "https://reliadb.com",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://reliadb.com/search/index.html?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
 </head>
 <body>
 
@@ -20,7 +74,7 @@ permalink: /index.html
 <nav id="navbar" role="navigation" aria-label="Main navigation">
   <div class="nav-inner">
     <a href="index.html" class="nav-logo" aria-label="ReliaDB Home">
-      <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" />
+      <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" width="180" height="42" />
       <span class="nav-logo-text">Relia<span>DB</span></span>
     </a>
     <ul class="nav-links" id="navLinks">
@@ -255,17 +309,23 @@ permalink: /index.html
 {% include "footer.njk" %}
 
 <script src="js/main.js"></script>
-<!-- Netlify Identity Widget — required for the blog admin panel at /admin -->
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+<!-- Netlify Identity Widget — only load on admin paths -->
 <script>
-  if (window.netlifyIdentity) {
-    window.netlifyIdentity.on("init", user => {
-      if (!user) {
-        window.netlifyIdentity.on("login", () => {
-          document.location.href = "/admin/";
+  if (window.location.pathname.startsWith('/admin')) {
+    var s = document.createElement('script');
+    s.src = 'https://identity.netlify.com/v1/netlify-identity-widget.js';
+    s.onload = function() {
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.on("init", function(user) {
+          if (!user) {
+            window.netlifyIdentity.on("login", function() {
+              document.location.href = "/admin/";
+            });
+          }
         });
       }
-    });
+    };
+    document.head.appendChild(s);
   }
 </script>
 </body>

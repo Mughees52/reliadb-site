@@ -1,6 +1,7 @@
 README-DEPLOY.md
 CLAUDE.md
 CHATLOG.md
+docs/**
 admin/**
 blog/post-template.html
 tools/**

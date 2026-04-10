@@ -7,6 +7,7 @@ categories:
   - tools
 read_time: 14
 featured: true
+author: "Mughees Ahmed"
 ---
 
 Most MySQL performance problems hide in plain sight. The query runs, returns results, and nobody looks at the execution plan until the database is on fire at 3 AM.

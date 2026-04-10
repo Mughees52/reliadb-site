@@ -7,6 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 15
 featured: false
+author: "Mughees Ahmed"
 ---
 
 <div class="series-nav">
