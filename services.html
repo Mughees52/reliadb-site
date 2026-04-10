@@ -8,10 +8,50 @@ permalink: /services.html
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Services | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
   <meta name="description" content="Expert PostgreSQL and MySQL database consulting services: health audits, monthly support, emergency response, migration projects, and architecture consulting." />
+  <link rel="canonical" href="https://reliadb.com/services.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Database Consulting Services | ReliaDB" />
+  <meta property="og:description" content="Expert PostgreSQL and MySQL database consulting: health audits, monthly DBA support, emergency response, migration projects, and architecture consulting." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://reliadb.com/services.html" />
+  <meta property="og:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Database Consulting Services | ReliaDB" />
+  <meta name="twitter:description" content="Expert PostgreSQL and MySQL database consulting services." />
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
+  <link rel="preload" href="/images/ReliaDB logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Service Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "Database Consulting",
+    "provider": {
+      "@type": "ProfessionalService",
+      "name": "ReliaDB",
+      "url": "https://reliadb.com"
+    },
+    "areaServed": ["EU", "US"],
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Database Consulting Services",
+      "itemListElement": [
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Database Health Audit", "description": "Thorough review of performance, security, backups, replication, and architecture with a written report." } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Monthly DBA Support", "description": "Dedicated 20-40 hrs/month DBA retainer with performance monitoring, tuning, and 4hr SLA incident response." } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Emergency Incident Response", "description": "Same-day response for production database outages, replication failures, and runaway query triage." } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Migration Projects", "description": "Oracle to PostgreSQL, MySQL to RDS, on-premise to cloud migrations with dry-run testing and rollback procedures." } },
+        { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Architecture Consulting", "description": "HA architecture design, sharding vs partitioning, multi-region and DR planning." } }
+      ]
+    }
+  }
+  </script>
   <style>
     /* Services page extras */
     .services-hero {
@@ -381,7 +421,7 @@ permalink: /services.html
   <nav id="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
       <a href="index.html" class="nav-logo" aria-label="ReliaDB Home">
-        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" />
+        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" width="180" height="42" />
         <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
       <ul class="nav-links" id="navLinks">

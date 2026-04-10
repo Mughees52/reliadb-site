@@ -49,19 +49,25 @@ export function generateIndexRecommendations(
             if (!allQueryCols.includes(m[1])) allQueryCols.push(m[1])
           }
 
+          // Validate columns against DDL to filter out SQL aliases
+          const resolvedTable = findTable(tables, resolved)
+          const ddlCols = resolvedTable?.columns.map(c => c.name.toLowerCase())
+
           // Extract GROUP BY and ORDER BY columns for this table to order them correctly
           const groupByMatch = query.match(/\bGROUP\s+BY\s+([\s\S]*?)(?:\bORDER\b|\bLIMIT\b|\bHAVING\b|;|$)/i)
           const orderByMatch = query.match(/\bORDER\s+BY\s+([\s\S]*?)(?:\bLIMIT\b|;|$)/i)
-          const groupByCols = groupByMatch ? extractTableColumns(groupByMatch[1], alias) : []
-          const orderByCols = orderByMatch ? extractTableColumns(orderByMatch[1], alias) : []
+          const groupByCols = groupByMatch ? extractTableColumns(groupByMatch[1], alias, ddlCols) : []
+          const orderByCols = orderByMatch ? extractTableColumns(orderByMatch[1], alias, ddlCols) : []
 
           // Build optimal column order: filter → GROUP BY → ORDER BY → remaining
           const orderedCols = [...columns]
           for (const c of groupByCols) if (!orderedCols.includes(c)) orderedCols.push(c)
           for (const c of orderByCols) if (!orderedCols.includes(c)) orderedCols.push(c)
           for (const c of allQueryCols) if (!orderedCols.includes(c)) orderedCols.push(c)
-
-          const coveringCols = orderedCols.filter(c => !EXCLUDE_WORDS.has(c.toLowerCase()))
+          const coveringCols = orderedCols.filter(c =>
+            !EXCLUDE_WORDS.has(c.toLowerCase()) &&
+            (!ddlCols || ddlCols.includes(c.toLowerCase()))
+          )
           if (coveringCols.length > columns.length && coveringCols.length <= 6) {
             const key = `${resolved}:covering:${coveringCols.join(',')}`
             if (!seen.has(key)) {
@@ -308,11 +314,15 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
   const groupCols = groupClause ? extractColumnRefs(groupClause) : []
   const orderCols = orderClause ? extractColumnRefs(orderClause) : []
 
+  // Extract JOIN ON columns — these should lead covering indexes for inner tables
+  const joinCols = extractJoinColumns(outerQuery)
+
   // Extract aggregate columns from SELECT for covering indexes
   const aggCols = extractAggregateColumns(query)
 
   // Group all columns by resolved table name
   interface TableCols {
+    join: string[]
     where: string[]
     group: string[]
     order: string[]
@@ -321,7 +331,7 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
   const byTable = new Map<string, TableCols>()
 
   function getEntry(resolved: string): TableCols {
-    if (!byTable.has(resolved)) byTable.set(resolved, { where: [], group: [], order: [], agg: [] })
+    if (!byTable.has(resolved)) byTable.set(resolved, { join: [], where: [], group: [], order: [], agg: [] })
     return byTable.get(resolved)!
   }
 
@@ -332,9 +342,13 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
   }
 
   // Resolve unaliased columns: try single-table FROM or DDL column matching
+  // Always validates against DDL columns to filter out SQL aliases
   function resolveUnaliased(col: string, clause: keyof TableCols) {
     const singleTable = query.match(/\bFROM\s+`?(\w+)`?(?:\s+WHERE\b)/i)
     if (singleTable) {
+      // Validate column exists in this table's DDL (filter out SQL aliases)
+      const t = tables.find(t2 => t2.name.toLowerCase() === singleTable[1].toLowerCase())
+      if (t && !t.columns.some(c => c.name.toLowerCase() === col.toLowerCase())) return
       addCol(singleTable[1], col, clause)
       return
     }
@@ -361,6 +375,9 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
     if (ref.table) addCol(ref.table, ref.column, 'agg')
     else resolveUnaliased(ref.column, 'agg')
   }
+  for (const ref of joinCols) {
+    if (ref.table) addCol(ref.table, ref.column, 'join')
+  }
 
   // For each table, build optimal composite index:
   // [WHERE equality cols] + [GROUP BY cols] + [ORDER BY cols] + [aggregate cols for covering]
@@ -378,18 +395,21 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
     // But keep non-PK GROUP BY columns as they still benefit from an index
     const groupToUse = cols.group.filter(c => !pkCols.includes(c.toLowerCase()))
 
-    // Build composite: WHERE → GROUP BY → ORDER BY → aggregate (covering)
+    // Build composite: WHERE equality → JOIN → GROUP BY → ORDER BY → aggregate (covering)
     // Filter out PK columns — the clustered index already covers them
     const composite: string[] = []
     for (const c of cols.where) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
+    for (const c of cols.join) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
     for (const c of groupToUse) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
     for (const c of cols.order) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
     for (const c of cols.agg) if (!composite.includes(c) && !pkCols.includes(c.toLowerCase())) composite.push(c)
 
     if (composite.length === 0) continue
-    // Aggregate-only columns don't warrant a standalone index — they only help as trailing
-    // columns in a composite with WHERE/GROUP BY/ORDER BY
-    if (cols.where.length === 0 && groupToUse.length === 0 && cols.order.length === 0) continue
+    // Aggregate-only columns don't warrant a standalone index
+    // But join + agg is valid (covering index for join side)
+    if (cols.where.length === 0 && groupToUse.length === 0 && cols.order.length === 0 && cols.join.length === 0) continue
+    // Single join column that already has an index — skip unless there are covering columns
+    if (cols.where.length === 0 && groupToUse.length === 0 && cols.order.length === 0 && composite.length <= 1) continue
     if (composite.length > 6) composite.length = 6
 
     // Skip if first column is PK — InnoDB clustered index already covers it
@@ -421,6 +441,8 @@ function analyzeQueryForIndexes(query: string, tables: ParsedTable[], seen: Set<
     // Build descriptive reason
     const parts: string[] = []
     if (cols.where.length > 0) parts.push(`WHERE on ${cols.where.map(c => `\`${c}\``).join(', ')}`)
+    const joinInComposite = cols.join.filter(c => composite.includes(c))
+    if (joinInComposite.length > 0) parts.push(`JOIN on ${joinInComposite.map(c => `\`${c}\``).join(', ')}`)
     if (groupToUse.length > 0) parts.push(`GROUP BY on ${groupToUse.map(c => `\`${c}\``).join(', ')}`)
     if (cols.order.length > 0) parts.push(`ORDER BY on ${cols.order.map(c => `\`${c}\``).join(', ')}`)
     if (cols.agg.length > 0) parts.push(`covers ${cols.agg.map(c => `\`${c}\``).join(', ')} for index-only scan`)
@@ -449,21 +471,40 @@ function stripSubqueries(query: string): string {
   return result
 }
 
-/** Extract columns for a specific table alias from a clause string */
-function extractTableColumns(clause: string, alias: string): string[] {
+/** Extract columns for a specific table alias from a clause string.
+ *  If validColumns is provided, bare (unqualified) columns are validated against it
+ *  to filter out SQL aliases like 'revenue', 'inventory_value', etc. */
+function extractTableColumns(clause: string, alias: string, validColumns?: string[]): string[] {
   const cols: string[] = []
   const regex = new RegExp(`\\b${alias}\\.(\\w+)\\b`, 'gi')
   let match
   while ((match = regex.exec(clause)) !== null) {
     if (!cols.includes(match[1]) && !EXCLUDE_WORDS.has(match[1].toLowerCase())) cols.push(match[1])
   }
-  // Also match bare column names (unqualified)
+  // Also match bare column names — but validate against DDL if available
   const bareRegex = /(?:^|,)\s*`?(\w+)`?\s*(?:ASC|DESC)?(?:\s*,|\s*$)/gi
   while ((match = bareRegex.exec(clause)) !== null) {
     const col = match[1]
-    if (!cols.includes(col) && !EXCLUDE_WORDS.has(col.toLowerCase())) cols.push(col)
+    if (cols.includes(col) || EXCLUDE_WORDS.has(col.toLowerCase())) continue
+    // If we have DDL columns, only accept real columns (skip aliases)
+    if (validColumns && !validColumns.includes(col.toLowerCase())) continue
+    cols.push(col)
   }
   return cols
+}
+
+/** Extract JOIN ON column references: ON t.id = s.tenant_id → [{table:'t', column:'id'}, {table:'s', column:'tenant_id'}] */
+function extractJoinColumns(query: string): ColumnRef[] {
+  const refs: ColumnRef[] = []
+  // Match ON clauses: ON alias.col = alias.col
+  const onRegex = /\bON\s+(\w+)\.(\w+)\s*=\s*(\w+)\.(\w+)/gi
+  let match
+  while ((match = onRegex.exec(query)) !== null) {
+    const [, t1, c1, t2, c2] = match
+    if (!refs.some(r => r.table === t1 && r.column === c1)) refs.push({ table: t1, column: c1 })
+    if (!refs.some(r => r.table === t2 && r.column === c2)) refs.push({ table: t2, column: c2 })
+  }
+  return refs
 }
 
 /** Extract columns from aggregate functions: SUM(t.col), COUNT(t.col), etc. */
@@ -579,8 +620,14 @@ function suggestCoveringIndexes(
     }
 
     // Also include the join column (from the index being used)
-    if (node.index && !usedCols.includes(node.index)) {
-      usedCols.unshift(node.index)
+    // Use the actual column name from DDL, not the index name
+    if (node.index) {
+      const idx = table.indexes.find(ix => ix.name.toLowerCase() === node.index!.toLowerCase())
+      if (idx) {
+        for (const col of idx.columns) {
+          if (!usedCols.includes(col)) usedCols.unshift(col)
+        }
+      }
     }
 
     // Add condition columns
@@ -589,18 +636,23 @@ function suggestCoveringIndexes(
       if (!usedCols.includes(c)) usedCols.push(c)
     }
 
-    if (usedCols.length >= 2 && usedCols.length <= 6) {
-      const key = `${resolved}:covering:${usedCols.sort().join(',')}`
+    // Validate all columns exist in DDL — filter out any stray names
+    const tableColNames = table.columns.map(c => c.name.toLowerCase())
+    const validUsedCols = usedCols.filter(c => tableColNames.includes(c.toLowerCase()))
+
+    if (validUsedCols.length >= 2 && validUsedCols.length <= 6) {
+      const key = `${resolved}:covering:${validUsedCols.sort().join(',')}`
       if (!seen.has(key)) {
         // Check if a covering index already exists
         const existing = table.indexes.some(idx =>
-          usedCols.every(c => idx.columns.some(ic => ic.toLowerCase() === c.toLowerCase()))
+          validUsedCols.every(c => idx.columns.some(ic => ic.toLowerCase() === c.toLowerCase()))
         )
         if (!existing) {
           seen.add(key)
           // Put join/equality columns first, then SELECT columns
-          const joinCols = condCols.length > 0 ? condCols : [node.index!]
-          const selectCols = usedCols.filter(c => !joinCols.includes(c))
+          const idxEntry = node.index ? table.indexes.find(ix => ix.name.toLowerCase() === node.index!.toLowerCase()) : null
+          const joinCols = condCols.length > 0 ? condCols : (idxEntry ? idxEntry.columns : [])
+          const selectCols = validUsedCols.filter(c => !joinCols.includes(c))
           const orderedCols = [...joinCols, ...selectCols]
 
           recs.push({

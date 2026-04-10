@@ -1,0 +1,33 @@
+# ReliaDB
+
+> ReliaDB is a PostgreSQL and MySQL DBA consulting service for growing SaaS companies and engineering teams. We provide database health audits, monthly support retainers, emergency incident response, migration projects, and architecture consulting.
+
+## About
+
+ReliaDB is run by Mughees Ahmed, a senior database administrator based in Pakistan serving EU and US clients. The business specializes in PostgreSQL and MySQL performance tuning, high availability, cloud database optimization (AWS RDS, Aurora), and database migrations.
+
+- Website: https://reliadb.com
+- Email: support@reliadb.com
+- LinkedIn: https://www.linkedin.com/company/reliadb
+
+## Key Pages
+
+- [Homepage](https://reliadb.com/): Overview of database consulting services
+- [Services](https://reliadb.com/services.html): Database health audits, monthly DBA support, emergency response, migration projects, architecture consulting
+- [Results](https://reliadb.com/results.html): Case studies — 94% query time reduction, 62% AWS RDS cost savings
+- [About](https://reliadb.com/about.html): Company background and expertise
+- [Contact](https://reliadb.com/contact.html): Book a free 30-minute database assessment
+- [Blog](https://reliadb.com/blog/index.html): Expert articles on PostgreSQL and MySQL optimization
+
+## Free Tools
+
+- [MySQL & MariaDB EXPLAIN Analyzer](https://reliadb.com/tools/explain/): Free, browser-based tool that visualizes MySQL and MariaDB EXPLAIN output with 49 detection rules, composite index recommendations, query rewrite suggestions, and impact simulation. 100% client-side — no data leaves your browser. Supports MySQL EXPLAIN ANALYZE (tree format), MariaDB ANALYZE (table and JSON), and FORMAT=JSON.
+
+## Blog Topics
+
+- PostgreSQL autovacuum tuning and internals
+- PostgreSQL crash recovery and diagnostics
+- MySQL 8.0 to 8.4 LTS upgrade guides (5-part series)
+- MariaDB to MySQL Aurora migration guides (5-part series)
+- MySQL EXPLAIN plan analysis and optimization
+- Database performance troubleshooting

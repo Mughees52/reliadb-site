@@ -88,11 +88,26 @@ module.exports = function (eleventyConfig) {
     }));
   });
 
+  // Date filter for sitemap
+  eleventyConfig.addFilter("date", function(dateObj, format) {
+    if (!dateObj) return "";
+    const d = new Date(dateObj);
+    if (format === "%Y-%m-%d") {
+      return d.toISOString().split("T")[0];
+    }
+    if (format === "%Y-%m-%dT%H:%M:%S+00:00") {
+      return d.toISOString().replace(/\.\d{3}Z$/, "+00:00");
+    }
+    return d.toISOString();
+  });
+
   eleventyConfig.addPassthroughCopy("css");
   eleventyConfig.addPassthroughCopy("js");
   eleventyConfig.addPassthroughCopy("images");
   eleventyConfig.addPassthroughCopy("assets");
   eleventyConfig.addPassthroughCopy("admin");
+  eleventyConfig.addPassthroughCopy("robots.txt");
+  eleventyConfig.addPassthroughCopy("llms.txt");
   eleventyConfig.addPassthroughCopy({ "tools/explain/dist": "tools/explain" });
 
   return {
