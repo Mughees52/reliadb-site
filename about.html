@@ -7,11 +7,54 @@ permalink: /about.html
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>About | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
-  <meta name="description" content="About ReliaDB — a Barcelona-based PostgreSQL and MySQL consulting company providing 24/7 support for growing teams." />
+  <meta name="description" content="About ReliaDB — PostgreSQL and MySQL DBA consulting based in Pakistan, serving EU and US clients with 24/7 support for growing teams." />
+  <link rel="canonical" href="https://reliadb.com/about.html" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="About ReliaDB — PostgreSQL & MySQL DBA Consulting" />
+  <meta property="og:description" content="PostgreSQL and MySQL DBA consulting based in Pakistan, serving EU and US clients with 24/7 support." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://reliadb.com/about.html" />
+  <meta property="og:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Fonts (non-blocking) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
+  <link rel="preload" href="/images/ReliaDB logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Person Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Mughees Ahmed",
+    "jobTitle": "Senior Database Administrator",
+    "worksFor": {
+      "@type": "ProfessionalService",
+      "name": "ReliaDB",
+      "url": "https://reliadb.com"
+    },
+    "knowsAbout": [
+      "PostgreSQL",
+      "MySQL",
+      "MariaDB",
+      "AWS RDS",
+      "Aurora",
+      "Database Performance Tuning",
+      "High Availability",
+      "Database Migrations"
+    ],
+    "sameAs": [
+      "https://www.linkedin.com/in/mughees-ahmed/"
+    ]
+  }
+  </script>
   <style>
     .about-hero {
       background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
@@ -250,7 +293,7 @@ permalink: /about.html
   <nav id="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
       <a href="index.html" class="nav-logo" aria-label="ReliaDB Home">
-        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" />
+        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" width="180" height="42" />
         <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
       <ul class="nav-links" id="navLinks">
