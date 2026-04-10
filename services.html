@@ -8,9 +8,24 @@ permalink: /services.html
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Services | ReliaDB — PostgreSQL & MySQL Database Consulting</title>
   <meta name="description" content="Expert PostgreSQL and MySQL database consulting services: health audits, monthly support, emergency response, migration projects, and architecture consulting." />
+  <link rel="canonical" href="https://reliadb.com/services.html" />
+  <!-- Open Graph -->
+  <meta property="og:title" content="Database Consulting Services | ReliaDB" />
+  <meta property="og:description" content="Expert PostgreSQL and MySQL database consulting services: health audits, monthly support, emergency response, migration projects, and architecture consulting." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://reliadb.com/services.html" />
+  <meta property="og:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
+  <meta property="og:site_name" content="ReliaDB" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Database Consulting Services | ReliaDB" />
+  <meta name="twitter:description" content="Expert PostgreSQL and MySQL database consulting services: health audits, monthly support, emergency response, migration projects, and architecture consulting." />
+  <meta name="twitter:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"></noscript>
+  <link rel="preload" href="/images/ReliaDB logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="css/style.css" />
   <style>
     /* Services page extras */
@@ -374,6 +389,60 @@ permalink: /services.html
       .sla-cards-grid { grid-template-columns: 1fr; }
     }
   </style>
+  <!-- Structured Data: Service -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "serviceType": "Database Consulting",
+    "provider": {
+      "@type": "ProfessionalService",
+      "name": "ReliaDB",
+      "url": "https://reliadb.com"
+    },
+    "hasOfferCatalog": {
+      "@type": "OfferCatalog",
+      "name": "Database Consulting Services",
+      "itemListElement": [
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Database Health Audit"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Monthly DBA Support"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Emergency Incident Response"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Migration Projects"
+          }
+        },
+        {
+          "@type": "Offer",
+          "itemOffered": {
+            "@type": "Service",
+            "name": "Architecture Consulting"
+          }
+        }
+      ]
+    }
+  }
+  </script>
 </head>
 <body>
 
@@ -381,7 +450,7 @@ permalink: /services.html
   <nav id="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-inner">
       <a href="index.html" class="nav-logo" aria-label="ReliaDB Home">
-        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" />
+        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" width="180" height="42" />
         <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
       <ul class="nav-links" id="navLinks">

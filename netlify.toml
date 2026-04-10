@@ -26,6 +26,18 @@
   [headers.values]
     X-Robots-Tag = "noindex"
 
+# Cache immutable hashed assets (Vite build output)
+[[headers]]
+  for = "/tools/explain/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache images (long-lived, revalidate on change)
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # Force HTTPS — redirect all HTTP traffic to HTTPS
 [[redirects]]
   from = "http://reliadb.com/*"

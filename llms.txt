@@ -1,0 +1,32 @@
+# ReliaDB
+
+> PostgreSQL and MySQL DBA consulting service run by Mughees Ahmed, based in Pakistan, serving EU and US clients.
+
+ReliaDB provides expert-level database consulting for growing companies. We specialize in PostgreSQL and MySQL performance audits, ongoing monthly support, and emergency response. Our goal is to help engineering teams ship faster by eliminating database bottlenecks.
+
+## About
+
+ReliaDB is a solo DBA consulting business founded by Mughees Ahmed. We work with startups and mid-size companies across Europe and the United States, delivering international-quality database expertise at competitive rates. Our focus is on PostgreSQL and MySQL — the two most widely deployed open-source relational databases.
+
+## Key Pages
+
+- [Homepage](https://reliadb.com/): Overview of services, social proof, and how to get started.
+- [Services](https://reliadb.com/services.html): Detailed service offerings including database audits, monthly support plans, and emergency response.
+- [Results](https://reliadb.com/results.html): Case studies and measurable outcomes from past engagements.
+- [About](https://reliadb.com/about.html): Background on Mughees Ahmed and the ReliaDB approach.
+- [Contact](https://reliadb.com/contact.html): Book a free assessment or send a message.
+- [Blog](https://reliadb.com/blog/): Expert-level articles on PostgreSQL, MySQL, and MariaDB.
+
+## Free Tools
+
+- [MySQL & MariaDB EXPLAIN Analyzer](https://reliadb.com/tools/explain/): A free, browser-based tool for visualizing and analyzing MySQL and MariaDB EXPLAIN output. Features include an interactive tree visualization, 49 automatic detection rules (covering full table scans, missing indexes, bad estimates, filesort, temporary tables, and more), composite index recommendations with query-aware alias resolution, 7 query rewrite generators, index impact simulation, DDL schema analysis, and MariaDB ANALYZE support. The tool is 100% client-side — no data leaves the browser, no backend, no API calls, no account required. Supports MySQL EXPLAIN ANALYZE (tree format), MariaDB ANALYZE (table and JSON), and FORMAT=JSON output.
+
+## Blog Topics
+
+- PostgreSQL autovacuum tuning and monitoring
+- PostgreSQL crash recovery and WAL management
+- MySQL upgrade guides (5.7 to 8.0, 8.0 to 8.4)
+- MariaDB migration guides
+- EXPLAIN analysis and query optimization techniques
+- Database performance auditing methodology
+- Index design and optimization strategies

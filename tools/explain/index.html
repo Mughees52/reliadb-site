@@ -19,10 +19,27 @@
   <meta name="twitter:title" content="MySQL & MariaDB EXPLAIN Analyzer — Free Query Plan Visualizer" />
   <meta name="twitter:description" content="Visualize and optimize MySQL and MariaDB query plans. Free, private, runs in your browser." />
 
+  <!-- SoftwareApplication Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "ReliaDB MySQL & MariaDB EXPLAIN Analyzer",
+    "description": "Free, browser-based tool that visualizes MySQL and MariaDB EXPLAIN output with 49 detection rules, composite index recommendations, query rewrite suggestions, and impact simulation. 100% client-side — no data leaves your browser.",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Web",
+    "url": "https://reliadb.com/tools/explain/",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": { "@type": "Organization", "name": "ReliaDB", "url": "https://reliadb.com" }
+  }
+  </script>
+
   <!-- Shared site assets -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"></noscript>
+  <link rel="preload" href="/images/ReliaDB logo.svg" as="image">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231A5276'/><text y='.9em' font-size='70' x='12' fill='white' font-weight='800'>R</text></svg>">
   <style>
@@ -45,7 +62,7 @@ if (new URLSearchParams(window.location.search).has('embed')) {
 <nav id="navbar" role="navigation" aria-label="Main navigation">
   <div class="nav-inner">
     <a href="/" class="nav-logo" aria-label="ReliaDB Home">
-      <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" />
+      <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" width="180" height="42" />
       <span class="nav-logo-text">Relia<span>DB</span></span>
     </a>
     <ul class="nav-links" id="navLinks">
@@ -76,15 +93,36 @@ if (new URLSearchParams(window.location.search).has('embed')) {
   </div>
 </nav>
 
+<!-- ── STATIC DESCRIPTION (visible to AI crawlers and SSR fallback) ── -->
+<section id="tool-description" style="max-width:800px;margin:100px auto 0;padding:0 24px;">
+  <h1 style="font-size:1.8rem;color:#1a1a2e;margin-bottom:16px;">MySQL & MariaDB EXPLAIN Analyzer</h1>
+  <p style="color:#444;line-height:1.8;font-size:1.05rem;">The ReliaDB EXPLAIN Analyzer is a free, browser-based tool that visualizes MySQL and MariaDB EXPLAIN output. Paste your query plan and get an interactive tree visualization, automatic performance issue detection with 49 rules, composite index recommendations, query rewrite suggestions, and index impact simulation. Supports MySQL EXPLAIN ANALYZE (tree format), MariaDB ANALYZE (table and JSON), and FORMAT=JSON output.</p>
+  <p style="color:#444;line-height:1.8;font-size:1.05rem;"><strong>100% client-side</strong> — your data never leaves your browser. No backend, no API calls, no account required. Built by <a href="/about.html" style="color:#2980B9;">ReliaDB</a>, a PostgreSQL and MySQL DBA consulting service.</p>
+</section>
+
 <!-- ── VUE APP MOUNT ── -->
 <div id="app"></div>
+<script>
+  // Hide static description once Vue app mounts
+  var desc = document.getElementById('tool-description');
+  if (desc) {
+    var observer = new MutationObserver(function() {
+      var app = document.getElementById('app');
+      if (app && app.children.length > 0) {
+        desc.style.display = 'none';
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.getElementById('app'), { childList: true });
+  }
+</script>
 
 <!-- ── FOOTER (matches site) ── -->
 <footer class="site-footer">
   <div class="footer-inner">
     <div class="footer-brand">
       <div class="footer-logo">
-        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="footer-logo-image" />
+        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="footer-logo-image" width="180" height="42" />
       </div>
       <p>International PostgreSQL &amp; MySQL consulting for growing companies, with delivery based in Pakistan.</p>
     </div>
