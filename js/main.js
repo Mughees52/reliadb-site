@@ -151,7 +151,7 @@ navAnchors.forEach(a => {
 
 // --- Scroll reveal (down + up) ---
 const revealTargets = document.querySelectorAll(
-  '.section, .service-full, .case-study-section, .about-section, .what-happens, .results-metrics, .contact-main, .blog-main, .search-page-main, .addons-section, .guarantee-section, .cta-bottom, .cta-about, .cta-section'
+  '.section, .service-full, .case-study-section, .about-section, .what-happens, .results-metrics, .contact-main, .search-page-main, .addons-section, .guarantee-section, .cta-bottom, .cta-about, .cta-section'
 );
 
 if (revealTargets.length) {
