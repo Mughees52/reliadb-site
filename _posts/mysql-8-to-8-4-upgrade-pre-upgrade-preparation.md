@@ -7,6 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 18
 featured: true
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-pre-upgrade-preparation.png"
 ---
 
 <!-- Series Navigation -->

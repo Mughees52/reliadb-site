@@ -12,6 +12,7 @@ categories:
   - troubleshooting
 read_time: 5
 featured: true
+coverImage: "/images/blog/postgresql-autovacuum-internals-tuning-guide.png"
 ---
 PostgreSQL autovacuum is the background worker that keeps your database from quietly falling apart. Misconfigure it and you'll deal with table bloat, degraded query plans, and in the worst case, a transaction ID wraparound that halts all writes across the cluster. Leave it at defaults on a large-table workload, and it may not run frequently enough to keep up.
 

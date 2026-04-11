@@ -9,6 +9,7 @@ read_time: 18
 featured: true
 author: "Mughees Ahmed"
 dateModified: "2026-04-11T00:00:00+00:00"
+coverImage: "/images/blog/mysql-explain-output-complete-guide.png"
 ---
 
 Every slow query in MySQL starts with one command: `EXPLAIN`. It tells you exactly how the optimizer plans to execute your query — which tables it reads first, which indexes it picks, how many rows it expects to scan, and whether it resorts to expensive operations like filesorts or temporary tables.

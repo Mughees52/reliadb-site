@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a3a5c"/>
+      <stop offset="50%" stop-color="#336791"/>
+      <stop offset="100%" stop-color="#2a5a7a"/>
+    </linearGradient>
+    <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4CAF50" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#4CAF50" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="cleanGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#66BB6A"/>
+      <stop offset="100%" stop-color="#388E3C"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.06">
+    <line x1="0" y1="0" x2="1200" y2="630" stroke="#fff" stroke-width="0.5"/>
+    <line x1="200" y1="0" x2="1200" y2="500" stroke="#fff" stroke-width="0.5"/>
+    <line x1="400" y1="0" x2="1200" y2="400" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="130" x2="1200" y2="630" stroke="#fff" stroke-width="0.5"/>
+    <line x1="0" y1="300" x2="900" y2="630" stroke="#fff" stroke-width="0.5"/>
+  </g>
+
+  <!-- Database cylinder (center-left) -->
+  <g transform="translate(280, 180)" filter="url(#softShadow)">
+    <ellipse cx="0" cy="0" rx="90" ry="25" fill="#2a5a7a" stroke="#4a8ab5" stroke-width="2"/>
+    <rect x="-90" y="0" width="180" height="200" fill="#2a5a7a" stroke="none"/>
+    <line x1="-90" y1="0" x2="-90" y2="200" stroke="#4a8ab5" stroke-width="2"/>
+    <line x1="90" y1="0" x2="90" y2="200" stroke="#4a8ab5" stroke-width="2"/>
+    <ellipse cx="0" cy="200" rx="90" ry="25" fill="#2a5a7a" stroke="#4a8ab5" stroke-width="2"/>
+    <ellipse cx="0" cy="0" rx="90" ry="25" fill="#3a6a8a" stroke="#4a8ab5" stroke-width="2"/>
+    <!-- Row lines inside cylinder -->
+    <ellipse cx="0" cy="55" rx="90" ry="18" fill="none" stroke="#4a8ab5" stroke-width="1" opacity="0.4"/>
+    <ellipse cx="0" cy="110" rx="90" ry="18" fill="none" stroke="#4a8ab5" stroke-width="1" opacity="0.4"/>
+    <ellipse cx="0" cy="165" rx="90" ry="18" fill="none" stroke="#4a8ab5" stroke-width="1" opacity="0.4"/>
+  </g>
+
+  <!-- Dead rows (fading circles leaving the database) -->
+  <!-- Row cluster 1 - fading out -->
+  <circle cx="420" cy="260" r="12" fill="#c0392b" opacity="0.7"/>
+  <circle cx="460" cy="230" r="10" fill="#c0392b" opacity="0.5"/>
+  <circle cx="500" cy="270" r="11" fill="#c0392b" opacity="0.35"/>
+  <circle cx="540" cy="240" r="9" fill="#c0392b" opacity="0.2"/>
+  <circle cx="575" cy="260" r="8" fill="#c0392b" opacity="0.1"/>
+  <circle cx="605" cy="245" r="7" fill="#c0392b" opacity="0.05"/>
+
+  <!-- Row cluster 2 - fading out -->
+  <circle cx="430" cy="340" r="11" fill="#e74c3c" opacity="0.65"/>
+  <circle cx="470" cy="360" r="9" fill="#e74c3c" opacity="0.45"/>
+  <circle cx="510" cy="345" r="10" fill="#e74c3c" opacity="0.3"/>
+  <circle cx="548" cy="355" r="8" fill="#e74c3c" opacity="0.15"/>
+  <circle cx="580" cy="340" r="7" fill="#e74c3c" opacity="0.07"/>
+
+  <!-- Row cluster 3 - fading out -->
+  <circle cx="415" cy="420" r="10" fill="#c0392b" opacity="0.6"/>
+  <circle cx="455" cy="400" r="8" fill="#c0392b" opacity="0.4"/>
+  <circle cx="490" cy="415" r="9" fill="#c0392b" opacity="0.22"/>
+  <circle cx="525" cy="405" r="7" fill="#c0392b" opacity="0.1"/>
+
+  <!-- Sweep motion lines -->
+  <g opacity="0.5">
+    <path d="M380 250 Q500 230 620 250" fill="none" stroke="url(#sweep)" stroke-width="3" stroke-dasharray="8,4"/>
+    <path d="M390 330 Q510 310 630 330" fill="none" stroke="url(#sweep)" stroke-width="3" stroke-dasharray="8,4"/>
+    <path d="M385 410 Q505 390 625 410" fill="none" stroke="url(#sweep)" stroke-width="3" stroke-dasharray="8,4"/>
+  </g>
+
+  <!-- Clean/live rows inside DB (green dots) -->
+  <g>
+    <circle cx="250" cy="260" r="8" fill="url(#cleanGrad)" opacity="0.9"/>
+    <circle cx="275" cy="275" r="7" fill="url(#cleanGrad)" opacity="0.85"/>
+    <circle cx="300" cy="260" r="8" fill="url(#cleanGrad)" opacity="0.9"/>
+    <circle cx="260" cy="320" r="7" fill="url(#cleanGrad)" opacity="0.85"/>
+    <circle cx="290" cy="330" r="8" fill="url(#cleanGrad)" opacity="0.9"/>
+    <circle cx="310" cy="315" r="7" fill="url(#cleanGrad)" opacity="0.85"/>
+    <circle cx="255" cy="380" r="8" fill="url(#cleanGrad)" opacity="0.9"/>
+    <circle cx="280" cy="395" r="7" fill="url(#cleanGrad)" opacity="0.85"/>
+    <circle cx="305" cy="380" r="8" fill="url(#cleanGrad)" opacity="0.9"/>
+  </g>
+
+  <!-- Recycling arrows (right side) -->
+  <g transform="translate(800, 315)" filter="url(#glow)">
+    <!-- Circular recycling symbol -->
+    <path d="M0,-80 A80,80 0 0,1 69,40" fill="none" stroke="#66BB6A" stroke-width="5" stroke-linecap="round"/>
+    <polygon points="69,40 55,20 80,25" fill="#66BB6A"/>
+
+    <path d="M69,40 A80,80 0 0,1 -69,40" fill="none" stroke="#81C784" stroke-width="5" stroke-linecap="round"/>
+    <polygon points="-69,40 -55,20 -80,25" fill="#81C784"/>
+
+    <path d="M-69,40 A80,80 0 0,1 0,-80" fill="none" stroke="#A5D6A7" stroke-width="5" stroke-linecap="round"/>
+    <polygon points="0,-80 -15,-60 12,-62" fill="#A5D6A7"/>
+
+    <!-- Center icon - small DB symbol -->
+    <ellipse cx="0" cy="-15" rx="22" ry="8" fill="#3a6a8a" stroke="#66BB6A" stroke-width="1.5"/>
+    <rect x="-22" y="-15" width="44" height="30" fill="#3a6a8a"/>
+    <ellipse cx="0" cy="15" rx="22" ry="8" fill="#3a6a8a" stroke="#66BB6A" stroke-width="1.5"/>
+    <line x1="-22" y1="-15" x2="-22" y2="15" stroke="#66BB6A" stroke-width="1.5"/>
+    <line x1="22" y1="-15" x2="22" y2="15" stroke="#66BB6A" stroke-width="1.5"/>
+  </g>
+
+  <!-- Connecting dotted lines from DB to recycler -->
+  <path d="M370 315 Q580 280 720 315" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+  <path d="M370 350 Q580 380 720 350" fill="none" stroke="#4CAF50" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.3"/>
+
+  <!-- Subtle particle dots (background atmosphere) -->
+  <circle cx="100" cy="100" r="2" fill="#fff" opacity="0.15"/>
+  <circle cx="950" cy="80" r="2.5" fill="#fff" opacity="0.12"/>
+  <circle cx="1050" cy="520" r="2" fill="#fff" opacity="0.1"/>
+  <circle cx="150" cy="550" r="1.5" fill="#fff" opacity="0.12"/>
+  <circle cx="650" cy="120" r="2" fill="#fff" opacity="0.1"/>
+  <circle cx="1100" cy="180" r="1.5" fill="#fff" opacity="0.08"/>
+
+  <!-- Title text -->
+  <text x="600" y="80" text-anchor="middle" font-family="sans-serif" font-weight="700" font-size="28" fill="#ffffff" letter-spacing="1">AUTOVACUUM INTERNALS</text>
+  <text x="600" y="570" text-anchor="middle" font-family="sans-serif" font-weight="400" font-size="16" fill="#8ab4d4" letter-spacing="2">POSTGRESQL TUNING GUIDE</text>
+
+  <!-- ReliaDB brand mark (bottom-right) -->
+  <g transform="translate(1140, 580)">
+    <rect x="-22" y="-22" width="44" height="44" rx="10" fill="#1A5276"/>
+    <text x="0" y="8" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="28" fill="#ffffff">R</text>
+  </g>
+</svg>

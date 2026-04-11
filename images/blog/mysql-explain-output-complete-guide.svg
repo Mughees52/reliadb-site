@@ -1,0 +1,146 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A1F2E"/>
+      <stop offset="50%" stop-color="#1A5276"/>
+      <stop offset="100%" stop-color="#0D2B3E"/>
+    </linearGradient>
+    <linearGradient id="nodeGood" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#27AE60"/>
+      <stop offset="100%" stop-color="#1E8449"/>
+    </linearGradient>
+    <linearGradient id="nodeWarn" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E67E22"/>
+      <stop offset="100%" stop-color="#D35400"/>
+    </linearGradient>
+    <linearGradient id="nodeBad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E74C3C"/>
+      <stop offset="100%" stop-color="#C0392B"/>
+    </linearGradient>
+    <filter id="glow6">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg6)"/>
+
+  <!-- Subtle dot grid -->
+  <g opacity="0.1">
+    <circle cx="60" cy="60" r="1.5" fill="#2980B9"/><circle cx="120" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="180" cy="60" r="1.5" fill="#2980B9"/><circle cx="240" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="300" cy="60" r="1.5" fill="#2980B9"/><circle cx="360" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="420" cy="60" r="1.5" fill="#2980B9"/><circle cx="480" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="540" cy="60" r="1.5" fill="#2980B9"/><circle cx="600" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="660" cy="60" r="1.5" fill="#2980B9"/><circle cx="720" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="780" cy="60" r="1.5" fill="#2980B9"/><circle cx="840" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="900" cy="60" r="1.5" fill="#2980B9"/><circle cx="960" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="1020" cy="60" r="1.5" fill="#2980B9"/><circle cx="1080" cy="60" r="1.5" fill="#2980B9"/>
+    <circle cx="1140" cy="60" r="1.5" fill="#2980B9"/>
+    <!-- Repeat rows -->
+    <circle cx="60" cy="120" r="1.5" fill="#2980B9"/><circle cx="120" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="180" cy="120" r="1.5" fill="#2980B9"/><circle cx="240" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="300" cy="120" r="1.5" fill="#2980B9"/><circle cx="360" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="420" cy="120" r="1.5" fill="#2980B9"/><circle cx="480" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="540" cy="120" r="1.5" fill="#2980B9"/><circle cx="600" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="660" cy="120" r="1.5" fill="#2980B9"/><circle cx="720" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="780" cy="120" r="1.5" fill="#2980B9"/><circle cx="840" cy="120" r="1.5" fill="#2980B9"/>
+    <circle cx="900" cy="120" r="1.5" fill="#2980B9"/><circle cx="960" cy="120" r="1.5" fill="#2980B9"/>
+  </g>
+
+  <!-- Query plan tree -->
+  <!-- Root node -->
+  <g transform="translate(550, 80)">
+    <rect x="-70" y="-22" width="140" height="44" rx="8" fill="#0D2B3E" stroke="#2980B9" stroke-width="2"/>
+    <circle cx="-50" cy="0" r="6" fill="#2980B9"/>
+    <rect x="-35" y="-5" width="80" height="10" rx="5" fill="#2980B9" opacity="0.4"/>
+  </g>
+
+  <!-- Edges from root - varying thickness -->
+  <line x1="510" y1="102" x2="340" y2="175" stroke="#2980B9" stroke-width="6" opacity="0.4"/>
+  <line x1="590" y1="102" x2="760" y2="175" stroke="#E67E22" stroke-width="10" opacity="0.4"/>
+
+  <!-- Left child -->
+  <g transform="translate(340, 195)">
+    <rect x="-65" y="-22" width="130" height="44" rx="8" fill="#0D2B3E" stroke="#27AE60" stroke-width="2"/>
+    <circle cx="-45" cy="0" r="6" fill="#27AE60"/>
+    <rect x="-30" y="-5" width="70" height="10" rx="5" fill="#27AE60" opacity="0.4"/>
+    <!-- Good badge -->
+    <rect x="45" y="-12" width="30" height="16" rx="4" fill="#27AE60" opacity="0.8"/>
+  </g>
+
+  <!-- Right child (bottleneck) -->
+  <g transform="translate(760, 195)">
+    <rect x="-70" y="-22" width="140" height="44" rx="8" fill="#0D2B3E" stroke="#E67E22" stroke-width="2.5" filter="url(#glow6)"/>
+    <circle cx="-50" cy="0" r="6" fill="#E67E22"/>
+    <rect x="-35" y="-5" width="85" height="10" rx="5" fill="#E67E22" opacity="0.4"/>
+    <!-- Warning badge -->
+    <rect x="48" y="-12" width="30" height="16" rx="4" fill="#E67E22" opacity="0.8"/>
+  </g>
+
+  <!-- Edges from right child -->
+  <line x1="720" y1="217" x2="600" y2="300" stroke="#27AE60" stroke-width="3" opacity="0.4"/>
+  <line x1="800" y1="217" x2="920" y2="300" stroke="#E74C3C" stroke-width="12" opacity="0.4"/>
+
+  <!-- Right-left grandchild -->
+  <g transform="translate(600, 320)">
+    <rect x="-60" y="-22" width="120" height="44" rx="8" fill="#0D2B3E" stroke="#2980B9" stroke-width="2"/>
+    <circle cx="-40" cy="0" r="6" fill="#2980B9"/>
+    <rect x="-25" y="-5" width="65" height="10" rx="5" fill="#2980B9" opacity="0.4"/>
+  </g>
+
+  <!-- Right-right grandchild (critical bottleneck) -->
+  <g transform="translate(920, 320)">
+    <rect x="-70" y="-22" width="140" height="44" rx="8" fill="#0D2B3E" stroke="#E74C3C" stroke-width="3" filter="url(#glow6)"/>
+    <circle cx="-50" cy="0" r="6" fill="#E74C3C"/>
+    <rect x="-35" y="-5" width="85" height="10" rx="5" fill="#E74C3C" opacity="0.4"/>
+    <!-- Critical badge -->
+    <rect x="48" y="-12" width="30" height="16" rx="4" fill="#E74C3C" opacity="0.8"/>
+  </g>
+
+  <!-- Left child's children -->
+  <line x1="305" y1="217" x2="220" y2="300" stroke="#27AE60" stroke-width="2" opacity="0.3"/>
+  <line x1="375" y1="217" x2="440" y2="300" stroke="#2980B9" stroke-width="4" opacity="0.3"/>
+
+  <g transform="translate(220, 320)">
+    <rect x="-50" y="-18" width="100" height="36" rx="7" fill="#0D2B3E" stroke="#27AE60" stroke-width="1.5"/>
+    <circle cx="-32" cy="0" r="5" fill="#27AE60"/>
+    <rect x="-20" y="-4" width="50" height="8" rx="4" fill="#27AE60" opacity="0.3"/>
+  </g>
+
+  <g transform="translate(440, 320)">
+    <rect x="-50" y="-18" width="100" height="36" rx="7" fill="#0D2B3E" stroke="#2980B9" stroke-width="1.5"/>
+    <circle cx="-32" cy="0" r="5" fill="#2980B9"/>
+    <rect x="-20" y="-4" width="55" height="8" rx="4" fill="#2980B9" opacity="0.3"/>
+  </g>
+
+  <!-- Magnifying glass over the tree -->
+  <g transform="translate(160, 140)" opacity="0.7">
+    <circle cx="0" cy="0" r="65" fill="none" stroke="#2980B9" stroke-width="3"/>
+    <circle cx="0" cy="0" r="60" fill="#2980B9" opacity="0.04"/>
+    <line x1="46" y1="46" x2="90" y2="90" stroke="#2980B9" stroke-width="6" stroke-linecap="round"/>
+    <!-- Glass highlight -->
+    <path d="M-30,-45 Q-10,-55 10,-45" fill="none" stroke="white" stroke-width="2" opacity="0.2"/>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(70, 440)">
+    <circle cx="0" cy="0" r="6" fill="#27AE60"/>
+    <text x="15" y="5" font-family="sans-serif" font-size="13" fill="#27AE60" opacity="0.7">Optimal</text>
+
+    <circle cx="0" cy="28" r="6" fill="#E67E22"/>
+    <text x="15" y="33" font-family="sans-serif" font-size="13" fill="#E67E22" opacity="0.7">Warning</text>
+
+    <circle cx="0" cy="56" r="6" fill="#E74C3C"/>
+    <text x="15" y="61" font-family="sans-serif" font-size="13" fill="#E74C3C" opacity="0.7">Critical</text>
+  </g>
+
+  <!-- Title -->
+  <text x="60" y="580" font-family="sans-serif" font-size="28" font-weight="700" fill="white" opacity="0.9">MySQL EXPLAIN Output</text>
+  <text x="60" y="610" font-family="sans-serif" font-size="18" fill="#2980B9" opacity="0.8">Complete Guide</text>
+
+  <!-- ReliaDB brand mark -->
+  <rect x="1130" y="570" width="44" height="44" rx="10" fill="#1A5276" stroke="#2980B9" stroke-width="1"/>
+  <text x="1152" y="601" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="800" fill="white">R</text>
+</svg>

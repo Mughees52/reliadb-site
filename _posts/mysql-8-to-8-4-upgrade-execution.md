@@ -7,6 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 16
 featured: false
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-execution.png"
 ---
 
 <div class="series-nav">
