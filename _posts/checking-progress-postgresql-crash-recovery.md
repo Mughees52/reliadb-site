@@ -451,3 +451,17 @@ The key takeaways:
 - **After recovery**: Review checkpoint logs and recovery prefetch stats to tune parameters for the next incident.
 
 55.6% of developers now use PostgreSQL — the most popular database for the third consecutive year ([Stack Overflow Developer Survey](https://vonng.com/en/pg/so2025-pg/), 2025). Understanding its recovery internals isn't optional for production DBAs. It's the difference between confidently reporting "recovery will complete in 45 seconds" and silently hoping.
+
+<div class="related-posts">
+<h3>Related Articles</h3>
+<div class="related-grid">
+<a class="related-card" href="/blog/postgresql-autovacuum-internals-tuning-guide.html">
+<div class="rc-cat">PostgreSQL</div>
+<h4>PostgreSQL Autovacuum Internals & Tuning Guide</h4>
+</a>
+<a class="related-card" href="/blog/postgresql-running-slow-diagnostic-guide.html">
+<div class="rc-cat">PostgreSQL</div>
+<h4>PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide</h4>
+</a>
+</div>
+</div>

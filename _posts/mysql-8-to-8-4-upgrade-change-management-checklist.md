@@ -8,6 +8,7 @@ categories:
 read_time: 15
 featured: false
 author: "Mughees Ahmed"
+dateModified: "2026-04-11T00:00:00+00:00"
 ---
 
 <div class="series-nav">
@@ -326,4 +327,18 @@ Use this checklist to track progress through each phase of the upgrade.
     <li><a href="/blog/mysql-8-to-8-4-upgrade-rollback-validation.html">Part 4: Rollback and Post-Upgrade Validation</a></li>
     <li><span class="current">Part 5: Change Management, Troubleshooting, and Checklist (You Are Here)</span></li>
   </ol>
+</div>
+
+<div class="related-posts">
+<h3>Related Articles</h3>
+<div class="related-grid">
+<a class="related-card" href="/blog/mysql-8-to-8-4-upgrade-pre-upgrade-preparation.html">
+<div class="rc-cat">MySQL Upgrade</div>
+<h4>MySQL 8.0 to 8.4 LTS Upgrade Guide — Part 1</h4>
+</a>
+<a class="related-card" href="/blog/mysql-explain-analyzer-free-query-plan-visualizer.html">
+<div class="rc-cat">Tools</div>
+<h4>We Built a Free MySQL EXPLAIN Analyzer</h4>
+</a>
+</div>
 </div>

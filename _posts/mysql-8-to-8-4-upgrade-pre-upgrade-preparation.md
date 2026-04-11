@@ -8,6 +8,7 @@ categories:
 read_time: 18
 featured: true
 author: "Mughees Ahmed"
+dateModified: "2026-04-11T00:00:00+00:00"
 ---
 
 <!-- Series Navigation -->
@@ -454,4 +455,18 @@ Use this checklist to verify you've completed all pre-upgrade preparation steps 
     <li><span class="current">Part 1: Pre-Upgrade Preparation (You Are Here)</span></li>
     <li><a href="/blog/mysql-8-to-8-4-upgrade-testing.html">Part 2: Upgrade Testing &rarr;</a></li>
   </ol>
+</div>
+
+<div class="related-posts">
+<h3>Related Articles</h3>
+<div class="related-grid">
+<a class="related-card" href="/blog/mysql-explain-analyzer-free-query-plan-visualizer.html">
+<div class="rc-cat">Tools</div>
+<h4>We Built a Free MySQL EXPLAIN Analyzer</h4>
+</a>
+<a class="related-card" href="/blog/mysql-8-to-8-4-upgrade-testing.html">
+<div class="rc-cat">MySQL Upgrade</div>
+<h4>MySQL 8.0 to 8.4 LTS Upgrade Guide — Part 2</h4>
+</a>
+</div>
 </div>

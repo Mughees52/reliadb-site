@@ -8,6 +8,7 @@ categories:
 read_time: 14
 featured: true
 author: "Mughees Ahmed"
+dateModified: "2026-04-11T00:00:00+00:00"
 ---
 
 Most MySQL performance problems hide in plain sight. The query runs, returns results, and nobody looks at the execution plan until the database is on fire at 3 AM.
@@ -342,3 +343,17 @@ No. The analysis engine uses 49 hand-written detection rules, a query-aware inde
 <h3 id="faq-embed">Can I embed the analysis in my documentation?</h3>
 
 Yes. Click the **Embed** button in the Actions section after analyzing a plan. It generates an `<iframe>` code snippet with your analysis pre-loaded. The embedded view shows a clean, focused analysis with a "Powered by ReliaDB" footer.
+
+<div class="related-posts">
+<h3>Related Articles</h3>
+<div class="related-grid">
+<a class="related-card" href="/blog/mysql-8-to-8-4-upgrade-pre-upgrade-preparation.html">
+<div class="rc-cat">MySQL Upgrade</div>
+<h4>MySQL 8.0 to 8.4 LTS Upgrade Guide — Part 1</h4>
+</a>
+<a class="related-card" href="/blog/mariadb-to-aurora-mysql-migration-pre-migration-requirements.html">
+<div class="rc-cat">MySQL</div>
+<h4>MariaDB 10.6 to MySQL Aurora 8.0 Migration Guide — Part 1</h4>
+</a>
+</div>
+</div>

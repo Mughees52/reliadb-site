@@ -246,6 +246,49 @@ permalink: /results.html
       .metrics-grid { grid-template-columns: 1fr 1fr; }
     }
   </style>
+  <!-- Case Studies Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Client Results — ReliaDB Database Consulting",
+    "description": "Real case studies showing how ReliaDB helped clients cut query times by 94% and reduce AWS RDS costs by 62%.",
+    "url": "https://reliadb.com/results.html",
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "item": {
+            "@type": "CaseStudy",
+            "name": "SaaS Platform: 18-Second Queries Down to 200ms",
+            "description": "B2B SaaS platform with PostgreSQL 14 reporting queries taking 18-25 seconds. ReliaDB reduced query times by 94% to under 200ms through composite indexing, autovacuum tuning, and query optimization.",
+            "about": {
+              "@type": "Service",
+              "name": "Database Performance Tuning",
+              "provider": { "@type": "Organization", "name": "ReliaDB" }
+            }
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "CaseStudy",
+            "name": "E-Commerce Platform: AWS RDS Bills Cut by 62%",
+            "description": "E-commerce platform over-provisioned on AWS RDS. ReliaDB reduced costs by 62% through instance downsizing, read replica consolidation, storage optimization, and strategic index additions.",
+            "about": {
+              "@type": "Service",
+              "name": "AWS RDS Cost Optimization",
+              "provider": { "@type": "Organization", "name": "ReliaDB" }
+            }
+          }
+        }
+      ]
+    }
+  }
+  </script>
 </head>
 <body>
 

@@ -13,6 +13,7 @@ categories:
 read_time: 5
 featured: true
 author: "Mughees Ahmed"
+dateModified: "2026-04-11T00:00:00+00:00"
 ---
 PostgreSQL autovacuum is the background worker that keeps your database from quietly falling apart. Misconfigure it and you'll deal with table bloat, degraded query plans, and in the worst case, a transaction ID wraparound that halts all writes across the cluster. Leave it at defaults on a large-table workload, and it may not run frequently enough to keep up.
 
@@ -352,3 +353,17 @@ Query `pg_stat_user_tables` for `n_dead_tup` as a fraction of `n_live_tup`, and 
 ---
 
 *Tested versions: PostgreSQL 11, 12, 13, 14, 15, 16, 17.*
+
+<div class="related-posts">
+<h3>Related Articles</h3>
+<div class="related-grid">
+<a class="related-card" href="/blog/postgresql-running-slow-diagnostic-guide.html">
+<div class="rc-cat">PostgreSQL</div>
+<h4>PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide</h4>
+</a>
+<a class="related-card" href="/blog/checking-progress-postgresql-crash-recovery.html">
+<div class="rc-cat">PostgreSQL</div>
+<h4>How Do You Check Progress on PostgreSQL's Crash Recovery Process?</h4>
+</a>
+</div>
+</div>

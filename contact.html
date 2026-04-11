@@ -271,6 +271,29 @@ permalink: /contact.html
       .steps-row { grid-template-columns: 1fr; gap: 24px; }
     }
   </style>
+  <!-- ContactPoint Schema -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    "name": "Contact ReliaDB",
+    "description": "Book a free 30-minute database assessment call with ReliaDB.",
+    "url": "https://reliadb.com/contact.html",
+    "mainEntity": {
+      "@type": "Organization",
+      "name": "ReliaDB",
+      "url": "https://reliadb.com",
+      "email": "support@reliadb.com",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "sales",
+        "email": "support@reliadb.com",
+        "availableLanguage": "English",
+        "areaServed": ["EU", "US"]
+      }
+    }
+  }
+  </script>
 </head>
 <body>
 
