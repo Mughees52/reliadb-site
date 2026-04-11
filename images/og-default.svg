@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A5276"/>
+      <stop offset="100%" stop-color="#154360"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Subtle grid pattern -->
+  <g opacity="0.04">
+    <line x1="0" y1="0" x2="1200" y2="630" stroke="#fff" stroke-width="1"/>
+    <line x1="400" y1="0" x2="1200" y2="530" stroke="#fff" stroke-width="1"/>
+    <line x1="800" y1="0" x2="1200" y2="260" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="200" x2="1200" y2="630" stroke="#fff" stroke-width="1"/>
+    <line x1="0" y1="400" x2="800" y2="630" stroke="#fff" stroke-width="1"/>
+  </g>
+  <!-- Database icon -->
+  <g transform="translate(80, 180)" opacity="0.12">
+    <ellipse cx="60" cy="0" rx="60" ry="20" fill="none" stroke="#fff" stroke-width="3"/>
+    <path d="M0,0 v60 a60,20 0 0,0 120,0 v-60" fill="none" stroke="#fff" stroke-width="3"/>
+    <ellipse cx="60" cy="60" rx="60" ry="20" fill="none" stroke="#fff" stroke-width="3"/>
+    <path d="M0,60 v60 a60,20 0 0,0 120,0 v-60" fill="none" stroke="#fff" stroke-width="3"/>
+    <ellipse cx="60" cy="120" rx="60" ry="20" fill="none" stroke="#fff" stroke-width="3"/>
+    <path d="M0,120 v60 a60,20 0 0,0 120,0 v-60" fill="none" stroke="#fff" stroke-width="3"/>
+    <ellipse cx="60" cy="180" rx="60" ry="20" fill="none" stroke="#fff" stroke-width="3"/>
+  </g>
+  <!-- Brand name -->
+  <text x="100" y="280" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="72" font-weight="800" fill="#fff">
+    Relia<tspan fill="#2980B9">DB</tspan>
+  </text>
+  <!-- Tagline -->
+  <text x="100" y="340" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="28" font-weight="400" fill="rgba(255,255,255,0.85)">
+    PostgreSQL &amp; MySQL DBA Consulting
+  </text>
+  <!-- Services line -->
+  <text x="100" y="400" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="20" font-weight="400" fill="rgba(255,255,255,0.6)">
+    Database Audits  ·  Monthly Support  ·  Emergency Response  ·  Migrations
+  </text>
+  <!-- Stats -->
+  <g transform="translate(100, 470)">
+    <rect x="0" y="0" width="200" height="80" rx="10" fill="rgba(255,255,255,0.08)"/>
+    <text x="100" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="800" fill="#fff">94%</text>
+    <text x="100" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="rgba(255,255,255,0.7)">Query time reduction</text>
+  </g>
+  <g transform="translate(320, 470)">
+    <rect x="0" y="0" width="200" height="80" rx="10" fill="rgba(255,255,255,0.08)"/>
+    <text x="100" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="800" fill="#fff">62%</text>
+    <text x="100" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="rgba(255,255,255,0.7)">AWS RDS cost savings</text>
+  </g>
+  <g transform="translate(540, 470)">
+    <rect x="0" y="0" width="200" height="80" rx="10" fill="rgba(255,255,255,0.08)"/>
+    <text x="100" y="35" text-anchor="middle" font-family="Inter, sans-serif" font-size="28" font-weight="800" fill="#fff">Zero</text>
+    <text x="100" y="60" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" fill="rgba(255,255,255,0.7)">Unplanned downtime</text>
+  </g>
+  <!-- URL -->
+  <text x="1100" y="590" text-anchor="end" font-family="Inter, sans-serif" font-size="16" font-weight="600" fill="rgba(255,255,255,0.5)">reliadb.com</text>
+  <!-- Accent bar -->
+  <rect x="0" y="620" width="1200" height="10" fill="#E67E22"/>
+</svg>
