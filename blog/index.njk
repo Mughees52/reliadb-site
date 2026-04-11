@@ -189,25 +189,20 @@ permalink: /blog/index.html
       transform: translateX(3px);
     }
     .featured-visual {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
       position: relative;
       overflow: hidden;
+    }
+    .featured-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .featured-visual::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(41,128,185,0.15), transparent 70%);
-    }
-    .featured-visual svg {
-      width: 100%;
-      max-width: 280px;
-      height: auto;
-      opacity: 0.85;
-      position: relative;
+      background: linear-gradient(90deg, #154360 0%, rgba(21,67,96,0.4) 40%, transparent 100%);
       z-index: 1;
     }
 
@@ -460,20 +455,8 @@ permalink: /blog/index.html
       </div>
       <div class="featured-visual">
         {% if latest.data.coverImage %}
-          <img src="{{ latest.data.coverImage }}" alt="{{ latest.data.title }}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0.4;z-index:0;" />
+          <img src="{{ latest.data.coverImage }}" alt="{{ latest.data.title }}" />
         {% endif %}
-        <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
-          <ellipse cx="100" cy="50" rx="60" ry="18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-          <path d="M40 50v40c0 10 27 18 60 18s60-8 60-18V50" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-          <ellipse cx="100" cy="90" rx="60" ry="18" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-          <path d="M40 90v40c0 10 27 18 60 18s60-8 60-18V90" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-          <ellipse cx="100" cy="130" rx="60" ry="18" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
-          <path d="M40 130v40c0 10 27 18 60 18s60-8 60-18v-40" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-          <ellipse cx="100" cy="170" rx="60" ry="18" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/>
-          <circle cx="162" cy="75" r="18" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none"/>
-          <line x1="175" y1="88" x2="190" y2="103" stroke="rgba(255,255,255,0.5)" stroke-width="2" stroke-linecap="round"/>
-          <path d="M155 72 l4 4 l8-8" stroke="#2ecc71" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        </svg>
       </div>
     </a>
   </div>
