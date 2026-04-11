@@ -7,7 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 10
 featured: false
-coverImage: "/images/blog/mysql-8-to-8-4-upgrade-rollback-validation.png"
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-rollback-validation.jpg"
 ---
 
 <div class="series-nav">

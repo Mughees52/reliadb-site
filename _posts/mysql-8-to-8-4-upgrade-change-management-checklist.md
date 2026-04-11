@@ -7,7 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 15
 featured: false
-coverImage: "/images/blog/mysql-8-to-8-4-upgrade-change-management-checklist.png"
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-change-management-checklist.jpg"
 ---
 
 <div class="series-nav">

@@ -7,7 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 18
 featured: true
-coverImage: "/images/blog/mysql-8-to-8-4-upgrade-pre-upgrade-preparation.png"
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-pre-upgrade-preparation.jpg"
 ---
 
 <!-- Series Navigation -->
@@ -293,7 +293,7 @@ Verify that all application connection libraries and drivers support `caching_sh
 </table>
 
 <figure>
-  <img src="/assets/images/blog/mysql-upgrade-8.4/image1.png" alt="Authentication migration flow diagram showing Path A (recommended with caching_sha2_password) and Path B (transitional with mysql_native_password)" loading="lazy" decoding="async" />
+  <img src="/assets/images/blog/mysql-upgrade-8.4/image1.jpg" alt="Authentication migration flow diagram showing Path A (recommended with caching_sha2_password) and Path B (transitional with mysql_native_password)" loading="lazy" decoding="async" />
   <figcaption>Figure 1: Authentication migration flow &mdash; Path A (recommended target state with caching_sha2_password) vs Path B (transitional with mysql_native_password enabled).</figcaption>
 </figure>
 

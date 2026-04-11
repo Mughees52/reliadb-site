@@ -16,7 +16,7 @@ categories:
   - troubleshooting
 read_time: 10
 featured: true
-coverImage: "/images/blog/checking-progress-postgresql-crash-recovery.png"
+coverImage: "/images/blog/checking-progress-postgresql-crash-recovery.jpg"
 category: postgresql
 ---
 Your PostgreSQL server just crashed. It's replaying WAL and you're staring at a process list that tells you almost nothing. The phone is ringing. How far along is recovery? When will the database accept connections again?

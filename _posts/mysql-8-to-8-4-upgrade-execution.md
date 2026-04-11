@@ -7,7 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 16
 featured: false
-coverImage: "/images/blog/mysql-8-to-8-4-upgrade-execution.png"
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-execution.jpg"
 ---
 
 <div class="series-nav">
@@ -37,7 +37,7 @@ Three primary approaches exist for performing the MySQL 8.0 to 8.4 upgrade. Each
 </table>
 
 <figure>
-  <img src="/assets/images/blog/mysql-upgrade-8.4/image2.png" alt="Decision flowchart for selecting the right MySQL upgrade approach based on available hardware and existing topology" loading="lazy" decoding="async" />
+  <img src="/assets/images/blog/mysql-upgrade-8.4/image2.jpg" alt="Decision flowchart for selecting the right MySQL upgrade approach based on available hardware and existing topology" loading="lazy" decoding="async" />
   <figcaption>Figure 1: Decision flowchart for selecting the right MySQL upgrade approach based on available hardware and existing topology.</figcaption>
 </figure>
 
@@ -46,7 +46,7 @@ Three primary approaches exist for performing the MySQL 8.0 to 8.4 upgrade. Each
 The replication-based approach provides minimal downtime, a natural testing period, and a straightforward rollback path. It requires additional hardware.
 
 <figure>
-  <img src="/assets/images/blog/mysql-upgrade-8.4/image3.png" alt="Replication-based upgrade showing Phase 1 sync via replication and Phase 2 cutover with traffic redirect" loading="lazy" decoding="async" />
+  <img src="/assets/images/blog/mysql-upgrade-8.4/image3.jpg" alt="Replication-based upgrade showing Phase 1 sync via replication and Phase 2 cutover with traffic redirect" loading="lazy" decoding="async" />
   <figcaption>Figure 2: Replication-based upgrade &mdash; Phase 1 (sync via replication) and Phase 2 (cutover with traffic redirect).</figcaption>
 </figure>
 
@@ -141,7 +141,7 @@ The in-place upgrade replaces MySQL binaries on the same server. This requires l
 </div>
 
 <figure>
-  <img src="/assets/images/blog/mysql-upgrade-8.4/image4.png" alt="In-place upgrade timeline showing each step with estimated duration, point of no return, and rollback path" loading="lazy" decoding="async" />
+  <img src="/assets/images/blog/mysql-upgrade-8.4/image4.jpg" alt="In-place upgrade timeline showing each step with estimated duration, point of no return, and rollback path" loading="lazy" decoding="async" />
   <figcaption>Figure 3: In-place upgrade timeline showing each step, estimated duration, point of no return, and rollback path.</figcaption>
 </figure>
 
@@ -262,7 +262,7 @@ The server automatically upgrades the data dictionary and system tables on first
 For environments with an existing source-replica replication topology, upgrade replicas first, then failover. This combines the benefits of minimal downtime with no extra hardware requirement.
 
 <figure>
-  <img src="/assets/images/blog/mysql-upgrade-8.4/image5.png" alt="Rolling replica upgrade showing four stages from initial state through failover and source upgrade" loading="lazy" decoding="async" />
+  <img src="/assets/images/blog/mysql-upgrade-8.4/image5.jpg" alt="Rolling replica upgrade showing four stages from initial state through failover and source upgrade" loading="lazy" decoding="async" />
   <figcaption>Figure 4: Rolling replica upgrade &mdash; four stages from initial state through failover and source upgrade.</figcaption>
 </figure>
 

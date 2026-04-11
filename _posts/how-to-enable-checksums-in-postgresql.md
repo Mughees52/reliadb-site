@@ -10,7 +10,7 @@ categories:
   - database-performance
 read_time: 12
 featured: false
-coverImage: "/images/blog/how-to-enable-checksums-in-postgresql.png"
+coverImage: "/images/blog/how-to-enable-checksums-in-postgresql.jpg"
 ---
 PostgreSQL didn't protect your data with checksums by default until version 18 (September 2025). Every earlier version — including the widely deployed PostgreSQL 14, 15, and 16 — ships with checksums off. That means a flipped bit on disk, a failing storage controller, or a corrupted page can sit undetected for months — until it propagates into your backups and you've lost the only clean copy.
 
