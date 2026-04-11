@@ -8,7 +8,7 @@ ReliaDB is a PostgreSQL & MySQL DBA consulting business. This website serves thr
 2. **Authority building** — publish expert-level blog content on MySQL/PostgreSQL
 3. **Free tools** — the MySQL & MariaDB EXPLAIN Analyzer drives organic traffic and positions ReliaDB as the database performance experts
 
-The business is run by a solo DBA consultant based in Pakistan, serving EU & US clients. Cost efficiency is critical — everything must run at **$0/month recurring cost**.
+The business is run by a solo DBA consultant based in Valencia, Spain, serving EU & US clients. Cost efficiency is critical — everything must run at **$0/month recurring cost**.
 
 ## WHAT
 

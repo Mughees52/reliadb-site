@@ -12,13 +12,9 @@
   <meta property="og:description" content="{{ description }}" />
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://reliadb.com{{ page.url }}" />
-<<<<<<< HEAD
   <meta property="og:image" content="https://reliadb.com{{ coverImage or '/images/og-default.png' }}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
-=======
-  <meta property="og:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
->>>>>>> 0f1dcd4dd09a2ddedd07a3fde6b0494ba723b1b9
   <meta property="og:site_name" content="ReliaDB" />
   <meta property="article:published_time" content="{{ page.date | date("%Y-%m-%dT%H:%M:%S+00:00") }}" />
   <meta property="article:author" content="{{ author or 'Mughees Ahmed' }}" />
@@ -27,11 +23,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="{{ title }}" />
   <meta name="twitter:description" content="{{ description }}" />
-<<<<<<< HEAD
   <meta name="twitter:image" content="https://reliadb.com/images/og-default.png" />
-=======
-  <meta name="twitter:image" content="https://reliadb.com/images/ReliaDB-Logo.png" />
->>>>>>> 0f1dcd4dd09a2ddedd07a3fde6b0494ba723b1b9
 
   <!-- Fonts (non-blocking) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -40,12 +32,9 @@
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" /></noscript>
   <link rel="preload" href="/images/ReliaDB logo.svg" as="image" fetchpriority="high" />
   <link rel="stylesheet" href="../css/style.css" />
-<<<<<<< HEAD
   <link rel="apple-touch-icon" href="/images/ReliaDB-Logo.png">
   <link rel="icon" type="image/png" href="/images/ReliaDB-Logo.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231A5276'/><text y='.9em' font-size='70' x='12' fill='white' font-weight='800'>R</text></svg>">
-=======
->>>>>>> 0f1dcd4dd09a2ddedd07a3fde6b0494ba723b1b9
 
   <!-- Article Schema -->
   <script type="application/ld+json">
@@ -54,7 +43,14 @@
     "@type": "Article",
     "headline": "{{ title }}",
     "description": "{{ description }}",
+    "image": {
+      "@type": "ImageObject",
+      "url": "https://reliadb.com{{ coverImage or '/images/og-default.png' }}",
+      "width": 1200,
+      "height": 630
+    },
     "datePublished": "{{ page.date | date("%Y-%m-%dT%H:%M:%S+00:00") }}",
+    "dateModified": "{{ dateModified or page.date | date("%Y-%m-%dT%H:%M:%S+00:00") }}",
     "author": {
       "@type": "Person",
       "name": "{{ author or 'Mughees Ahmed' }}",
@@ -62,6 +58,7 @@
     },
     "publisher": {
       "@type": "Organization",
+      "@id": "https://reliadb.com/#organization",
       "name": "ReliaDB",
       "url": "https://reliadb.com",
       "logo": {
@@ -81,7 +78,7 @@
     "@type": "BreadcrumbList",
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://reliadb.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://reliadb.com/blog/index.html" },
+      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://reliadb.com/blog/" },
       { "@type": "ListItem", "position": 3, "name": "{{ title }}", "item": "https://reliadb.com{{ page.url }}" }
     ]
   }
