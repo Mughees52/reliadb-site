@@ -51,7 +51,7 @@ Key facts:
 - **Handles pasted terminal output**: auto-strips SQL prompts (`-> SELECT`, `-> GROUP BY`), MySQL/MariaDB result wrappers (`| ... |` borders), `+---+` borders, `N rows in set` lines
 - **Analysis engine (all phases complete)**:
   - 49 detection rules (8 critical, 20 warning, 5 info, 7 good, 4 MariaDB-specific, 5 MySQL 8.0+ specific)
-  - 24 SQL query hint patterns
+  - 33 SQL query hint patterns + 3 function-based detectors
   - 7 query rewrite generators (YEAR→range, subquery→JOIN, NOT IN→LEFT JOIN, GROUP BY fix, SELECT *, OFFSET→keyset, RAND())
   - DDL parser with FK-without-index, redundant index, NOT NULL suggestions
   - Query-aware index advisor: extracts WHERE/GROUP BY/ORDER BY from SQL, resolves table aliases, suggests composite covering indexes, detects suboptimal index choice on range scans, skips GROUP BY index when PK present, deduplicates overlapping recommendations
