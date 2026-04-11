@@ -100,12 +100,111 @@ ac98a58 Phase 2: Enhanced analysis, PEV2 visualization, robust index advisor
 ### What's Next (Backlog)
 
 1. Slow query log parser
-2. MySQL 8.4 EXPLAIN FORMAT=TREE enhancements (parallel workers, hash joins)
-3. Export report as PDF/PNG
-4. Saved workspaces (named plan collections)
-5. Bulk analyzer (multiple EXPLAINs at once)
-6. Index impact simulator
-7. Keyboard shortcuts
-8. Embeddable widget
-9. Offline PWA
-10. Launch blog post (LAST — after all features)
+2. Export report as PDF/PNG
+3. Saved workspaces (named plan collections)
+4. Bulk analyzer (multiple EXPLAINs at once)
+5. Offline PWA
+
+---
+
+## Session: 2026-04-10/11 — Full SEO Overhaul + Blog Redesign
+
+### Summary
+
+Comprehensive SEO audit (scored 38/100) → implemented Phases 1-3 of the SEO ranking plan → score improved to ~78/100. Redesigned blog listing and post pages. Created new blog content. Open-sourced the EXPLAIN Analyzer. Submitted to awesome-mysql.
+
+---
+
+### SEO Phase 1: Technical Foundation (April 10)
+
+- Full SEO audit with 6 parallel subagents (technical, content, schema, performance, GEO, backlinks)
+- Created `robots.txt` with AI crawler directives (GPTBot, ClaudeBot, PerplexityBot allowed; CCBot blocked)
+- Created `sitemap.xml` via Eleventy template (auto-generates for all pages + blog posts)
+- Created `llms.txt` for AI search self-description
+- Added `<link rel="canonical">` to ALL pages
+- Added Open Graph + Twitter Card meta tags to ALL pages
+- Added JSON-LD schema: `ProfessionalService` + `WebSite` + `SearchAction` (homepage), `Service` + `OfferCatalog` (services), `Person` (about), `Article` + `BreadcrumbList` (all blog posts), `SoftwareApplication` (EXPLAIN Analyzer)
+- Non-blocking Google Fonts loading on ALL pages (dropped unused weight 500)
+- Added `width`/`height` to ALL logo `<img>` tags (CLS fix)
+- Logo preload with `fetchpriority="high"` on all pages
+- Passive scroll listener in `main.js`
+- Moved Netlify Identity Widget to admin-only (conditional load, saves 73KB)
+- Added `Cache-Control: immutable` headers for Vite assets and images in `netlify.toml`
+- Added static HTML content section to EXPLAIN Analyzer (visible to AI crawlers)
+- Dynamic author rendering in blog template — "Mughees Ahmed" for Mughees's posts, "Mario" for Mario's posts
+- Fixed about page meta description (removed "Barcelona-based", now "based in Pakistan")
+
+### SEO Phase 2: Content Authority & E-E-A-T (April 11)
+
+- Added `CollectionPage` + `CaseStudy` schema to results.html
+- Added `ContactPage` + `ContactPoint` schema to contact.html
+- Added `dateModified` to Article JSON-LD schema (conditional)
+- Added `article:modified_time` OG meta tag
+- Added "Last Updated" green badge on blog posts with dateModified
+- Added dateModified to 8 blog post front matters
+- Added related posts cross-links to 7 blog posts (internal linking)
+
+### SEO Phase 3: Performance & Images (April 11)
+
+- Created proper 1200x630 branded OG image (`og-default.png`)
+- Updated og:image and twitter:image on all pages + added dimensions
+- Added apple-touch-icon and PNG favicon
+- Added loading skeleton to EXPLAIN Analyzer (before Vue mounts)
+- Added modulepreload hints for 3 Vite chunks (index, codemirror, d3)
+
+### Google Search Console (April 11)
+
+- Verified via HTML file method (`googlebff62dc8eab397a4.html`)
+- Submitted sitemap.xml — 22 pages discovered, Status: Success
+
+### Open-Source Analyzer Repo (April 11)
+
+- Created public repo: `github.com/Mughees52/mysql-explain-analyzer`
+- MIT license, standalone index.html (no site chrome), vite base='/'
+- Submitted PR to `shlomi-noach/awesome-mysql` (#183)
+- Maintainer requested shorter description → updated and pushed
+
+### Blog Redesign (April 11)
+
+- Redesigned blog index: compact hero, category filter pills, featured post card, 3-column card grid
+- Fixed scroll-reveal animation hiding blog listing (removed `.blog-main` from reveal targets)
+- Created 12 unique cover images (Unsplash photos, free license, 1200x630 JPEG)
+- Added `coverImage` to all 15 blog post front matters
+- Blog cards show cover image thumbnails with hover zoom effect
+- Redesigned blog post pages: cover image as hero banner with dark gradient overlay, title + ReliaDB branding
+- Widened blog post layout (1100px → 1300px max-width)
+
+### New Blog Post (April 11)
+
+- **"MySQL EXPLAIN Output Explained: The Complete Guide (2026)"** — 18 min read
+- All EXPLAIN output from real queries on 680K-row MySQL 8.0.45 database (`mysql-box` multipass VM)
+- Covers all access types, Extra flags, EXPLAIN ANALYZE tree, select_type, filtered column
+- 4 real-world fix patterns (YEAR() function, NOT IN, large OFFSET, SELECT *)
+- Inline CTA to EXPLAIN Analyzer tool
+- Cross-links to MySQL upgrade guide and EXPLAIN Analyzer announcement post
+
+### Schema Audit Results (verified live April 11)
+
+| Page | Schema Types | Status |
+|------|-------------|--------|
+| Homepage | ProfessionalService, WebSite + SearchAction | PASS |
+| Services | Service + OfferCatalog (5 services) | PASS |
+| About | Person (Mughees Ahmed) | PASS |
+| Results | CollectionPage + CaseStudy | PASS |
+| Contact | ContactPage + ContactPoint | PASS |
+| EXPLAIN Analyzer | SoftwareApplication | PASS |
+| Blog posts (Mughees) | Article + BreadcrumbList | PASS |
+| Blog posts (Mario) | Article + BreadcrumbList | PASS |
+
+### SEO Score Progress
+
+| State | Score |
+|-------|-------|
+| Before (April 10) | 38/100 |
+| After Phase 1 | ~65/100 |
+| After Phase 2+3 | ~78/100 |
+| Target | 90+/100 |
+
+### Full Plan
+
+See `docs/SEO-RANKING-PLAN.md` for the complete 7-phase roadmap to #1 ranking.

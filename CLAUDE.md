@@ -168,7 +168,21 @@ Push to `main` → Netlify auto-builds and deploys.
 - **MySQL 8.4 tree enhancements**: Complete — 40+ node types (hash joins, window functions, CTEs, skip scans, antijoins, index merge, etc.)
 - **Index impact simulator**: Complete — structural plan change predictions per index recommendation
 - **Embeddable widget**: Complete — iframe embed mode with `?embed` param, "Get Embed Code" button, powered-by footer
-- **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, PWA, launch blog post (LAST)
+- **Open-source repo**: `github.com/Mughees52/mysql-explain-analyzer` (MIT license, standalone version without site chrome)
+- **awesome-mysql listing**: PR #183 submitted to `shlomi-noach/awesome-mysql`
+- **Future backlog**: Slow query log parser, export PDF/PNG, saved workspaces, bulk analyzer, PWA
+
+### SEO & Content
+
+- **SEO Plan**: `docs/SEO-RANKING-PLAN.md` — 7-phase roadmap from 38/100 to 90+/100
+- **Current SEO score**: ~78/100 (after Phases 1-3)
+- **Google Search Console**: Verified, sitemap submitted (22 pages)
+- **Schema**: JSON-LD on every page (ProfessionalService, Service, Person, Article, BreadcrumbList, SoftwareApplication, CollectionPage, ContactPage)
+- **AI Search**: robots.txt (AI crawlers allowed), llms.txt, static HTML on tool page for crawler visibility
+- **Blog**: 16 posts (4 PostgreSQL, 5 MySQL upgrade, 5 MariaDB migration, 1 EXPLAIN guide, 1 Analyzer announcement), all with cover images, Article schema, OG tags, internal cross-links
+- **Blog authors**: Mughees Ahmed (your posts), Mario (MariaDB migration posts) — dynamic rendering
+- **Cover images**: Unsplash photos (free license), 1200x630 JPEG, stored in `/images/blog/`
+- **Performance**: Non-blocking fonts, logo preload, passive scroll, immutable cache headers, modulepreload for Vite chunks, loading skeleton on tool page
 
 ### Brand
 
