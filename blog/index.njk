@@ -33,77 +33,352 @@ permalink: /blog/index.html
   <link rel="icon" type="image/png" href="/images/ReliaDB-Logo.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231A5276'/><text y='.9em' font-size='70' x='12' fill='white' font-weight='800'>R</text></svg>">
   <style>
-    .blog-hero { background: linear-gradient(135deg, #1A5276 0%, #154360 100%); padding: 110px 0 40px; text-align: center; color: #fff; }
-    .blog-hero h1 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1rem; color: #ffffff; font-weight: 800; }
-    .blog-hero p { font-size: 1.15rem; color: rgba(255,255,255,0.85); max-width: 600px; margin: 0 auto; }
-    .blog-hero h1,
-    .blog-hero p { animation: fadeUp .6s ease both; }
-    .blog-hero p { animation-delay: .12s; }
-    .blog-main { max-width: 1100px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: 1fr 320px; gap: 56px; align-items: start; }
-    .post-list { display: flex; flex-direction: column; gap: 32px; }
-    .post-card-h { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px 32px; transition: box-shadow 0.24s, transform 0.2s, border-color 0.2s; text-decoration: none; display: block; position: relative; overflow: hidden; }
-    .post-card-h::before { content: ""; position: absolute; left: 0; top: 0; height: 3px; width: 100%; background: linear-gradient(90deg, #1A5276, #2980B9); opacity: 0; transition: opacity 0.2s ease; }
-    .post-card-h:hover { box-shadow: 0 14px 34px rgba(26,82,118,0.14); transform: translateY(-3px); border-color: #d3e1ef; }
-    .post-card-h:hover::before { opacity: 1; }
-    .post-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .post-cat { background: #EAF2F8; color: #1A5276; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; }
-    .post-date, .post-read-time { font-size: 0.82rem; color: #999; }
-    .post-card-h h2 { font-size: 1.2rem; color: #1a1a2e; margin-bottom: 10px; line-height: 1.4; font-weight: 700; }
-    .post-card-h p { font-size: 0.93rem; color: #666; line-height: 1.7; margin: 0; }
-    .post-read-more { display: inline-flex; align-items: center; gap: 4px; font-size: 0.85rem; font-weight: 600; color: #2980B9; margin-top: 14px; transition: transform .18s ease, color .18s ease; }
-    .post-card-h:hover .post-read-more { transform: translateX(2px); color: #1A5276; }
-    .blog-sidebar { position: sticky; top: 90px; }
-    .sidebar-widget { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px; transition: transform .2s ease, box-shadow .24s ease, border-color .2s ease; }
-    .sidebar-widget:hover { transform: translateY(-2px); box-shadow: 0 12px 22px rgba(26,82,118,0.1); border-color: #d6e2ef; }
-    .sidebar-widget h3 { font-size: 0.9rem; font-weight: 700; color: #1a1a2e; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #EAF2F8; }
-    .sidebar-links { list-style: none; padding: 0; margin: 0; }
-    .sidebar-links li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-    .sidebar-links a { font-size: 0.9rem; color: #444; text-decoration: none; line-height: 1.4; transition: color .18s ease, padding-left .18s ease; }
-    .sidebar-links a:hover { color: #1A5276; padding-left: 3px; }
-    .sidebar-cta { background: #1A5276; color: #fff; border-radius: 12px; padding: 28px 24px; text-align: center; border: none; }
-    .sidebar-cta h3 { color: #fff; border-bottom-color: rgba(255,255,255,0.2); }
-    .sidebar-cta p { font-size: 0.88rem; color: rgba(255,255,255,0.8); line-height: 1.6; margin-bottom: 16px; }
-    .sidebar-cta .btn { background: #E67E22; border-color: #E67E22; font-size: 0.88rem; padding: 10px 18px; }
+    /* ── Hero (compact) ── */
+    .blog-hero {
+      background: linear-gradient(135deg, #1A5276 0%, #154360 100%);
+      padding: 100px 0 32px;
+      color: #fff;
+    }
+    .blog-hero-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .blog-hero h1 {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      color: #fff;
+      margin: 0;
+    }
+    .blog-hero p {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.7);
+      margin: 6px 0 0;
+    }
+    .blog-hero-stats {
+      display: flex;
+      gap: 24px;
+    }
+    .blog-hero-stat {
+      text-align: center;
+    }
+    .blog-hero-stat strong {
+      display: block;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+    }
+    .blog-hero-stat span {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.6);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
 
-    .reveal-on-scroll {
+    /* ── Category filter bar ── */
+    .cat-bar {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px 0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cat-pill {
+      background: #f0f4f8;
+      color: #555;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: background .18s, color .18s;
+      border: 1px solid transparent;
+    }
+    .cat-pill:hover, .cat-pill.active {
+      background: #1A5276;
+      color: #fff;
+    }
+
+    /* ── Featured post (first post, full width) ── */
+    .featured-post {
+      max-width: 1200px;
+      margin: 24px auto 0;
+      padding: 0 24px;
+    }
+    .featured-card {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+      text-decoration: none;
+      transition: box-shadow .24s, transform .2s;
+    }
+    .featured-card:hover {
+      box-shadow: 0 16px 40px rgba(26,82,118,0.12);
+      transform: translateY(-2px);
+    }
+    .featured-left {
+      background: linear-gradient(135deg, #1A5276, #2980B9);
+      padding: 40px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .featured-left::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+    }
+    .featured-badge {
+      background: #E67E22;
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      width: fit-content;
+      margin-bottom: 16px;
+    }
+    .featured-left h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.35;
+      margin: 0 0 12px;
+    }
+    .featured-left .feat-desc {
+      font-size: 0.92rem;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.7;
+      margin: 0;
+    }
+    .featured-left .feat-read {
+      margin-top: 20px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #E67E22;
+    }
+    .featured-right {
+      padding: 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .featured-right .feat-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .featured-right .feat-cat {
+      background: #EAF2F8;
+      color: #1A5276;
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 3px 9px;
+      border-radius: 12px;
+    }
+    .featured-right .feat-date {
+      font-size: 0.8rem;
+      color: #999;
+    }
+    .featured-right h3 {
+      font-size: 1.1rem;
+      color: #1a1a2e;
+      font-weight: 700;
+      line-height: 1.4;
+      margin: 0 0 8px;
+    }
+    .featured-right p {
+      font-size: 0.88rem;
+      color: #666;
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* ── Post grid ── */
+    .blog-grid-section {
+      max-width: 1200px;
+      margin: 32px auto 0;
+      padding: 0 24px 64px;
+    }
+    .blog-grid-section h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .post-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .post-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow .24s, transform .2s, border-color .2s;
+      position: relative;
+    }
+    .post-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 3px;
+      width: 100%;
+      background: linear-gradient(90deg, #1A5276, #2980B9);
+      border-radius: 12px 12px 0 0;
       opacity: 0;
-      transform: translateY(22px);
-      transition: opacity .55s ease, transform .55s cubic-bezier(.2,.65,.2,1);
-      will-change: transform, opacity;
+      transition: opacity .2s;
     }
-    .reveal-on-scroll.is-visible {
-      opacity: 1;
-      transform: translateY(0);
+    .post-card:hover {
+      box-shadow: 0 12px 30px rgba(26,82,118,0.1);
+      transform: translateY(-3px);
+      border-color: #d3e1ef;
     }
-    .reveal-stagger-1 { transition-delay: .08s; }
-    .reveal-stagger-2 { transition-delay: .16s; }
+    .post-card:hover::before { opacity: 1; }
+    .post-card .pc-meta {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .post-card .pc-cat {
+      background: #EAF2F8;
+      color: #1A5276;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .post-card .pc-date {
+      font-size: 0.78rem;
+      color: #aaa;
+    }
+    .post-card h3 {
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      line-height: 1.4;
+      margin: 0 0 8px;
+      flex-grow: 1;
+    }
+    .post-card .pc-desc {
+      font-size: 0.85rem;
+      color: #777;
+      line-height: 1.6;
+      margin: 0 0 14px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .post-card .pc-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid #f0f0f0;
+    }
+    .post-card .pc-read {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #2980B9;
+    }
+    .post-card .pc-time {
+      font-size: 0.76rem;
+      color: #bbb;
+    }
 
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(14px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* ── Sidebar CTA at bottom on mobile ── */
+    .blog-bottom-cta {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 64px;
+    }
+    .bottom-cta-card {
+      background: #1A5276;
+      border-radius: 14px;
+      padding: 40px;
+      text-align: center;
+      color: #fff;
+    }
+    .bottom-cta-card h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .bottom-cta-card p {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 20px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .bottom-cta-card .btn {
+      background: #E67E22;
+      border-color: #E67E22;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-block;
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .blog-hero h1, .blog-hero p,
-      .reveal-on-scroll,
-      .post-card-h,
-      .sidebar-widget,
-      .post-read-more,
-      .sidebar-links a {
-        animation: none !important;
-        transition: none !important;
-        transform: none !important;
-        opacity: 1 !important;
-      }
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .featured-card { grid-template-columns: 1fr; }
+      .post-grid { grid-template-columns: 1fr 1fr; }
+      .blog-hero-stats { display: none; }
     }
-    @media (max-width: 880px) { .blog-main { grid-template-columns: 1fr; } .blog-sidebar { position: static; } }
+    @media (max-width: 600px) {
+      .post-grid { grid-template-columns: 1fr; }
+      .featured-left { padding: 28px 24px; }
+      .featured-right { padding: 24px; }
+    }
   </style>
 </head>
 <body>
   <nav id="navbar">
     <div class="nav-inner">
       <a href="../index.html" class="nav-logo" aria-label="ReliaDB Home">
-        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" />
+        <img src="/images/ReliaDB logo.svg" alt="ReliaDB logo" class="nav-logo-image" width="180" height="42" />
         <span class="nav-logo-text">Relia<span>DB</span></span>
       </a>
       <ul class="nav-links" id="navLinks">
@@ -119,99 +394,103 @@ permalink: /blog/index.html
     </div>
   </nav>
 
+  <!-- ── Compact Hero ── -->
   <section class="blog-hero">
-    <div class="container">
-      <h1>The ReliaDB Blog</h1>
-      <p>Practical guides on PostgreSQL performance, MySQL optimisation, AWS RDS cost savings, high availability, and everything in between.</p>
+    <div class="blog-hero-inner">
+      <div>
+        <h1>The ReliaDB Blog</h1>
+        <p>PostgreSQL &amp; MySQL guides from production experience</p>
+      </div>
+      <div class="blog-hero-stats">
+        <div class="blog-hero-stat">
+          <strong>{{ collections.blogPosts.length }}</strong>
+          <span>Articles</span>
+        </div>
+        <div class="blog-hero-stat">
+          <strong>{{ collections.categories.length }}</strong>
+          <span>Topics</span>
+        </div>
+      </div>
     </div>
   </section>
 
-  <div class="blog-main">
-    <main>
-      <div class="post-list">
-        {% for post in collections.blogPosts %}
-          <a href="{{ post.url }}" class="post-card-h">
-            <div class="post-meta">
-              {% set categories = post.data | postCategories(collections.categories) %}
-              {% if categories.length %}
-                {% for cat in categories %}
-                  <span class="post-cat">{{ cat.title }}</span>
-                {% endfor %}
-              {% else %}
-                <span class="post-cat">Uncategorized</span>
-              {% endif %}
-              <span class="post-date">{{ post.date.toDateString() }}</span>
-              <span class="post-read-time">{{ post.data.read_time or 8 }} min read</span>
+  <!-- ── Category Filter ── -->
+  <div class="cat-bar">
+    <a href="/blog/index.html" class="cat-pill active">All</a>
+    {% for cat in collections.categories %}
+      <a href="/blog/category/{{ cat.slug }}/" class="cat-pill">{{ cat.title }}</a>
+    {% endfor %}
+  </div>
+
+  <!-- ── Featured Post (latest) ── -->
+  {% set latest = collections.blogPosts[0] %}
+  {% set latestCats = latest.data | postCategories(collections.categories) %}
+  {% set second = collections.blogPosts[1] %}
+  {% set secondCats = second.data | postCategories(collections.categories) %}
+  <div class="featured-post">
+    <a href="{{ latest.url }}" class="featured-card">
+      <div class="featured-left">
+        <div class="featured-badge">Latest Post</div>
+        <h2>{{ latest.data.title }}</h2>
+        <p class="feat-desc">{{ latest.data.description }}</p>
+        <span class="feat-read">Read article &rarr;</span>
+      </div>
+      <div class="featured-right">
+        <div class="feat-meta">
+          {% for cat in latestCats %}
+            <span class="feat-cat">{{ cat.title }}</span>
+          {% endfor %}
+          <span class="feat-date">{{ latest.date.toDateString() }} &middot; {{ latest.data.read_time or 8 }} min</span>
+        </div>
+        <h3>Up Next</h3>
+        <div class="feat-meta" style="margin-top:16px">
+          {% for cat in secondCats %}
+            <span class="feat-cat">{{ cat.title }}</span>
+          {% endfor %}
+          <span class="feat-date">{{ second.date.toDateString() }}</span>
+        </div>
+        <h3 style="margin-top:4px"><a href="{{ second.url }}" style="color:#1a1a2e;text-decoration:none;">{{ second.data.title }}</a></h3>
+        <p>{{ second.data.description | truncate(120) }}</p>
+      </div>
+    </a>
+  </div>
+
+  <!-- ── All Posts Grid ── -->
+  <div class="blog-grid-section">
+    <h2>All Articles</h2>
+    <div class="post-grid">
+      {% for post in collections.blogPosts %}
+        {% if loop.index > 2 %}
+          {% set cats = post.data | postCategories(collections.categories) %}
+          <a href="{{ post.url }}" class="post-card">
+            <div class="pc-meta">
+              {% for cat in cats %}
+                <span class="pc-cat">{{ cat.title }}</span>
+              {% endfor %}
+              <span class="pc-date">{{ post.date.toDateString() }}</span>
             </div>
-            <h2>{{ post.data.title }}</h2>
-            <p>{{ post.data.description }}</p>
-            <span class="post-read-more">Read article &rarr;</span>
+            <h3>{{ post.data.title }}</h3>
+            <p class="pc-desc">{{ post.data.description }}</p>
+            <div class="pc-footer">
+              <span class="pc-read">Read &rarr;</span>
+              <span class="pc-time">{{ post.data.read_time or 8 }} min</span>
+            </div>
           </a>
-        {% endfor %}
-      </div>
-    </main>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
 
-    <aside class="blog-sidebar">
-      <div class="sidebar-widget sidebar-cta">
-        <h3>Database Problems?</h3>
-        <p>Book a free 30-minute assessment call and get actionable recommendations.</p>
-        <a href="../contact.html" class="btn">Book Free Assessment</a>
-      </div>
-
-      <div class="sidebar-widget">
-        <h3>Categories</h3>
-        <ul class="sidebar-links">
-          {% for cat in collections.categories %}
-            <li><a href="/blog/category/{{ cat.slug }}/">{{ cat.title }} ({{ cat.posts.length }})</a></li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <div class="sidebar-widget">
-        <h3>Latest Posts</h3>
-        <ul class="sidebar-links">
-          {% for post in collections.blogPosts %}
-            {% if loop.index <= 6 %}
-              <li><a href="{{ post.url }}">{{ post.data.title }}</a></li>
-            {% endif %}
-          {% endfor %}
-        </ul>
-      </div>
-    </aside>
+  <!-- ── Bottom CTA ── -->
+  <div class="blog-bottom-cta">
+    <div class="bottom-cta-card">
+      <h2>Need help with your database?</h2>
+      <p>Book a free 30-minute assessment call and get actionable recommendations for your setup.</p>
+      <a href="../contact.html" class="btn">Book Free Assessment &rarr;</a>
+    </div>
   </div>
 
   {% include "footer.njk" %}
-
   <script src="../js/main.js"></script>
-  <script>
-    (function () {
-      const targets = [
-        ...document.querySelectorAll('.post-card-h'),
-        ...document.querySelectorAll('.sidebar-widget')
-      ];
-
-      targets.forEach((el, index) => {
-        el.classList.add('reveal-on-scroll');
-        if (index % 3 === 1) el.classList.add('reveal-stagger-1');
-        if (index % 3 === 2) el.classList.add('reveal-stagger-2');
-      });
-
-      if (!('IntersectionObserver' in window)) {
-        targets.forEach(el => el.classList.add('is-visible'));
-        return;
-      }
-
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
-
-      targets.forEach(el => io.observe(el));
-    })();
-  </script>
 </body>
 </html>
