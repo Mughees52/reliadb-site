@@ -1,6 +1,6 @@
 # ReliaDB
 
-> PostgreSQL and MySQL DBA consulting service run by Mughees Ahmed, based in Pakistan, serving EU and US clients.
+> PostgreSQL and MySQL DBA consulting service run by Mughees Ahmed, based in Valencia, Spain, serving EU and US clients.
 
 ReliaDB provides expert-level database consulting for growing companies. We specialize in PostgreSQL and MySQL performance audits, ongoing monthly support, and emergency response. Our goal is to help engineering teams ship faster by eliminating database bottlenecks.
 
