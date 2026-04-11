@@ -13,11 +13,15 @@
   <meta property="og:description" content="Visualize and optimize MySQL and MariaDB query plans. Detects performance issues, recommends indexes. Free, private, runs in your browser." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://reliadb.com/tools/explain/" />
+  <meta property="og:image" content="https://reliadb.com/images/og-default.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="MySQL & MariaDB EXPLAIN Analyzer — Free Query Plan Visualizer" />
   <meta name="twitter:description" content="Visualize and optimize MySQL and MariaDB query plans. Free, private, runs in your browser." />
+  <meta name="twitter:image" content="https://reliadb.com/images/og-default.png" />
 
   <!-- SoftwareApplication Schema -->
   <script type="application/ld+json">
@@ -41,7 +45,14 @@
   <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"></noscript>
   <link rel="preload" href="/images/ReliaDB logo.svg" as="image">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="apple-touch-icon" href="/images/ReliaDB-Logo.png">
+  <link rel="icon" type="image/png" href="/images/ReliaDB-Logo.png">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231A5276'/><text y='.9em' font-size='70' x='12' fill='white' font-weight='800'>R</text></svg>">
+
+  <!-- Modulepreload hints for Vite-built chunks -->
+  <link rel="modulepreload" href="/tools/explain/assets/index-BC-Fa9Tz.js">
+  <link rel="modulepreload" href="/tools/explain/assets/codemirror-BRPpCoqb.js">
+  <link rel="modulepreload" href="/tools/explain/assets/d3-Da366USJ.js">
   <style>
     /* Embed mode: hide site chrome */
     [data-embed] #navbar,
@@ -100,16 +111,30 @@ if (new URLSearchParams(window.location.search).has('embed')) {
   <p style="color:#444;line-height:1.8;font-size:1.05rem;"><strong>100% client-side</strong> — your data never leaves your browser. No backend, no API calls, no account required. Built by <a href="/about.html" style="color:#2980B9;">ReliaDB</a>, a PostgreSQL and MySQL DBA consulting service.</p>
 </section>
 
+<!-- Loading skeleton (hidden once Vue mounts) -->
+<div id="tool-skeleton" style="max-width:1200px;margin:24px auto;padding:0 24px;">
+  <div style="background:#f0f4f8;border-radius:12px;padding:24px;margin-bottom:16px;">
+    <div style="background:#e2e8f0;height:20px;width:60%;border-radius:4px;margin-bottom:12px;"></div>
+    <div style="background:#e2e8f0;height:200px;border-radius:8px;"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div style="background:#f0f4f8;border-radius:12px;height:120px;"></div>
+    <div style="background:#f0f4f8;border-radius:12px;height:120px;"></div>
+  </div>
+</div>
+
 <!-- ── VUE APP MOUNT ── -->
 <div id="app"></div>
 <script>
-  // Hide static description once Vue app mounts
+  // Hide static description and skeleton once Vue app mounts
   var desc = document.getElementById('tool-description');
-  if (desc) {
+  var skel = document.getElementById('tool-skeleton');
+  if (desc || skel) {
     var observer = new MutationObserver(function() {
       var app = document.getElementById('app');
       if (app && app.children.length > 0) {
-        desc.style.display = 'none';
+        if (desc) desc.style.display = 'none';
+        if (skel) skel.style.display = 'none';
         observer.disconnect();
       }
     });
