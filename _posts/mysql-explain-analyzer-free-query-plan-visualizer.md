@@ -8,7 +8,7 @@ categories:
 read_time: 14
 featured: true
 author: "Mughees Ahmed"
-dateModified: "2026-04-11T00:00:00+00:00"
+dateModified: "2026-04-12T00:00:00+00:00"
 ---
 
 Most MySQL performance problems hide in plain sight. The query runs, returns results, and nobody looks at the execution plan until the database is on fire at 3 AM.
@@ -279,7 +279,7 @@ I compared the analyzer's output against independent senior DBA analysis on 5 qu
 
 The tool matches a senior DBA's analysis on 90% of findings and beats it on automation: impact simulation, executable rewrites, and automated query pattern detection. The 10% gap is in niche areas like recognizing that `ORDER BY DATEDIFF()` is monotonically equivalent to `ORDER BY date` — edge cases that rarely affect real-world optimization.
 
-The full comparison across all 50 test queries is documented in the <a href="https://github.com/reliadb/explain-analyzer" target="_blank" rel="noopener">project repository</a>.
+The full comparison across all 50 test queries is documented in the <a href="https://github.com/Mughees52/mysql-explain-analyzer" target="_blank" rel="noopener">project repository</a>.
 
 <h2 id="smart-features">What Makes the Index Advisor Smart</h2>
 
@@ -313,6 +313,34 @@ Paste it straight from your terminal — the tool auto-strips `mysql>` prompts, 
 This tool runs 100% in your browser. There's no backend, no API calls, no analytics on your queries, no database that stores your plans. The source code is TypeScript rules — not a language model, not an AI API call.
 
 Query plans often contain table names, column names, and row counts that reveal your application's data model. That information shouldn't leave your machine just to visualize an EXPLAIN plan.
+
+<h2 id="open-source">Now Open Source</h2>
+
+The EXPLAIN Analyzer is now open source under the MIT license. You can browse the full source code, run it locally, or contribute:
+
+<a href="https://github.com/Mughees52/mysql-explain-analyzer" target="_blank" rel="noopener" class="btn btn-outline" style="margin: 1rem 0; display: inline-block;">View on GitHub &rarr;</a>
+
+**What's in the repo:**
+
+- Complete Vue 3 + TypeScript source code
+- All 49 detection rules, index advisor, query rewriter, and impact simulator
+- All parsers (MySQL EXPLAIN ANALYZE tree, FORMAT=JSON, traditional table, MariaDB ANALYZE)
+- Test suite with 50 queries against a 680K-row MySQL 8.0 database
+- Test database setup scripts so you can reproduce every result
+
+**Why open source?** We built this tool because no equivalent existed for MySQL. The PostgreSQL community has [explain.dalibo.com](https://explain.dalibo.com) and [PEV2](https://github.com/dalibo/pev2) — MySQL had nothing comparable. Making it open source means the MySQL community can use it, improve it, and trust that their query plans aren't being sent to any server.
+
+The tool is also listed on [awesome-mysql](https://github.com/shlomi-noach/awesome-mysql) — the curated list of open-source MySQL tools.
+
+You can run it locally in three commands:
+
+```bash
+git clone https://github.com/Mughees52/mysql-explain-analyzer.git
+cd mysql-explain-analyzer
+npm install && npm run dev
+```
+
+Or just use the hosted version at [reliadb.com/tools/explain/](https://reliadb.com/tools/explain/) — same code, zero setup.
 
 <h2 id="try-it">Try It Now</h2>
 
