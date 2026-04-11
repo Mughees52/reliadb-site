@@ -7,8 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 18
 featured: true
-author: "Mughees Ahmed"
-dateModified: "2026-04-11T00:00:00+00:00"
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-pre-upgrade-preparation.jpg"
 ---
 
 <!-- Series Navigation -->
@@ -294,7 +293,7 @@ Verify that all application connection libraries and drivers support `caching_sh
 </table>
 
 <figure>
-  <img src="/assets/images/blog/mysql-upgrade-8.4/image1.png" alt="Authentication migration flow diagram showing Path A (recommended with caching_sha2_password) and Path B (transitional with mysql_native_password)" loading="lazy" decoding="async" />
+  <img src="/assets/images/blog/mysql-upgrade-8.4/image1.jpg" alt="Authentication migration flow diagram showing Path A (recommended with caching_sha2_password) and Path B (transitional with mysql_native_password)" loading="lazy" decoding="async" />
   <figcaption>Figure 1: Authentication migration flow &mdash; Path A (recommended target state with caching_sha2_password) vs Path B (transitional with mysql_native_password enabled).</figcaption>
 </figure>
 
@@ -455,18 +454,4 @@ Use this checklist to verify you've completed all pre-upgrade preparation steps 
     <li><span class="current">Part 1: Pre-Upgrade Preparation (You Are Here)</span></li>
     <li><a href="/blog/mysql-8-to-8-4-upgrade-testing.html">Part 2: Upgrade Testing &rarr;</a></li>
   </ol>
-</div>
-
-<div class="related-posts">
-<h3>Related Articles</h3>
-<div class="related-grid">
-<a class="related-card" href="/blog/mysql-explain-analyzer-free-query-plan-visualizer.html">
-<div class="rc-cat">Tools</div>
-<h4>We Built a Free MySQL EXPLAIN Analyzer</h4>
-</a>
-<a class="related-card" href="/blog/mysql-8-to-8-4-upgrade-testing.html">
-<div class="rc-cat">MySQL Upgrade</div>
-<h4>MySQL 8.0 to 8.4 LTS Upgrade Guide — Part 2</h4>
-</a>
-</div>
 </div>

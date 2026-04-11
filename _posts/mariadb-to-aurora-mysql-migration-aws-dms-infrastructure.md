@@ -8,6 +8,7 @@ categories:
 read_time: 14
 featured: false
 author: "Mario"
+coverImage: "/images/blog/mariadb-to-aurora-mysql-migration.jpg"
 ---
 
 <div class="series-nav">

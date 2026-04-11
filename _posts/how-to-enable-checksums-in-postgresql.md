@@ -10,7 +10,7 @@ categories:
   - database-performance
 read_time: 12
 featured: false
-author: "Mughees Ahmed"
+coverImage: "/images/blog/how-to-enable-checksums-in-postgresql.jpg"
 ---
 PostgreSQL didn't protect your data with checksums by default until version 18 (September 2025). Every earlier version — including the widely deployed PostgreSQL 14, 15, and 16 — ships with checksums off. That means a flipped bit on disk, a failing storage controller, or a corrupted page can sit undetected for months — until it propagates into your backups and you've lost the only clean copy.
 
@@ -478,17 +478,3 @@ Data checksums in PostgreSQL cost you roughly 1.7% TPS and give you the ability 
 - The performance overhead is 1-3% in real workloads — negligible compared to undetected data loss
 
 If you're running PostgreSQL in production without checksums, you're trusting that your storage hardware, controllers, and firmware will never corrupt a single byte. The research says otherwise.
-
-<div class="related-posts">
-<h3>Related Articles</h3>
-<div class="related-grid">
-<a class="related-card" href="/blog/postgresql-running-slow-diagnostic-guide.html">
-<div class="rc-cat">PostgreSQL</div>
-<h4>PostgreSQL Running Slow? A Step-by-Step Diagnostic Guide</h4>
-</a>
-<a class="related-card" href="/blog/checking-progress-postgresql-crash-recovery.html">
-<div class="rc-cat">PostgreSQL</div>
-<h4>How Do You Check Progress on PostgreSQL's Crash Recovery Process?</h4>
-</a>
-</div>
-</div>

@@ -7,8 +7,7 @@ categories:
   - mysql-upgrade
 read_time: 12
 featured: false
-author: "Mughees Ahmed"
-dateModified: "2026-04-11T00:00:00+00:00"
+coverImage: "/images/blog/mysql-8-to-8-4-upgrade-testing.jpg"
 ---
 
 <!-- Series Navigation -->
