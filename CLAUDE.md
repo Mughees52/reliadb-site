@@ -183,6 +183,20 @@ Push to `main` → Netlify auto-builds and deploys.
 - **Blog authors**: Mughees Ahmed (your posts), Mario (MariaDB migration posts) — dynamic rendering
 - **Cover images**: Unsplash photos (free license), 1200x630 JPEG, stored in `/images/blog/`
 - **Performance**: Non-blocking fonts, logo preload, passive scroll, immutable cache headers, modulepreload for Vite chunks, loading skeleton on tool page
+- **MySQL Internals Series**: `docs/MYSQL-INTERNALS-SERIES-PLAN.md` — 13 animated posts, 2 done (Architecture, UPDATE)
+- **Blog posts must always include**: `coverImage` in front matter, Article schema, OG tags, related posts cross-links
+
+### Interactive Animation Rules (IMPORTANT)
+
+Blog posts with step-by-step animations MUST follow these rules:
+
+1. **Container**: `overflow: clip` (NOT `overflow: hidden` — hidden breaks sticky positioning)
+2. **Controls header**: `position: sticky; top: 72px` (72px = navbar height)
+3. **No nested scroll areas**: page itself is the ONLY scroll context. Never use `overflow-y: auto` on internal containers.
+4. **Scroll JS**: Use `getBoundingClientRect()` + `window.scrollTo()`. Never use `element.offsetTop` (wrong parent reference) or `scrollIntoView({block:'nearest'})` (unreliable).
+5. **Interaction**: Step-by-step via Next/Back buttons. Auto-play is optional toggle, not default.
+6. **Theme**: Light (#F4F6F8 container, white cards, colored borders) — matches site design.
+7. **See `docs/MYSQL-INTERNALS-SERIES-PLAN.md`** for full design system, color scheme, and scroll JS template.
 
 ### Brand
 

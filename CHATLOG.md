@@ -208,3 +208,73 @@ Comprehensive SEO audit (scored 38/100) → implemented Phases 1-3 of the SEO ra
 ### Full Plan
 
 See `docs/SEO-RANKING-PLAN.md` for the complete 7-phase roadmap to #1 ranking.
+
+---
+
+## Session: 2026-04-12 — MySQL Internals Animated Series + SEO Re-Audit + Schema Fixes
+
+### Summary
+
+Launched the "MySQL Internals Animated" blog series with interactive step-through animations. Created 2 posts, planned 13 total. Fixed critical schema issues, location consistency, privacy policy. Re-audited live site (score: 66/100 live, ~88 projected after merge). Open-sourced analyzer repo improvements. Submitted to awesome-mariadb.
+
+---
+
+### MySQL Internals Animated Series
+
+- Created full series plan: `docs/MYSQL-INTERNALS-SERIES-PLAN.md` (13 posts)
+- **Post 0: InnoDB Architecture Visual Guide** — component explorer with 10 InnoDB components, data flow paths
+- **Post 1: How a MySQL UPDATE Actually Works** — 14-step animation from client to background flush, includes two-phase commit + binlog (missing from original)
+- Animation design system: light theme, step-by-step interaction (Next/Back/Auto/Reset)
+
+### Animation Scroll Bug Fix (3 iterations)
+
+**Problem:** Controls at top, steps grow below → user loses Next button as they scroll down.
+
+**Failed approaches:**
+1. `position: sticky` with `overflow: hidden` on parent → sticky broken (overflow:hidden creates scroll context)
+2. Internal scroll area with `max-height: 70vh; overflow-y: auto` → scroll-within-scroll anti-pattern, `offsetTop` relative to wrong parent
+3. `scrollIntoView({block:'nearest'})` → unreliable, doesn't account for sticky header
+
+**Correct fix:**
+- `overflow: clip` on outer container (preserves rounded corners, no scroll context, doesn't break sticky)
+- `position: sticky; top: 72px` on controls header (accounts for navbar)
+- `getBoundingClientRect()` + `window.scrollTo()` for scroll calculations (viewport-relative, always correct)
+- Page is the ONLY scroll context — no nested scrolling
+- `setTimeout(fn, 50)` before reading positions (ensures DOM update)
+
+**Key learnings documented in CLAUDE.md and series plan for all future animation posts.**
+
+### SEO Re-Audit (Live Site)
+
+Ran full re-audit with 4 parallel agents (technical, schema, GEO, content):
+- **Technical SEO**: 78/100 (+43 from baseline)
+- **Schema**: 52/100 (many gaps found — CaseStudy invalid type, Article missing image, no @id linking)
+- **Content Quality**: 68/100 (E-E-A-T gaps — no credentials, author inconsistency, no privacy policy)
+- **AI Search Readiness**: 68/100 (llms.txt present but no RSL license, location inconsistency)
+- **Weighted total**: 66/100 (live site without blog redesign branch)
+
+### Schema Fixes Applied
+
+- Added `@id` entity linking to ProfessionalService → referenced in all Article/Service publishers
+- Fixed `CaseStudy` → `Article` in results.html (CaseStudy not valid Schema.org type)
+- Added `name`/`url`/`description` to Service schema on services.html
+- Added `BreadcrumbList` to services, about, results, contact pages
+- Added `image` + `dateModified` to Article schema in blog template
+- Added `featureList` + `softwareVersion` to SoftwareApplication
+- Fixed BreadcrumbList blog URL `/blog/index.html` → `/blog/`
+
+### Other Fixes
+
+- **Location standardized**: "Based in Valencia, Spain. Supporting teams globally." across all pages, footer, schema, llms.txt, CLAUDE.md
+- **Privacy policy**: New `/privacy-policy.html` with GDPR-compliant content, linked from all footers
+- **X-Frame-Options**: `DENY` → `SAMEORIGIN` (was blocking blog post iframes of EXPLAIN Analyzer)
+- **RSS feed**: Created `/feed.xml` via Eleventy template for PlanetMySQL submission
+- **EXPLAIN Analyzer blog post**: Added "Now Open Source" section with GitHub link, fixed repo URL
+- **awesome-mariadb PR**: Submitted to Vettabase/awesome-mariadb, added to CONTRIBUTORS
+
+### GitHub Repo Improvements
+
+- Professional README with badges (live demo, license, stars, Vue 3, TypeScript)
+- Feature tables, detection rules summary, test results table
+- Issue templates (bug report with EXPLAIN format checkboxes, feature request)
+- FUNDING.yml linking to ReliaDB contact page

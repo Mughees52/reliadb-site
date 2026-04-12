@@ -399,15 +399,48 @@
 - **Parallel steps:** side-by-side grid (2 columns)
 - **Section boxes:** grouped steps within a labeled border (light bg, colored border)
 - **Progress bar:** brand gradient (navy → blue → orange)
-- **Controls:** Play (green), Reset (gray), Speed (navy pills)
+- **Controls:** Next Step (navy), Back (outline), step counter, Auto (green), Reset (gray)
+- **Interaction:** step-by-step on click (NOT auto-play by default). Auto is optional toggle.
 - **Detail tips:** expandable box with #F4F6F8 bg, visible only on active step
 - **Container background:** #F4F6F8 (site bg-alt) — matches blog post body, NOT dark
+
+### Critical CSS/JS Rules (learned from bugs)
+
+**DO:**
+- Use `overflow: clip` on the outer container (preserves rounded corners, doesn't break sticky)
+- Use `position: sticky; top: 72px` on the controls header (72px = navbar height)
+- Use `getBoundingClientRect()` for scroll position calculations (viewport-relative, always correct)
+- Use `window.scrollTo()` for scrolling (page is the only scroll context)
+- Use `setTimeout(fn, 50)` before reading positions (ensures DOM has updated)
+- Keep the page itself as the ONLY scroll context
+
+**DO NOT:**
+- Do NOT use `overflow: hidden` on any ancestor of a sticky element (breaks sticky positioning)
+- Do NOT use `overflow: auto` to create internal scroll areas (scroll-within-scroll is an anti-pattern)
+- Do NOT use `element.offsetTop` for scroll calculations (relative to offsetParent, which varies)
+- Do NOT use `scrollIntoView({block:'nearest'})` (unreliable, doesn't account for sticky headers)
+
+### Scroll JS Template (copy for each new post)
+```js
+// After showing a new step, scroll the page so it's visible below sticky header
+if (activeElement) {
+  setTimeout(function() {
+    var header = document.querySelector('.CLASSNAME-header');
+    var headerBottom = header ? header.getBoundingClientRect().bottom : 132;
+    var rect = activeElement.getBoundingClientRect();
+    if (rect.top < headerBottom || rect.bottom > window.innerHeight) {
+      var scrollTarget = rect.top + window.scrollY - headerBottom - 10;
+      window.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+    }
+  }, 50);
+}
+```
 
 ### Template Structure
 Each post follows this pattern:
 1. Opening hook (2-3 sentences about why this matters)
 2. Source attribution callout box
-3. **Interactive animation** (dark embedded section)
+3. **Interactive animation** (light theme, sticky controls, page-scroll)
 4. Detailed prose explanation of each step
 5. Key Takeaways summary table
 6. Configuration reference table
@@ -420,6 +453,7 @@ Each post follows this pattern:
 
 | Week | Post | Status |
 |------|------|--------|
+| Week 1 (Apr 12) | Post 0: InnoDB Architecture Visual Guide | DONE |
 | Week 1 (Apr 12) | Post 1: How UPDATE Works | DONE |
 | Week 1-2 | Post 2: How SELECT Works | NEXT |
 | Week 2-3 | Post 3: Buffer Pool Deep Dive | |
