@@ -20,7 +20,7 @@ Click **Next Step** to follow the UPDATE statement through every layer of InnoDB
 <strong>Sources:</strong> Cross-referenced against the <a href="https://dev.mysql.com/doc/refman/8.4/en/innodb-redo-log.html">MySQL 8.4 Reference Manual</a>, <a href="https://www.percona.com/blog/how-innodb-handles-redo-logging/">Percona's InnoDB redo logging deep-dive</a>, and <a href="https://www.alibabacloud.com/blog/what-are-the-differences-and-functions-of-the-redo-log-undo-log-and-binlog-in-mysql_598035">Alibaba Cloud's redo/undo/binlog analysis</a>.
 </div>
 
-<div style="margin-left:calc(-50vw + 50%);margin-right:calc(-50vw + 50%);width:100vw;padding:0;">
+<div style="padding:0;">
 <iframe src="/blog/assets/innodb-update-flow-animation.html" style="width:100%; height:90vh; border:none;" loading="lazy" title="How a MySQL UPDATE Works — InnoDB Data Flow Animation"></iframe>
 </div>
 
