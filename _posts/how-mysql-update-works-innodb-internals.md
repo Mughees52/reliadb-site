@@ -10,6 +10,7 @@ featured: true
 author: "Mughees Ahmed"
 dateModified: "2026-04-12T00:00:00+00:00"
 coverImage: "/images/blog/mysql-8-to-8-4-upgrade-execution.jpg"
+fullwidth: true
 ---
 
 You run `UPDATE orders SET status = 'shipped' WHERE id = 42` and get back "1 row affected" in 2 milliseconds. But what actually happened inside MySQL during those 2 milliseconds?
