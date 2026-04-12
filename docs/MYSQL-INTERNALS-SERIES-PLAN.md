@@ -308,33 +308,43 @@
 
 ## Animation Design System (Consistent Across Series)
 
-### Color Scheme
-| Component | Color | Hex |
-|-----------|-------|-----|
-| Client/Application | Gray | #555 |
-| SQL Layer (Parser/Optimizer) | Indigo | #4338ca |
-| Executor | Blue | #2563eb |
-| InnoDB Locks | Amber | #f59e0b |
-| Undo Log | Dark Amber | #d97706 |
-| Buffer Pool | Emerald | #10b981 |
-| Redo Log | Pink | #ec4899 |
-| Change Buffer | Lime | #84cc16 |
-| Binary Log | Sky Blue | #0ea5e9 |
-| Commit | Red | #ef4444 |
-| OK/Success | Green | #22c55e |
-| Background/Async | Gray | #777 |
-| Section borders | Subtle version of interior color |
+### Color Scheme (matches ReliaDB site theme — light background, not dark)
+
+**Base:** Light background (#F4F6F8) with white cards, matching the EXPLAIN Analyzer tool style.
+
+| Component | Card BG | Border | Badge/Number | Hex |
+|-----------|---------|--------|--------------|-----|
+| Animation container | #F4F6F8 | — | — | Site bg-alt |
+| Client/Application | #FFFFFF | #DDE3E9 | #1A5276 (navy) | Site primary |
+| SQL Layer section | #FFFFFF | #2980B933 | — | Accent border |
+| Parser/Optimizer | #F0F4FF | #2980B944 | #2980B9 (blue) | Site accent |
+| Executor | #EAF2F8 | #1A527644 | #1A5276 (navy) | accent-lt |
+| InnoDB section | #FFFFFF | #1E844933 | — | Success border |
+| Row Lock | #FFF8EC | #E67E2244 | #E67E22 (orange) | Site CTA |
+| Undo Log | #FFF8EC | #CA6F1E33 | #CA6F1E (dark orange) | cta-dark |
+| Buffer Pool | #ECFDF5 | #1E844944 | #1E8449 (green) | Site success |
+| Redo Log | #FDF2F8 | #C0392B44 | #C0392B (red) | Danger |
+| Change Buffer | #F0FFF4 | #27AE6044 | #27AE60 (lime) | Light green |
+| Binary Log | #EAF2F8 | #2980B944 | #2980B9 (blue) | Accent |
+| Commit section | #FFFFFF | #C0392B33 | — | Danger border |
+| InnoDB PREPARE | #F5F3FF | #8E44AD44 | #8E44AD (purple) | Purple |
+| InnoDB COMMIT | #FEF2F2 | #C0392B44 | #C0392B (red) | Danger |
+| OK/Success | #ECFDF5 | #1E844966 | #1E8449 (green) | Success |
+| Background/Async | #F4F6F8 | #DDE3E9 | #777 (gray) | text-lt |
+| Active step glow | — | — | #E67E22 shadow | CTA glow |
+| Connectors | #DDE3E9 default, #E67E22 active | | | |
+| Progress bar | linear-gradient(90deg, #1A5276, #2980B9, #E67E22) | | | Brand gradient |
 
 ### Animation Patterns
 - **Step reveal:** opacity 0 → 1 with translateY(20px → 0), cubic-bezier easing
-- **Active glow:** pulse animation on the current step's card
-- **Connectors:** vertical lines with arrow, glow amber when active
+- **Active glow:** subtle orange box-shadow pulse on the current step's card
+- **Connectors:** vertical lines (#DDE3E9), glow orange (#E67E22) when active, with arrow
 - **Parallel steps:** side-by-side grid (2 columns)
-- **Section boxes:** grouped steps within a labeled border
-- **Progress bar:** gradient top bar showing completion
-- **Controls:** Play, Reset, Speed (Slow/Normal/Fast)
-- **Detail tips:** expandable box visible only on active step
-- **Dark background:** #0f0f1a — embedded within the light blog template
+- **Section boxes:** grouped steps within a labeled border (light bg, colored border)
+- **Progress bar:** brand gradient (navy → blue → orange)
+- **Controls:** Play (green), Reset (gray), Speed (navy pills)
+- **Detail tips:** expandable box with #F4F6F8 bg, visible only on active step
+- **Container background:** #F4F6F8 (site bg-alt) — matches blog post body, NOT dark
 
 ### Template Structure
 Each post follows this pattern:

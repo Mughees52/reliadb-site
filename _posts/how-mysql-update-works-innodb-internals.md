@@ -24,74 +24,74 @@ Understanding the internal execution path is essential for diagnosing lock conte
 
 Click **Play** to watch the full UPDATE lifecycle step by step. Each card expands with technical details when active.
 
-<div style="background:#0f0f1a;border-radius:16px;padding:32px 20px 48px;margin:24px 0;overflow:hidden;">
+<div style="background:#F4F6F8;border-radius:16px;padding:32px 20px 48px;margin:24px 0;overflow:hidden;border:1px solid #DDE3E9;">
 <style>
   .upd-flow * { margin: 0; padding: 0; box-sizing: border-box; }
-  .upd-flow { font-family: 'Inter', sans-serif; color: #e0e0e0; max-width: 720px; margin: 0 auto; }
-  .upd-progress { height: 3px; background: linear-gradient(90deg, #f59e0b, #ef4444, #8b5cf6); transition: width 0.5s ease; width: 0%; border-radius: 2px; margin-bottom: 24px; }
+  .upd-flow { font-family: 'Inter', sans-serif; color: #444; max-width: 720px; margin: 0 auto; }
+  .upd-progress { height: 3px; background: linear-gradient(90deg, #1A5276, #2980B9, #E67E22); transition: width 0.5s ease; width: 0%; border-radius: 2px; margin-bottom: 24px; }
   .upd-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
   .upd-controls button { padding: 8px 20px; border: none; border-radius: 6px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .upd-btn-play { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
-  .upd-btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.4); }
-  .upd-btn-reset { background: #2a2a3e; color: #aaa; border: 1px solid #3a3a50 !important; }
-  .upd-btn-reset:hover { background: #3a3a50; color: #fff; }
-  .upd-btn-speed { background: #2a2a3e; color: #c4b5fd; border: 1px solid #4c3d8f !important; font-size: 0.8rem; padding: 6px 14px; }
-  .upd-btn-speed:hover { background: #3a2d6e; }
-  .upd-btn-speed.active { background: #5b21b6; color: #fff; }
+  .upd-btn-play { background: linear-gradient(135deg, #1E8449, #27AE60); color: #fff; }
+  .upd-btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,132,73,0.3); }
+  .upd-btn-reset { background: #fff; color: #777; border: 1px solid #DDE3E9 !important; }
+  .upd-btn-reset:hover { background: #EAF2F8; color: #444; }
+  .upd-btn-speed { background: #fff; color: #1A5276; border: 1px solid #D6EAF8 !important; font-size: 0.8rem; padding: 6px 14px; }
+  .upd-btn-speed:hover { background: #EAF2F8; }
+  .upd-btn-speed.active { background: #1A5276; color: #fff; }
   .upd-steps { display: flex; flex-direction: column; align-items: center; gap: 0; }
-  .upd-conn { width: 2px; height: 28px; background: #333; opacity: 0; transition: opacity 0.3s; }
+  .upd-conn { width: 2px; height: 28px; background: #DDE3E9; opacity: 0; transition: opacity 0.3s; }
   .upd-conn.vis { opacity: 1; }
-  .upd-conn.act { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
+  .upd-conn.act { background: #E67E22; box-shadow: 0 0 6px rgba(230,126,34,0.3); }
   .upd-step { opacity: 0; transform: translateY(20px) scale(0.97); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); width: 100%; }
   .upd-step.vis { opacity: 1; transform: translateY(0) scale(1); }
-  .upd-card { border-radius: 12px; padding: 16px 20px; transition: box-shadow 0.4s; }
-  .upd-step.act .upd-card { box-shadow: 0 0 20px rgba(245,158,11,0.12); }
+  .upd-card { border-radius: 10px; padding: 14px 18px; transition: box-shadow 0.4s; }
+  .upd-step.act .upd-card { box-shadow: 0 0 16px rgba(230,126,34,0.12), 0 4px 12px rgba(0,0,0,0.06); }
   .upd-num { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-weight: 800; font-size: 0.75rem; margin-right: 8px; flex-shrink: 0; }
   .upd-hdr { display: flex; align-items: center; margin-bottom: 4px; }
-  .upd-title { font-size: 0.95rem; font-weight: 700; }
-  .upd-desc { color: #999; font-size: 0.82rem; margin-left: 34px; line-height: 1.5; }
-  .upd-detail { display: none; background: #1a1a2e; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #aaa; margin: 8px 0 0 34px; line-height: 1.55; }
+  .upd-title { font-size: 0.95rem; font-weight: 700; color: #1a1a2e; }
+  .upd-desc { color: #777; font-size: 0.82rem; margin-left: 34px; line-height: 1.5; }
+  .upd-detail { display: none; background: #fff; border: 1px solid #DDE3E9; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #666; margin: 8px 0 0 34px; line-height: 1.55; }
   .upd-step.act .upd-detail { display: block; }
-  .upd-section { border: 1px solid #333; border-radius: 14px; padding: 14px; width: 100%; opacity: 0; transform: translateY(15px); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  .upd-section { border: 1px solid #DDE3E9; border-radius: 14px; padding: 14px; width: 100%; opacity: 0; transform: translateY(15px); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); background: #fff; }
   .upd-section.vis { opacity: 1; transform: translateY(0); }
-  .upd-section-label { font-weight: 700; font-size: 0.85rem; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #333; }
+  .upd-section-label { font-weight: 700; font-size: 0.85rem; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #eee; }
   .upd-section .upd-steps { gap: 0; }
   .upd-par { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
   .upd-par .upd-step { max-width: 100%; }
-  .upd-repeat { color: #666; font-size: 0.78rem; font-style: italic; text-align: center; padding: 6px 0; opacity: 0; transition: opacity 0.4s; }
+  .upd-repeat { color: #999; font-size: 0.78rem; font-style: italic; text-align: center; padding: 6px 0; opacity: 0; transition: opacity 0.4s; }
   .upd-repeat.vis { opacity: 1; }
-  /* Themes */
-  .t-client .upd-card { background: #1e1e30; border: 1px solid #444; }
-  .t-client .upd-num { background: #555; color: #fff; }
-  .t-sql .upd-card { background: #1a1a38; border: 1px solid #4338ca55; }
-  .t-sql .upd-num { background: #4338ca; color: #fff; }
-  .t-sql-sec { border-color: #4338ca44; }
-  .t-sql-sec .upd-section-label { color: #818cf8; border-color: #4338ca44; }
-  .t-exec .upd-card { background: #1a2332; border: 1px solid #2563eb55; }
-  .t-exec .upd-num { background: #2563eb; color: #fff; }
-  .t-lock .upd-card { background: #2a1f10; border: 1px solid #f59e0b44; }
-  .t-lock .upd-num { background: #f59e0b; color: #000; }
-  .t-undo .upd-card { background: #2a1f10; border: 1px solid #f59e0b33; }
-  .t-undo .upd-num { background: #d97706; color: #000; }
-  .t-buf .upd-card { background: #0f2218; border: 1px solid #10b98144; }
-  .t-buf .upd-num { background: #10b981; color: #000; }
-  .t-redo .upd-card { background: #1f0f18; border: 1px solid #ec489944; }
-  .t-redo .upd-num { background: #ec4899; color: #fff; }
-  .t-cb .upd-card { background: #1a1f10; border: 1px solid #84cc1644; }
-  .t-cb .upd-num { background: #84cc16; color: #000; }
-  .t-innodb-sec { border-color: #22c55e44; background: #0a1a0f22; }
-  .t-innodb-sec .upd-section-label { color: #4ade80; border-color: #22c55e33; }
-  .t-prepare .upd-card { background: #1a1028; border: 1px solid #8b5cf644; }
-  .t-prepare .upd-num { background: #8b5cf6; color: #fff; }
-  .t-binlog .upd-card { background: #1a2838; border: 1px solid #0ea5e944; }
-  .t-binlog .upd-num { background: #0ea5e9; color: #fff; }
-  .t-commit .upd-card { background: #2a0f0f; border: 1px solid #ef444466; }
-  .t-commit .upd-num { background: #ef4444; color: #fff; }
-  .t-commit-sec { border-color: #ef444433; background: #1a0a0a22; }
-  .t-commit-sec .upd-section-label { color: #f87171; border-color: #ef444433; }
-  .t-ok .upd-card { background: #0f2a18; border: 1px solid #22c55e66; }
-  .t-ok .upd-num { background: #22c55e; color: #000; }
-  .t-bg .upd-card { background: #1a1a1a; border: 1px solid #555; }
+  /* Themes — Light */
+  .t-client .upd-card { background: #fff; border: 1px solid #DDE3E9; }
+  .t-client .upd-num { background: #1A5276; color: #fff; }
+  .t-sql .upd-card { background: #F0F4FF; border: 1px solid #2980B933; }
+  .t-sql .upd-num { background: #2980B9; color: #fff; }
+  .t-sql-sec { border-color: #2980B933; }
+  .t-sql-sec .upd-section-label { color: #2980B9; border-color: #2980B922; }
+  .t-exec .upd-card { background: #EAF2F8; border: 1px solid #1A527633; }
+  .t-exec .upd-num { background: #1A5276; color: #fff; }
+  .t-lock .upd-card { background: #FFF8EC; border: 1px solid #E67E2233; }
+  .t-lock .upd-num { background: #E67E22; color: #fff; }
+  .t-undo .upd-card { background: #FFF8EC; border: 1px solid #CA6F1E33; }
+  .t-undo .upd-num { background: #CA6F1E; color: #fff; }
+  .t-buf .upd-card { background: #ECFDF5; border: 1px solid #1E844933; }
+  .t-buf .upd-num { background: #1E8449; color: #fff; }
+  .t-redo .upd-card { background: #FEF2F2; border: 1px solid #C0392B33; }
+  .t-redo .upd-num { background: #C0392B; color: #fff; }
+  .t-cb .upd-card { background: #F0FFF4; border: 1px solid #27AE6033; }
+  .t-cb .upd-num { background: #27AE60; color: #fff; }
+  .t-innodb-sec { border-color: #1E844933; background: #FAFFFE; }
+  .t-innodb-sec .upd-section-label { color: #1E8449; border-color: #1E844922; }
+  .t-prepare .upd-card { background: #F5F3FF; border: 1px solid #8E44AD33; }
+  .t-prepare .upd-num { background: #8E44AD; color: #fff; }
+  .t-binlog .upd-card { background: #EAF2F8; border: 1px solid #2980B933; }
+  .t-binlog .upd-num { background: #2980B9; color: #fff; }
+  .t-commit .upd-card { background: #FEF2F2; border: 1px solid #C0392B44; }
+  .t-commit .upd-num { background: #C0392B; color: #fff; }
+  .t-commit-sec { border-color: #C0392B22; background: #FFFAFA; }
+  .t-commit-sec .upd-section-label { color: #C0392B; border-color: #C0392B22; }
+  .t-ok .upd-card { background: #ECFDF5; border: 1px solid #1E844944; }
+  .t-ok .upd-num { background: #1E8449; color: #fff; }
+  .t-bg .upd-card { background: #F4F6F8; border: 1px solid #DDE3E9; }
   .t-bg .upd-num { background: #777; color: #fff; }
   @media (max-width: 600px) { .upd-par { grid-template-columns: 1fr; } }
 </style>
