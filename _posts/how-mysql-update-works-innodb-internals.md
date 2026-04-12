@@ -29,15 +29,20 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
   .upd-flow * { margin: 0; padding: 0; box-sizing: border-box; }
   .upd-flow { font-family: 'Inter', sans-serif; color: #444; max-width: 720px; margin: 0 auto; }
   .upd-progress { height: 3px; background: linear-gradient(90deg, #1A5276, #2980B9, #E67E22); transition: width 0.5s ease; width: 0%; border-radius: 2px; margin-bottom: 24px; }
-  .upd-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+  .upd-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
   .upd-controls button { padding: 8px 20px; border: none; border-radius: 6px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-  .upd-btn-play { background: linear-gradient(135deg, #1E8449, #27AE60); color: #fff; }
-  .upd-btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,132,73,0.3); }
+  .upd-btn-next { background: linear-gradient(135deg, #1A5276, #2980B9); color: #fff; padding: 10px 28px; font-size: 0.9rem; }
+  .upd-btn-next:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,82,118,0.3); }
+  .upd-btn-next:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+  .upd-btn-prev { background: #fff; color: #1A5276; border: 1px solid #D6EAF8 !important; }
+  .upd-btn-prev:hover { background: #EAF2F8; }
+  .upd-btn-prev:disabled { opacity: 0.3; cursor: default; }
+  .upd-btn-auto { background: #fff; color: #1E8449; border: 1px solid #1E844933 !important; font-size: 0.8rem; }
+  .upd-btn-auto:hover { background: #ECFDF5; }
+  .upd-btn-auto.playing { background: #1E8449; color: #fff; }
   .upd-btn-reset { background: #fff; color: #777; border: 1px solid #DDE3E9 !important; }
   .upd-btn-reset:hover { background: #EAF2F8; color: #444; }
-  .upd-btn-speed { background: #fff; color: #1A5276; border: 1px solid #D6EAF8 !important; font-size: 0.8rem; padding: 6px 14px; }
-  .upd-btn-speed:hover { background: #EAF2F8; }
-  .upd-btn-speed.active { background: #1A5276; color: #fff; }
+  .upd-step-counter { font-size: 0.82rem; color: #777; font-weight: 600; min-width: 70px; text-align: center; }
   .upd-steps { display: flex; flex-direction: column; align-items: center; gap: 0; }
   .upd-conn { width: 2px; height: 28px; background: #DDE3E9; opacity: 0; transition: opacity 0.3s; }
   .upd-conn.vis { opacity: 1; }
@@ -99,11 +104,11 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
 <div class="upd-flow">
   <div class="upd-progress" id="updProgress"></div>
   <div class="upd-controls">
-    <button class="upd-btn-play" id="updPlay" onclick="updPlay()">&#9654; Play</button>
+    <button class="upd-btn-prev" id="updPrev" onclick="updPrev()" disabled>&larr; Back</button>
+    <button class="upd-btn-next" id="updNext" onclick="updNext()">Next Step &rarr;</button>
+    <span class="upd-step-counter" id="updCounter">0 / 14</span>
+    <button class="upd-btn-auto" id="updAuto" onclick="updAutoPlay()">&#9654; Auto</button>
     <button class="upd-btn-reset" onclick="updReset()">&#8634; Reset</button>
-    <button class="upd-btn-speed" onclick="updSpd(this,2000)">Slow</button>
-    <button class="upd-btn-speed active" onclick="updSpd(this,1200)">Normal</button>
-    <button class="upd-btn-speed" onclick="updSpd(this,600)">Fast</button>
   </div>
 
   <div class="upd-steps" id="updSteps">
@@ -255,67 +260,125 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
 (function(){
   var STEPS=['1','2','2b','4','5','5b','7','7b','9','10','11','12','13','14'];
   var TOTAL=STEPS.length;
-  var spd=1200,playing=false,cur=0,tmr=null;
+  var cur=0,autoTmr=null,autoPlaying=false;
 
-  window.updSpd=function(b,ms){
-    spd=ms;
-    document.querySelectorAll('.upd-btn-speed').forEach(function(x){x.classList.remove('active')});
-    b.classList.add('active');
-  };
+  function updateUI(){
+    document.getElementById('updCounter').textContent=cur+' / '+TOTAL;
+    document.getElementById('updPrev').disabled=(cur===0);
+    var nb=document.getElementById('updNext');
+    if(cur>=TOTAL){nb.textContent='\u2713 Complete';nb.disabled=true;}
+    else{nb.textContent='Next Step \u2192';nb.disabled=false;}
+    document.getElementById('updProgress').style.width=(cur/TOTAL*100)+'%';
+  }
 
-  function show(s){
+  function showStep(idx){
+    var s=STEPS[idx];
     // Show section boxes
     if(s==='2')document.querySelector('[data-sec="sql"]').classList.add('vis');
     if(s==='5')document.querySelector('[data-sec="innodb"]').classList.add('vis');
     if(s==='10')document.querySelector('[data-sec="commit"]').classList.add('vis');
 
+    // Show step card
     var el=document.querySelector('[data-s="'+s+'"]');
-    if(el){el.classList.add('vis');el.classList.add('act');}
+    if(el){el.classList.add('vis','act');}
 
-    // Show connector
-    var prev={'2':'1','4':'3','5':'4','7':'6','9':'8','10':'9b','11':'10','12':'11','13':'12','14':'13'};
-    if(prev[s]){
+    // Show connector before this step
+    var connMap={'2':'1','4':'3','5':'4','7':'6','9':'8','10':'9b','11':'10','12':'11','13':'12','14':'13'};
+    if(connMap[s]){
       document.querySelectorAll('.upd-conn').forEach(function(c){
-        if(c.getAttribute('data-a')===prev[s])c.classList.add('vis','act');
+        if(c.getAttribute('data-a')===connMap[s])c.classList.add('vis','act');
       });
     }
 
-    // Deactivate previous
+    // Deactivate previous steps (keep visible, remove active glow)
+    document.querySelectorAll('.upd-step').forEach(function(x){
+      if(x.getAttribute('data-s')!==s)x.classList.remove('act');
+    });
+    // Remove active from connectors after brief glow
     setTimeout(function(){
-      document.querySelectorAll('.upd-step').forEach(function(x){
-        if(x.getAttribute('data-s')!==s)x.classList.remove('act');
-      });
       document.querySelectorAll('.upd-conn').forEach(function(c){c.classList.remove('act')});
-    },spd*0.7);
+    },600);
 
     // Repeat label after step 9
-    if(s==='9')setTimeout(function(){document.getElementById('updRepeat').classList.add('vis')},spd*0.3);
+    if(s==='9')document.getElementById('updRepeat').classList.add('vis');
 
-    // Progress
-    document.getElementById('updProgress').style.width=((STEPS.indexOf(s)+1)/TOTAL*100)+'%';
+    // Scroll the active step into view
+    if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
   }
 
-  window.updPlay=function(){
-    if(playing)return;
-    playing=true;
-    var btn=document.getElementById('updPlay');
-    btn.textContent='Playing...';btn.style.opacity='0.6';
-    function next(){
-      if(cur>=TOTAL){playing=false;btn.textContent='Complete';btn.style.opacity='1';return;}
-      show(STEPS[cur]);cur++;tmr=setTimeout(next,spd);
+  function hideStep(idx){
+    var s=STEPS[idx];
+    var el=document.querySelector('[data-s="'+s+'"]');
+    if(el)el.classList.remove('vis','act');
+
+    // Hide connector
+    var connMap={'2':'1','4':'3','5':'4','7':'6','9':'8','10':'9b','11':'10','12':'11','13':'12','14':'13'};
+    if(connMap[s]){
+      document.querySelectorAll('.upd-conn').forEach(function(c){
+        if(c.getAttribute('data-a')===connMap[s])c.classList.remove('vis','act');
+      });
     }
-    next();
+
+    // Hide sections if their steps are all hidden
+    if(s==='2'){var sec=document.querySelector('[data-sec="sql"]');if(sec&&cur<1)sec.classList.remove('vis');}
+    if(s==='5'){var sec=document.querySelector('[data-sec="innodb"]');if(sec&&cur<4)sec.classList.remove('vis');}
+    if(s==='10'){var sec=document.querySelector('[data-sec="commit"]');if(sec&&cur<9)sec.classList.remove('vis');}
+
+    if(s==='9')document.getElementById('updRepeat').classList.remove('vis');
+
+    // Re-activate the now-current step
+    if(cur>0){
+      var prev=STEPS[cur-1];
+      var prevEl=document.querySelector('[data-s="'+prev+'"]');
+      if(prevEl)prevEl.classList.add('act');
+    }
+  }
+
+  window.updNext=function(){
+    if(cur>=TOTAL)return;
+    showStep(cur);
+    cur++;
+    updateUI();
+  };
+
+  window.updPrev=function(){
+    if(cur<=0)return;
+    cur--;
+    hideStep(cur);
+    updateUI();
+  };
+
+  window.updAutoPlay=function(){
+    var btn=document.getElementById('updAuto');
+    if(autoPlaying){
+      clearInterval(autoTmr);autoTmr=null;autoPlaying=false;
+      btn.classList.remove('playing');btn.textContent='\u25B6 Auto';
+      return;
+    }
+    autoPlaying=true;
+    btn.classList.add('playing');btn.textContent='\u23F8 Pause';
+    autoTmr=setInterval(function(){
+      if(cur>=TOTAL){
+        clearInterval(autoTmr);autoTmr=null;autoPlaying=false;
+        btn.classList.remove('playing');btn.textContent='\u25B6 Auto';
+        return;
+      }
+      updNext();
+    },1500);
   };
 
   window.updReset=function(){
-    playing=false;cur=0;if(tmr)clearTimeout(tmr);
+    if(autoTmr){clearInterval(autoTmr);autoTmr=null;}
+    autoPlaying=false;cur=0;
     document.querySelectorAll('.upd-step').forEach(function(x){x.classList.remove('vis','act')});
     document.querySelectorAll('.upd-conn').forEach(function(c){c.classList.remove('vis','act')});
     document.querySelectorAll('.upd-section').forEach(function(x){x.classList.remove('vis')});
     document.getElementById('updRepeat').classList.remove('vis');
-    document.getElementById('updProgress').style.width='0%';
-    var btn=document.getElementById('updPlay');btn.textContent='\u25B6 Play';btn.style.opacity='1';
+    var btn=document.getElementById('updAuto');btn.classList.remove('playing');btn.textContent='\u25B6 Auto';
+    updateUI();
   };
+
+  updateUI();
 })();
 </script>
 </div>
