@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Life of an UPDATE — InnoDB Data Flow Animated</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#ffffff;color:#444444;overflow-x:hidden}
+
+/* ── Responsive wrapper ── */
+.page-wrap{max-width:1600px;margin:0 auto;padding:0 24px}
+@media(min-width:1400px){
+  .main-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  .main-grid .left-col{position:sticky;top:80px}
+}
+
+/* ── Hero ── */
+.hero{text-align:center;padding:40px 20px 12px}
+.hero h1{font-size:2.4rem;font-weight:800;background:linear-gradient(135deg,#1a5276,#2980b9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.hero .sql{font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#1a5276;background:#f0f4f8;display:inline-block;padding:8px 20px;border-radius:6px;border:1px solid #d6eaf8;margin-top:8px}
+.hero .sql span{color:#2980b9}
+
+/* ── Sticky controls ── */
+.controls{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid #dde3e9;padding:12px 24px;display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}
+.controls button{padding:10px 24px;border:none;border-radius:6px;font-family:inherit;font-size:.9rem;font-weight:600;cursor:pointer;transition:.2s}
+.btn-next{background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff}
+.btn-next:hover{box-shadow:0 4px 16px rgba(41,128,185,.3);transform:translateY(-1px)}
+.btn-next:disabled{opacity:.35;cursor:default;transform:none;box-shadow:none}
+.btn-sec{background:#ffffff;color:#1a5276;border:1px solid #d6eaf8!important}
+.btn-sec:hover{background:#eaf2f8;color:#1a5276}
+.step-ct{color:#888;font-size:.85rem;font-weight:600;min-width:60px;text-align:center}
+
+/* ── Progress bar ── */
+.prog-bar{height:3px;background:#e8ecf0;position:relative;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#1a5276,#2980b9,#5dade2);transition:width .5s ease;width:0%}
+
+/* ── Narration ── */
+.narr{margin:16px 0;padding:0}
+.narr-box{background:#ffffff;border:1px solid #dde3e9;border-radius:12px;padding:20px 26px;min-height:80px}
+.narr-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.narr-text{font-size:1rem;line-height:1.8;color:#444444}
+.narr-text strong{color:#1a1a2e}
+.narr-text code{font-family:'JetBrains Mono',monospace;font-size:.85rem;background:#f0f4f8;padding:2px 6px;border-radius:3px;color:#1a5276}
+
+/* ── Architecture diagram ── */
+.diagram{margin:12px 0;padding:0;position:relative}
+.dia-svg{width:100%;height:auto}
+
+/* ── Component boxes in SVG ── */
+.box{rx:10;ry:10;transition:all .5s cubic-bezier(.16,1,.3,1);cursor:pointer}
+.box-hidden{opacity:0;transform:translateY(8px)}
+.box-vis{opacity:1;transform:translateY(0)}
+.box-label{font-family:'Inter',sans-serif;font-weight:700;pointer-events:none;transition:opacity .5s}
+.box-sub{font-family:'Inter',sans-serif;font-weight:400;pointer-events:none;transition:opacity .5s}
+.box-hidden-text{opacity:0}
+
+/* ── Animated data packet ── */
+.packet{r:5;opacity:0;filter:url(#glow)}
+.packet-active{opacity:1}
+
+/* ── Pulse animation ── */
+@keyframes pulse{0%,100%{opacity:.7}50%{opacity:1}}
+.active-box{animation:pulse 1.5s ease-in-out infinite}
+
+/* ── Connection paths ── */
+.conn{fill:none;stroke-width:2;stroke-dasharray:6 4;opacity:0;transition:opacity .5s}
+.conn-vis{opacity:.4}
+.conn-active{opacity:1;stroke-dasharray:none;stroke-width:2.5}
+
+/* ── Detail panel ── */
+.detail{margin:0;padding:0}
+.detail-box{background:#f8fafb;border:1px solid #dde3e9;border-radius:10px;padding:0;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s,margin .3s;margin:0}
+.detail-box.open{max-height:400px;padding:18px 24px;margin:10px 0 0}
+.detail-box .dt{font-size:.85rem;font-weight:700;margin-bottom:8px;color:#1a1a2e}
+.detail-box .dd{font-size:.88rem;color:#555;line-height:1.7}
+.detail-box .dd code{font-family:'JetBrains Mono',monospace;font-size:.82rem;background:#f0f4f8;padding:2px 6px;border-radius:3px;color:#1a5276}
+.detail-box .kp{display:flex;gap:6px;margin:4px 0}
+.detail-box .kp::before{content:'→';color:#2980b9;flex-shrink:0;font-size:.85rem}
+
+/* ── Single-column fallback ── */
+@media(max-width:1399px){
+  .narr,.diagram,.detail{max-width:960px;margin-left:auto;margin-right:auto;padding:0 20px}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>The Life of an UPDATE</h1>
+  <p style="color:#5a6377;font-size:.88rem;margin-bottom:8px">Follow a single SQL statement from client to disk — every buffer, log, and flush along the way.</p>
+  <div class="sql"><span>UPDATE</span> orders <span>SET</span> status = 'shipped' <span>WHERE</span> id = 42;</div>
+</div>
+
+<div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+
+<div class="controls">
+  <button class="btn-sec" id="btnBack" onclick="goBack()">← Back</button>
+  <button class="btn-next" id="btnNext" onclick="goNext()">Next Step →</button>
+  <span class="step-ct" id="stepCt">0 / 18</span>
+  <button class="btn-sec" onclick="resetAll()">↺ Reset</button>
+  <button class="btn-sec" id="btnAuto" onclick="toggleAuto()">▶ Auto</button>
+</div>
+
+<div class="page-wrap">
+<div class="main-grid">
+
+<div class="left-col">
+<div class="diagram">
+<svg viewBox="0 0 920 720" class="dia-svg" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#aab7c4"/></marker>
+    <marker id="ah-active" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6" fill="#2980b9"/></marker>
+  </defs>
+
+  <!-- ══ Background zones ══ -->
+  <rect x="10" y="5" width="440" height="710" rx="16" fill="#eaf2f8" stroke="#d6eaf8" stroke-width="1"/>
+  <text x="230" y="30" text-anchor="middle" fill="#2980b9" font-size="11" font-weight="700" letter-spacing=".08em" font-family="Inter">IN-MEMORY</text>
+
+  <rect x="470" y="5" width="440" height="710" rx="16" fill="#f4ecf7" stroke="#e8daef" stroke-width="1"/>
+  <text x="690" y="30" text-anchor="middle" fill="#7d3c98" font-size="11" font-weight="700" letter-spacing=".08em" font-family="Inter">ON-DISK</text>
+
+  <!-- ══ Connection paths ══ -->
+  <!-- Client → Parser -->
+  <path id="c-client-parser" class="conn" d="M230,85 L230,130" stroke="#aab7c4" marker-end="url(#ah)"/>
+  <!-- Parser → Optimizer -->
+  <path id="c-parser-opt" class="conn" d="M230,170 L230,210" stroke="#aab7c4" marker-end="url(#ah)"/>
+  <!-- Optimizer → Executor -->
+  <path id="c-opt-exec" class="conn" d="M230,250 L230,290" stroke="#aab7c4" marker-end="url(#ah)"/>
+  <!-- Executor → Buffer Pool -->
+  <path id="c-exec-bp" class="conn" d="M230,330 L230,385" stroke="#2980b9" marker-end="url(#ah)"/>
+  <!-- BP → X Lock (internal) -->
+  <path id="c-bp-lock" class="conn" d="M150,430 L150,430" stroke="#2980b9"/>
+  <!-- BP → Undo -->
+  <path id="c-bp-undo" class="conn" d="M310,420 L490,550" stroke="#c0392b" marker-end="url(#ah)"/>
+  <!-- BP → Log Buffer -->
+  <path id="c-bp-logbuf" class="conn" d="M150,470 L150,540" stroke="#d4ac0d" marker-end="url(#ah)"/>
+  <!-- Log Buffer → Redo Log -->
+  <path id="c-logbuf-redo" class="conn" d="M260,580 L490,630" stroke="#d4ac0d" marker-end="url(#ah)"/>
+  <!-- BP → Change Buffer -->
+  <path id="c-bp-cb" class="conn" d="M310,460 L370,510" stroke="#1e8449" marker-end="url(#ah)"/>
+  <!-- BP → Doublewrite -->
+  <path id="c-bp-dw" class="conn" d="M370,420 L490,350" stroke="#5dade2" marker-end="url(#ah)"/>
+  <!-- Doublewrite → Tablespace -->
+  <path id="c-dw-tbl" class="conn" d="M700,350 L700,280" stroke="#7d3c98" marker-end="url(#ah)"/>
+  <!-- OK → Client -->
+  <path id="c-ok-client" class="conn" d="M370,680 L370,85 L310,85" stroke="#1e8449" marker-end="url(#ah)"/>
+
+  <!-- ══ Component boxes ══ -->
+
+  <!-- CLIENT -->
+  <rect id="b-client" class="box box-hidden" x="130" y="48" width="200" height="40" fill="#ffffff" stroke="#aab7c4"/>
+  <text id="t-client" class="box-label box-hidden-text" x="230" y="73" text-anchor="middle" fill="#555" font-size="13">① Client (app)</text>
+
+  <!-- PARSER -->
+  <rect id="b-parser" class="box box-hidden" x="130" y="128" width="200" height="44" fill="#ebf5fb" stroke="#aed6f1"/>
+  <text id="t-parser" class="box-label box-hidden-text" x="230" y="148" text-anchor="middle" fill="#1a5276" font-size="12">② Parser</text>
+  <text id="s-parser" class="box-sub box-hidden-text" x="230" y="163" text-anchor="middle" fill="#7f8c8d" font-size="9">SQL → parse tree</text>
+
+  <!-- OPTIMIZER -->
+  <rect id="b-opt" class="box box-hidden" x="130" y="208" width="200" height="44" fill="#ebf5fb" stroke="#aed6f1"/>
+  <text id="t-opt" class="box-label box-hidden-text" x="230" y="228" text-anchor="middle" fill="#1a5276" font-size="12">③ Optimizer</text>
+  <text id="s-opt" class="box-sub box-hidden-text" x="230" y="243" text-anchor="middle" fill="#7f8c8d" font-size="9">choose index &amp; plan</text>
+
+  <!-- EXECUTOR -->
+  <rect id="b-exec" class="box box-hidden" x="130" y="288" width="200" height="44" fill="#d6eaf8" stroke="#85c1e9"/>
+  <text id="t-exec" class="box-label box-hidden-text" x="230" y="308" text-anchor="middle" fill="#1a5276" font-size="12">④ Executor</text>
+  <text id="s-exec" class="box-sub box-hidden-text" x="230" y="323" text-anchor="middle" fill="#7f8c8d" font-size="9">handler API → InnoDB</text>
+
+  <!-- BUFFER POOL (big box) -->
+  <rect id="b-bp" class="box box-hidden" x="40" y="378" width="380" height="100" fill="#d4e6f1" stroke="#85c1e9"/>
+  <text id="t-bp" class="box-label box-hidden-text" x="230" y="402" text-anchor="middle" fill="#1a5276" font-size="13">⑤ Buffer Pool</text>
+  <text id="s-bp" class="box-sub box-hidden-text" x="230" y="418" text-anchor="middle" fill="#5d6d7e" font-size="9">page loaded, row modified in-memory, marked dirty</text>
+  <!-- X Lock badge -->
+  <rect id="b-lock" class="box box-hidden" x="52" y="432" width="110" height="36" rx="6" fill="#fef9e7" stroke="#f9e79f"/>
+  <text id="t-lock" class="box-label box-hidden-text" x="107" y="455" text-anchor="middle" fill="#b7950b" font-size="10">🔒 X Lock</text>
+
+  <!-- UNDO TABLESPACE (disk) -->
+  <rect id="b-undo" class="box box-hidden" x="490" y="520" width="200" height="54" fill="#fdedec" stroke="#f5b7b1"/>
+  <text id="t-undo" class="box-label box-hidden-text" x="590" y="544" text-anchor="middle" fill="#c0392b" font-size="12">⑦ Undo Tablespace</text>
+  <text id="s-undo" class="box-sub box-hidden-text" x="590" y="560" text-anchor="middle" fill="#7f8c8d" font-size="9">old row → rollback / MVCC</text>
+
+  <!-- LOG BUFFER (memory) -->
+  <rect id="b-logbuf" class="box box-hidden" x="50" y="540" width="220" height="50" fill="#fef9e7" stroke="#f9e79f"/>
+  <text id="t-logbuf" class="box-label box-hidden-text" x="160" y="563" text-anchor="middle" fill="#b7950b" font-size="12">⑧ Log Buffer</text>
+  <text id="s-logbuf" class="box-sub box-hidden-text" x="160" y="578" text-anchor="middle" fill="#7f8c8d" font-size="9">redo record written to memory</text>
+
+  <!-- CHANGE BUFFER (memory) -->
+  <rect id="b-cb" class="box box-hidden" x="290" y="500" width="140" height="44" fill="#e8f8f5" stroke="#a2d9ce"/>
+  <text id="t-cb" class="box-label box-hidden-text" x="360" y="520" text-anchor="middle" fill="#1e8449" font-size="11">⑨ Change Buffer</text>
+  <text id="s-cb" class="box-sub box-hidden-text" x="360" y="534" text-anchor="middle" fill="#7f8c8d" font-size="8">secondary idx deferred</text>
+
+  <!-- REDO LOG (disk) -->
+  <rect id="b-redo" class="box box-hidden" x="490" y="610" width="200" height="54" fill="#fef5e7" stroke="#fad7a0"/>
+  <text id="t-redo" class="box-label box-hidden-text" x="590" y="634" text-anchor="middle" fill="#b7950b" font-size="12">⑩ Redo Log (WAL)</text>
+  <text id="s-redo" class="box-sub box-hidden-text" x="590" y="650" text-anchor="middle" fill="#7f8c8d" font-size="9">fsync → crash-safe</text>
+
+  <!-- COMMIT badge -->
+  <rect id="b-commit" class="box box-hidden" x="100" y="630" width="160" height="40" fill="#fdedec" stroke="#f5b7b1"/>
+  <text id="t-commit" class="box-label box-hidden-text" x="180" y="655" text-anchor="middle" fill="#c0392b" font-size="13">⑪ COMMIT</text>
+
+  <!-- DOUBLEWRITE BUFFER (disk) -->
+  <rect id="b-dw" class="box box-hidden" x="490" y="320" width="220" height="54" fill="#ebf5fb" stroke="#aed6f1"/>
+  <text id="t-dw" class="box-label box-hidden-text" x="600" y="344" text-anchor="middle" fill="#2471a3" font-size="12">⑫ Doublewrite Buffer</text>
+  <text id="s-dw" class="box-sub box-hidden-text" x="600" y="360" text-anchor="middle" fill="#7f8c8d" font-size="9">torn-page safety net</text>
+
+  <!-- TABLESPACE .ibd (disk) -->
+  <rect id="b-tbl" class="box box-hidden" x="530" y="220" width="180" height="54" fill="#f4ecf7" stroke="#d7bde2"/>
+  <text id="t-tbl" class="box-label box-hidden-text" x="620" y="244" text-anchor="middle" fill="#7d3c98" font-size="12">⑬ Tablespace (.ibd)</text>
+  <text id="s-tbl" class="box-sub box-hidden-text" x="620" y="260" text-anchor="middle" fill="#7f8c8d" font-size="9">orders.ibd on disk</text>
+
+  <!-- OK PACKET -->
+  <rect id="b-ok" class="box box-hidden" x="300" y="665" width="160" height="38" fill="#e8f8f5" stroke="#a2d9ce"/>
+  <text id="t-ok" class="box-label box-hidden-text" x="380" y="689" text-anchor="middle" fill="#1e8449" font-size="12">⑭ OK → Client</text>
+
+  <!-- BG FLUSH label -->
+  <text id="t-bgflush" class="box-sub box-hidden-text" x="460" y="420" text-anchor="start" fill="#7f8c8d" font-size="9" font-style="italic">async page cleaner</text>
+
+  <!-- ══ Data packets (animated dots) ══ -->
+  <circle id="pkt1" class="packet" cx="230" cy="85" fill="#2980b9"/>
+  <circle id="pkt2" class="packet" cx="230" cy="400" fill="#2980b9"/>
+  <circle id="pkt3" class="packet" cx="310" cy="420" fill="#c0392b"/>
+  <circle id="pkt4" class="packet" cx="150" cy="470" fill="#d4ac0d"/>
+  <circle id="pkt5" class="packet" cx="260" cy="580" fill="#d4ac0d"/>
+  <circle id="pkt6" class="packet" cx="370" cy="420" fill="#5dade2"/>
+  <circle id="pkt7" class="packet" cx="370" cy="680" fill="#1e8449"/>
+</svg>
+</div>
+</div><!-- /left-col -->
+
+<div class="right-col">
+<div class="narr">
+  <div class="narr-box" id="narrBox">
+    <div class="narr-label" id="narrLabel" style="color:#818cf8">Ready</div>
+    <div class="narr-text" id="narrText">Click <strong>Next Step</strong> to follow the UPDATE statement through every layer of InnoDB — from the TCP packet arriving at mysqld all the way to the dirty page being flushed to your <code>.ibd</code> file on disk.</div>
+  </div>
+</div>
+
+<div class="detail">
+  <div class="detail-box" id="detailBox">
+    <div class="dt" id="detailTitle"></div>
+    <div class="dd" id="detailContent"></div>
+  </div>
+</div>
+</div><!-- /right-col -->
+
+</div><!-- /main-grid -->
+</div><!-- /page-wrap -->
+
+<div style="text-align:center;padding:32px 20px;color:#999;font-size:.78rem">
+  Based on MySQL 9.x InnoDB internals · <code>UPDATE orders SET status='shipped' WHERE id=42</code>
+</div>
+
+<script>
+// ── Step definitions ──
+const STEPS = [
+  // Phase 1: SQL Layer
+  {
+    show: ['b-client','t-client'],
+    conns: [],
+    label: 'Phase 1 · Client', color: '#555',
+    text: 'Your application sends <strong>UPDATE orders SET status=\'shipped\' WHERE id=42</strong> over a TCP connection (or Unix socket) as a <code>COM_QUERY</code> packet. The MySQL server receives it.',
+    detail: {t:'Client → mysqld', c:'The client library (mysqlclient, JDBC, etc.) serializes the SQL into a COM_QUERY packet. Connection may come through a pool (ProxySQL, HikariCP).'}
+  },
+  {
+    show: ['b-parser','t-parser','s-parser'],
+    conns: ['c-client-parser'],
+    pkt: {id:'pkt1', path:[[230,85],[230,130]], color:'#1a5276'},
+    label: 'Phase 1 · Parser', color: '#1a5276',
+    text: 'The <strong>Parser</strong> tokenizes the SQL and builds a parse tree (AST). It validates syntax — a typo like <code>UPDTE</code> would die here with error 1064.',
+    detail: {t:'Parser', c:'Bison-generated grammar produces an AST. The parse tree identifies this as an UPDATE on table <code>orders</code>, column <code>status</code>, with a WHERE on <code>id</code>.'}
+  },
+  {
+    show: ['b-opt','t-opt','s-opt'],
+    conns: ['c-parser-opt'],
+    pkt: {id:'pkt1', path:[[230,170],[230,210]], color:'#1a5276'},
+    label: 'Phase 1 · Optimizer', color: '#1a5276',
+    text: 'The <strong>Optimizer</strong> decides HOW to find id=42. It evaluates indexes: primary key lookup (best), secondary index, or full table scan (worst). For <code>WHERE id=42</code> on a PK, it picks a single B-tree descent — O(log n).',
+    detail: {t:'Cost-Based Optimizer', c:'Checks statistics, evaluates access paths. For this UPDATE: clustered index lookup on PK. You can see the plan with <code>EXPLAIN UPDATE orders SET status=\'shipped\' WHERE id=42</code>.'}
+  },
+  {
+    show: ['b-exec','t-exec','s-exec'],
+    conns: ['c-opt-exec'],
+    pkt: {id:'pkt1', path:[[230,250],[230,290]], color:'#2471a3'},
+    label: 'Phase 1 · Executor', color: '#2471a3',
+    text: 'The <strong>Executor</strong> runs the plan. It calls InnoDB via the <strong>handler API</strong> — specifically <code>ha_update_row()</code>. This is the boundary between the SQL layer and the storage engine. From here, we enter InnoDB.',
+    detail: {t:'Executor → handler API', c:'The executor iterates matching rows using the handler interface. For each row matching WHERE id=42, it calls <code>ha_update_row(old_row, new_row)</code> which enters InnoDB\'s storage engine code.'}
+  },
+
+  // Phase 2: InnoDB per-row work
+  {
+    show: ['b-bp','t-bp','s-bp'],
+    conns: ['c-exec-bp'],
+    pkt: {id:'pkt2', path:[[230,330],[230,385]], color:'#2980b9'},
+    label: 'Phase 2 · Buffer Pool', color: '#2980b9',
+    text: 'InnoDB loads the page containing id=42 into the <strong>Buffer Pool</strong> (if not already cached). The 16 KB page is read from <code>orders.ibd</code> on disk and placed in the LRU list. Now the row is accessible in RAM.',
+    detail: {t:'Buffer Pool — Page Load', c:'The buffer pool is typically 70-80% of server RAM. Pages are managed in an LRU with young/old sublists. A cache hit avoids disk I/O entirely. <code>innodb_buffer_pool_size</code> controls the total size.'}
+  },
+  {
+    show: ['b-lock','t-lock'],
+    conns: [],
+    pulse: 'b-lock',
+    label: 'Phase 2 · Row Locking', color: '#b7950b',
+    text: '<strong>X (exclusive) lock</strong> acquired on the row id=42. In REPEATABLE READ (default), InnoDB also takes a <strong>gap lock</strong> or <strong>next-key lock</strong> to prevent phantom reads. Other transactions trying to update the same row will block here.',
+    detail: {t:'Row Locking', c:'InnoDB uses record-level locking, not page or table locks. The X lock prevents concurrent writes. Gap locks prevent inserts in the locked range. You can see locks with <code>SELECT * FROM performance_schema.data_locks</code>.'}
+  },
+  {
+    show: ['b-undo','t-undo','s-undo'],
+    conns: ['c-bp-undo'],
+    pkt: {id:'pkt3', path:[[310,420],[490,550]], color:'#c0392b'},
+    label: 'Phase 2 · Undo Log', color: '#c0392b',
+    text: 'The <strong>old row version</strong> (status=\'pending\') is written to the <strong>Undo Tablespace</strong>. This serves two purposes: <strong>ROLLBACK</strong> (undo the change if the transaction aborts) and <strong>MVCC</strong> (other transactions can still read the old version without blocking).',
+    detail: {t:'Undo Log → Undo Tablespace', c:'The before-image goes into a rollback segment inside undo_001 or undo_002. The undo record forms a version chain: each old version points to the next older version. This is how MVCC consistent reads work without locking.'}
+  },
+  {
+    show: [],
+    conns: [],
+    pulse: 'b-bp',
+    label: 'Phase 2 · In-Memory Modify', color: '#2980b9',
+    text: 'The row is <strong>modified in the buffer pool</strong>: status changes from \'pending\' to \'shipped\'. The page is now <strong>marked dirty</strong> — it differs from the on-disk version. The actual disk write happens later, asynchronously.',
+    detail: {t:'Dirty Page', c:'The modification happens entirely in RAM. The page is added to the flush list (dirty pages awaiting write-back). The page cleaner threads will eventually flush it. This is why writes are fast — no synchronous disk I/O for the data page.'}
+  },
+  {
+    show: ['b-logbuf','t-logbuf','s-logbuf'],
+    conns: ['c-bp-logbuf'],
+    pkt: {id:'pkt4', path:[[150,470],[150,540]], color:'#d4ac0d'},
+    label: 'Phase 2 · Log Buffer', color: '#d4ac0d',
+    text: 'A <strong>redo log record</strong> is written to the <strong>Log Buffer</strong> in memory. This record says: "on page X, at offset Y, change these bytes from A to B." It\'s a physical change record with a Log Sequence Number (LSN).',
+    detail: {t:'Log Buffer — Redo Record', c:'The redo record is a compact physiological record (physical to the page, logical to the row). Written within a mini-transaction (mtr). <code>innodb_log_buffer_size</code> defaults to 16 MB.'}
+  },
+  {
+    show: ['b-cb','t-cb','s-cb'],
+    conns: ['c-bp-cb'],
+    label: 'Phase 2 · Change Buffer', color: '#1e8449',
+    text: 'If the UPDATE affects a <strong>non-unique secondary index</strong> (e.g., an index on <code>status</code>) and that index page isn\'t in the buffer pool, the change is <strong>buffered</strong> in the Change Buffer instead of doing a random disk read. Merged later when the page is eventually loaded.',
+    detail: {t:'Change Buffer', c:'Only for non-unique secondary indexes. If the status column has a secondary index, updating it from \'pending\' to \'shipped\' requires updating that index. The change buffer avoids the random I/O. <code>innodb_change_buffering=all</code> by default.'}
+  },
+
+  // Phase 3: Commit
+  {
+    show: ['b-redo','t-redo','s-redo'],
+    conns: ['c-logbuf-redo'],
+    pkt: {id:'pkt5', path:[[260,580],[490,630]], color:'#d4ac0d'},
+    label: 'Phase 3 · Redo Log Flush', color: '#b7950b',
+    text: 'At <strong>COMMIT</strong>, the log buffer is <strong>flushed (fsync)</strong> to the <strong>Redo Log</strong> files on disk. This is the critical durability point — once the redo record is on disk, the transaction is crash-safe even if the server dies before the dirty page is written.',
+    detail: {t:'WAL — Write-Ahead Log', c:'This is the Write-Ahead Log protocol: the redo log must be durable BEFORE the transaction is acknowledged. <code>innodb_flush_log_at_trx_commit=1</code> means fsync every commit (safest). Group commit batches multiple transactions\' fsyncs for efficiency.'}
+  },
+  {
+    show: ['b-commit','t-commit'],
+    conns: [],
+    pulse: 'b-commit',
+    label: 'Phase 3 · COMMIT', color: '#c0392b',
+    text: 'The transaction is now <strong>COMMITTED</strong>. The redo log is durable on disk. Even if the server crashes right now, InnoDB will replay the redo log on restart and reconstruct the change. The dirty page in the buffer pool hasn\'t been written to the tablespace yet — and that\'s fine.',
+    detail: {t:'Transaction Committed', c:'In MySQL\'s two-phase commit, InnoDB first writes a PREPARE record to the redo log, then MySQL writes to the binary log (for replication), then InnoDB writes the final COMMIT record. This ensures redo log and binlog stay in sync.'}
+  },
+  {
+    show: ['b-ok','t-ok'],
+    conns: ['c-ok-client'],
+    pkt: {id:'pkt7', path:[[370,680],[370,85]], color:'#1e8449'},
+    label: 'Phase 3 · Response', color: '#1e8449',
+    text: '<strong>OK packet</strong> sent back to the client: <code>Query OK, 1 row affected</code>. The application can proceed. The row lock is released (unless inside a larger transaction). But the story isn\'t over — the dirty page still needs to reach disk.',
+    detail: {t:'OK Packet → Client', c:'The OK packet includes the affected row count and any warnings. The client library receives it and returns control to the application code. The row\'s X lock is released at this point (for autocommit transactions).'}
+  },
+
+  // Phase 4: Background flush
+  {
+    show: ['b-dw','t-dw','s-dw','t-bgflush'],
+    conns: ['c-bp-dw'],
+    pkt: {id:'pkt6', path:[[370,420],[490,350]], color:'#5dade2'},
+    label: 'Phase 4 · Doublewrite', color: '#2471a3',
+    text: '<strong>Asynchronously</strong>, the page cleaner thread picks up the dirty page. Before writing it to the tablespace, it goes through the <strong>Doublewrite Buffer</strong> — a sequential write area that protects against torn pages (half-written 16 KB pages if a crash happens mid-flush).',
+    detail: {t:'Doublewrite Buffer — Torn Page Protection', c:'InnoDB pages are 16 KB but the OS writes 4 KB blocks. A crash during flush can leave a page half-old/half-new. The doublewrite buffer writes the clean page first. On recovery, if a tablespace page is torn, InnoDB restores it from the doublewrite copy.'}
+  },
+  {
+    show: ['b-tbl','t-tbl','s-tbl'],
+    conns: ['c-dw-tbl'],
+    pkt: {id:'pkt6', path:[[700,350],[700,280]], color:'#7d3c98'},
+    label: 'Phase 4 · Tablespace Write', color: '#7d3c98',
+    text: 'Finally, the clean page is written to the <strong>tablespace file</strong> (<code>orders.ibd</code>) on disk. The page is no longer dirty. The corresponding redo log entries can now be recycled. This is the end of the UPDATE\'s journey.',
+    detail: {t:'Tablespace — orders.ibd', c:'With <code>innodb_file_per_table=ON</code> (default), each table has its own .ibd file. The page is written using O_DIRECT (bypassing OS page cache) to its permanent location. The redo log checkpoint advances past this LSN.'}
+  },
+
+  // Summary steps
+  {
+    show: [],
+    conns: [],
+    label: 'Timeline · Summary', color: '#1a5276',
+    text: '<strong>Synchronous path</strong> (what the client waits for): Parse → Optimize → Execute → Load page → Lock → Undo → Modify → Redo to log buffer → fsync redo log → COMMIT → OK. This is typically <strong>1-5 ms</strong> for a PK lookup UPDATE.',
+    highlightSync: true
+  },
+  {
+    show: [],
+    conns: [],
+    label: 'Timeline · Summary', color: '#2471a3',
+    text: '<strong>Asynchronous path</strong> (happens after OK): Page cleaner wakes up → writes dirty page through doublewrite buffer → writes to tablespace .ibd → checkpoint advances → redo entries recycled. This can happen <strong>seconds to minutes</strong> later.',
+    highlightAsync: true
+  },
+  {
+    show: [],
+    conns: [],
+    label: 'Complete · All Paths', color: '#1a5276',
+    text: 'You\'ve followed the complete lifecycle! The key insight: <strong>InnoDB never makes the client wait for the data page to hit disk.</strong> The WAL (redo log) guarantees crash safety, so the actual page flush can be deferred. This is why InnoDB is fast — the synchronous path is just memory operations + one sequential fsync.',
+    highlightAll: true
+  }
+];
+
+let cur = 0;
+let revealed = new Set();
+let revealedConns = new Set();
+let autoInterval = null;
+
+function show(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('box-hidden','box-hidden-text');
+  el.classList.add('box-vis');
+  revealed.add(id);
+}
+
+function showConn(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('conn-vis');
+  revealedConns.add(id);
+}
+
+function activateConn(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('conn-active');
+  el.setAttribute('marker-end','url(#ah-active)');
+  setTimeout(() => {
+    el.classList.remove('conn-active');
+    el.setAttribute('marker-end','url(#ah)');
+  }, 1500);
+}
+
+function animatePacket(pktDef) {
+  if (!pktDef) return;
+  const el = document.getElementById(pktDef.id);
+  if (!el) return;
+  el.setAttribute('fill', pktDef.color);
+  const path = pktDef.path;
+  const dur = 600;
+  const start = performance.now();
+  el.classList.add('packet-active');
+
+  function tick(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    const x = path[0][0] + (path[1][0] - path[0][0]) * eased;
+    const y = path[0][1] + (path[1][1] - path[0][1]) * eased;
+    el.setAttribute('cx', x);
+    el.setAttribute('cy', y);
+    if (t < 1) requestAnimationFrame(tick);
+    else setTimeout(() => el.classList.remove('packet-active'), 300);
+  }
+  requestAnimationFrame(tick);
+}
+
+function pulseBox(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active-box');
+  setTimeout(() => el.classList.remove('active-box'), 2500);
+}
+
+function updateUI() {
+  document.getElementById('stepCt').textContent = `${cur} / ${STEPS.length}`;
+  document.getElementById('btnBack').disabled = cur === 0;
+  document.getElementById('btnNext').disabled = cur >= STEPS.length;
+  document.getElementById('btnNext').textContent = cur >= STEPS.length ? '✓ Complete' : 'Next Step →';
+  document.getElementById('progFill').style.width = `${(cur / STEPS.length) * 100}%`;
+}
+
+function goNext() {
+  if (cur >= STEPS.length) return;
+  const step = STEPS[cur];
+
+  // Show elements
+  step.show.forEach(show);
+  step.conns.forEach(id => { showConn(id); activateConn(id); });
+
+  // Animate packet
+  if (step.pkt) animatePacket(step.pkt);
+
+  // Pulse
+  if (step.pulse) pulseBox(step.pulse);
+
+  // Highlight groups
+  if (step.highlightSync) {
+    ['b-client','b-parser','b-opt','b-exec','b-bp','b-lock','b-undo','b-logbuf','b-redo','b-commit','b-ok'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && revealed.has(id)) { el.classList.add('active-box'); setTimeout(() => el.classList.remove('active-box'), 3000); }
+    });
+  }
+  if (step.highlightAsync) {
+    ['b-dw','b-tbl'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && revealed.has(id)) { el.classList.add('active-box'); setTimeout(() => el.classList.remove('active-box'), 3000); }
+    });
+  }
+  if (step.highlightAll) {
+    document.querySelectorAll('.box-vis').forEach(el => { el.classList.add('active-box'); setTimeout(() => el.classList.remove('active-box'), 3000); });
+  }
+
+  // Narration
+  document.getElementById('narrLabel').style.color = step.color;
+  document.getElementById('narrLabel').textContent = step.label;
+  document.getElementById('narrText').innerHTML = step.text;
+
+  // Detail
+  if (step.detail) {
+    document.getElementById('detailTitle').textContent = step.detail.t;
+    document.getElementById('detailContent').innerHTML = step.detail.c;
+    document.getElementById('detailBox').classList.add('open');
+  } else {
+    document.getElementById('detailBox').classList.remove('open');
+  }
+
+  cur++;
+  updateUI();
+
+  // Scroll the newly revealed component into view
+  setTimeout(() => {
+    const firstEl = step.show[0] ? document.getElementById(step.show[0]) : null;
+    if (firstEl && firstEl.getBoundingClientRect) {
+      // SVG elements — scroll the narration instead
+    }
+    const narrBox = document.getElementById('narrBox');
+    const rect = narrBox.getBoundingClientRect();
+    const controlsH = document.querySelector('.controls').offsetHeight + 10;
+    if (rect.top < controlsH) {
+      window.scrollTo({top: window.scrollY + rect.top - controlsH - 8, behavior: 'smooth'});
+    }
+  }, 100);
+}
+
+function goBack() {
+  if (cur <= 0) return;
+  cur--;
+  const step = STEPS[cur];
+
+  // Hide this step's elements
+  step.show.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('box-hidden','box-hidden-text'); el.classList.remove('box-vis','active-box'); revealed.delete(id); }
+  });
+  step.conns.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('conn-vis','conn-active'); revealedConns.delete(id); }
+  });
+
+  // Show previous narration
+  if (cur > 0) {
+    const prev = STEPS[cur - 1];
+    document.getElementById('narrLabel').style.color = prev.color;
+    document.getElementById('narrLabel').textContent = prev.label;
+    document.getElementById('narrText').innerHTML = prev.text;
+    if (prev.detail) {
+      document.getElementById('detailTitle').textContent = prev.detail.t;
+      document.getElementById('detailContent').innerHTML = prev.detail.c;
+      document.getElementById('detailBox').classList.add('open');
+    } else {
+      document.getElementById('detailBox').classList.remove('open');
+    }
+  } else {
+    document.getElementById('narrLabel').style.color = '#1a5276';
+    document.getElementById('narrLabel').textContent = 'Ready';
+    document.getElementById('narrText').innerHTML = 'Click <strong>Next Step</strong> to begin.';
+    document.getElementById('detailBox').classList.remove('open');
+  }
+
+  updateUI();
+}
+
+function resetAll() {
+  stopAuto();
+  cur = 0;
+  revealed.clear();
+  revealedConns.clear();
+  document.querySelectorAll('.box').forEach(el => { el.classList.add('box-hidden'); el.classList.remove('box-vis','active-box'); });
+  document.querySelectorAll('.box-label,.box-sub').forEach(el => { el.classList.add('box-hidden-text'); });
+  document.querySelectorAll('.conn').forEach(el => { el.classList.remove('conn-vis','conn-active'); });
+  document.querySelectorAll('.packet').forEach(el => el.classList.remove('packet-active'));
+  document.getElementById('detailBox').classList.remove('open');
+  document.getElementById('narrLabel').style.color = '#1a5276';
+  document.getElementById('narrLabel').textContent = 'Ready';
+  document.getElementById('narrText').innerHTML = 'Click <strong>Next Step</strong> to begin.';
+  updateUI();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function toggleAuto() {
+  if (autoInterval) { stopAuto(); return; }
+  document.getElementById('btnAuto').textContent = '⏸ Pause';
+  document.getElementById('btnAuto').style.color = '#f59e0b';
+  autoInterval = setInterval(() => {
+    if (cur >= STEPS.length) { stopAuto(); return; }
+    goNext();
+  }, 2800);
+}
+
+function stopAuto() {
+  clearInterval(autoInterval);
+  autoInterval = null;
+  document.getElementById('btnAuto').textContent = '▶ Auto';
+  document.getElementById('btnAuto').style.color = '';
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goNext(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); goBack(); }
+  if (e.key === 'r') resetAll();
+});
+
+updateUI();
+</script>
+</body>
+</html>
