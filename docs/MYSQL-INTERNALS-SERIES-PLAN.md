@@ -10,6 +10,7 @@
 
 | # | Title | Animation Focus | Target Keyword | Priority |
 |---|-------|----------------|----------------|----------|
+| 0 | InnoDB Architecture: The Complete Visual Guide | All components: memory + disk, how they connect | innodb architecture explained | NEXT |
 | 1 | How a MySQL UPDATE Actually Works | Write path: client → SQL → InnoDB → commit | mysql update internals | DONE |
 | 2 | How a MySQL SELECT Actually Works | Read path: client → SQL → buffer pool → response | mysql select internals | HIGH |
 | 3 | InnoDB Buffer Pool: What Happens in Memory | LRU pages, young/old sublist, eviction, dirty flush | innodb buffer pool explained | HIGH |
@@ -23,12 +24,68 @@
 | 11 | InnoDB Tablespace Architecture: Where Your Data Lives on Disk | Pages, extents, segments, system tablespace, file-per-table | innodb tablespace | LOW |
 | 12 | How MySQL Handles Transactions: BEGIN to COMMIT | Isolation levels, savepoints, implicit commit, 2PC | mysql transaction internals | LOW |
 
+**Series order:** Post 0 (Architecture overview) is the entry point. It introduces every component and links to the deep-dive posts. Readers start here, then follow the path they're interested in.
+
+---
+
+## Post 0: InnoDB Architecture — The Complete Visual Guide (NEXT)
+
+**Status:** Building now.
+**Concept:** Interactive architecture diagram — NOT a flowchart like the other posts. This is a component explorer. Each InnoDB component is a clickable/steppable card. When activated, it highlights its connections to other components and shows data flow paths.
+
+**Animation type:** Component explorer with two panels:
+- Left: In-Memory Structures (4 components)
+- Right: On-Disk Structures (5 component groups)
+- Center: data flow arrows that light up showing how data moves between components
+
+**Steps (12):**
+1. Overview: show all components dimmed, "Click Next to explore each component"
+2. **Buffer Pool** — the centerpiece. Caches data + index pages. 70-80% of RAM. Show it as a grid of page slots.
+3. **Adaptive Hash Index** — auto-built hash on hot B-tree pages. Show arrow from buffer pool → AHI.
+4. **Change Buffer** — buffers secondary index changes. Show arrow: DML → change buffer → (later) secondary index pages.
+5. **Log Buffer** — holds redo log entries in memory before flush. Show arrow: transaction → log buffer → redo log.
+6. **System Tablespace** (ibdata1) — data dictionary, doublewrite buffer, change buffer, undo logs (legacy). Show on-disk box.
+7. **File-Per-Table Tablespaces** (.ibd files) — one file per table. Show multiple .ibd boxes.
+8. **Undo Tablespaces** — before-images for rollback + MVCC. Show arrow: buffer pool modification → undo tablespace.
+9. **Redo Log** — WAL for crash recovery. Show arrow: log buffer → redo log files on disk.
+10. **Doublewrite Buffer** — torn page protection. Show arrow: buffer pool dirty page → doublewrite → tablespace.
+11. **Temporary Tablespace** — temp tables for sorts, GROUP BY. Show arrow: executor → temp tablespace.
+12. **Full picture** — all arrows light up showing the complete data flow: query → buffer pool → redo log → commit → background flush → tablespace.
+
+**Key concepts per component:**
+- Buffer Pool: page size (16KB), LRU algorithm, hit ratio, sizing
+- AHI: automatic, can be disabled, monitoring via SHOW ENGINE INNODB STATUS
+- Change Buffer: only non-unique secondary indexes, max_size setting
+- Log Buffer: innodb_log_buffer_size, flushed at commit
+- System Tablespace: ibdata1, avoid storing table data here (use file-per-table)
+- File-Per-Table: default since MySQL 5.6, innodb_file_per_table=ON
+- Undo Tablespaces: separate since MySQL 8.0, innodb_undo_tablespaces=2
+- Redo Log: crash recovery, innodb_redo_log_capacity (MySQL 8.0.30+)
+- Doublewrite: innodb_doublewrite=ON, 2x write cost but essential for safety
+- Temp Tablespace: session temp + global temp, auto-extending
+
+**Configuration quick reference table:**
+| Parameter | Component | Default | Notes |
+|-----------|-----------|---------|-------|
+| innodb_buffer_pool_size | Buffer Pool | 128MB | Set to 70-80% of RAM |
+| innodb_buffer_pool_instances | Buffer Pool | 8 (if >1GB) | Reduces contention |
+| innodb_adaptive_hash_index | AHI | ON | Disable if high contention |
+| innodb_change_buffer_max_size | Change Buffer | 25 | % of buffer pool |
+| innodb_log_buffer_size | Log Buffer | 64MB | Increase for large transactions |
+| innodb_redo_log_capacity | Redo Log | 100MB | Increase for write-heavy |
+| innodb_file_per_table | Tablespaces | ON | Always keep ON |
+| innodb_undo_tablespaces | Undo | 2 | Default is fine |
+| innodb_doublewrite | Doublewrite | ON | Never disable |
+
+**Source:** [MySQL 9.6 Reference Manual — InnoDB Architecture](https://dev.mysql.com/doc/refman/9.6/en/innodb-architecture.html)
+
 ---
 
 ## Post 1: How a MySQL UPDATE Actually Works (DONE)
 
 **Status:** Written and committed.
-**Animation:** 14 steps — Client → Parser → Optimizer → Executor → InnoDB per-row (lock, undo, buffer pool, redo, change buffer) → Two-Phase Commit (PREPARE, binlog, COMMIT) → OK → background flush.
+**Animation:** 14 steps, step-by-step interaction (Next/Back/Auto/Reset).
+**Path:** Client → Parser → Optimizer → Executor → InnoDB per-row (lock, undo, buffer pool, redo, change buffer) → Two-Phase Commit (PREPARE, binlog, COMMIT) → OK → background flush.
 **Sources:** MySQL 8.4 docs, Percona redo logging, Alibaba Cloud redo/undo/binlog analysis.
 
 ---
