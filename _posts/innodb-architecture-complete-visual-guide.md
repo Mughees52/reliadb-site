@@ -24,12 +24,14 @@ Understanding InnoDB's architecture is the foundation for everything else: query
 
 Click **Next** to explore each InnoDB component. Connections between components light up as you step through.
 
-<div style="background:#F4F6F8;border-radius:16px;padding:28px 20px 40px;margin:24px 0;overflow:hidden;border:1px solid #DDE3E9;">
+<div style="background:#F4F6F8;border-radius:16px;margin:24px 0;overflow:hidden;border:1px solid #DDE3E9;">
 <style>
   .arch * { margin:0;padding:0;box-sizing:border-box; }
   .arch { font-family:'Inter',sans-serif;color:#444;max-width:800px;margin:0 auto; }
-  .arch-progress { height:3px;background:linear-gradient(90deg,#1A5276,#2980B9,#E67E22);transition:width 0.5s;width:0%;border-radius:2px;margin-bottom:20px; }
-  .arch-controls { display:flex;justify-content:center;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center;position:sticky;top:72px;z-index:10;background:#F4F6F8;padding:12px 0;border-bottom:1px solid #DDE3E9; }
+  .arch-header { position:sticky;top:0;z-index:10;background:#F4F6F8;padding:20px 20px 0; }
+  .arch-progress { height:3px;background:linear-gradient(90deg,#1A5276,#2980B9,#E67E22);transition:width 0.5s;width:0%;border-radius:2px;margin-bottom:16px; }
+  .arch-controls { display:flex;justify-content:center;gap:10px;margin-bottom:0;flex-wrap:wrap;align-items:center;padding:0 0 14px;border-bottom:1px solid #DDE3E9; }
+  .arch-scroll-area { max-height:70vh;overflow-y:auto;padding:20px 20px 40px;scroll-behavior:smooth; }
   .arch-controls button { padding:8px 20px;border:none;border-radius:6px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s; }
   .arch-btn-next { background:linear-gradient(135deg,#1A5276,#2980B9);color:#fff;padding:10px 28px;font-size:0.9rem; }
   .arch-btn-next:hover { transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,82,118,0.3); }
@@ -92,13 +94,16 @@ Click **Next** to explore each InnoDB component. Connections between components 
 </style>
 
 <div class="arch">
-  <div class="arch-progress" id="archProgress"></div>
-  <div class="arch-controls">
-    <button class="arch-btn-prev" id="archPrev" onclick="archPrev()" disabled>&larr; Back</button>
-    <button class="arch-btn-next" id="archNext" onclick="archNext()">Start Exploring &rarr;</button>
-    <span class="arch-counter" id="archCounter">0 / 12</span>
-    <button class="arch-btn-reset" onclick="archReset()">&#8634; Reset</button>
+  <div class="arch-header">
+    <div class="arch-progress" id="archProgress"></div>
+    <div class="arch-controls">
+      <button class="arch-btn-prev" id="archPrev" onclick="archPrev()" disabled>&larr; Back</button>
+      <button class="arch-btn-next" id="archNext" onclick="archNext()">Start Exploring &rarr;</button>
+      <span class="arch-counter" id="archCounter">0 / 12</span>
+      <button class="arch-btn-reset" onclick="archReset()">&#8634; Reset</button>
+    </div>
   </div>
+  <div class="arch-scroll-area" id="archScrollArea">
 
   <div class="arch-diagram">
     <!-- In-Memory -->
@@ -207,6 +212,7 @@ Click **Next** to explore each InnoDB component. Connections between components 
     <div class="arch-summary-title">The Complete Picture</div>
     <p>Every query flows through these components. <strong>Reads</strong> go through the buffer pool (and hit disk only on cache miss). <strong>Writes</strong> modify the buffer pool page, record the change in the redo log for crash safety, save a before-image in the undo log for rollback/MVCC, and optionally defer secondary index updates in the change buffer. <strong>Commits</strong> flush the log buffer to the redo log on disk. <strong>Background threads</strong> flush dirty pages through the doublewrite buffer to tablespace files.</p>
   </div>
+  </div><!-- close arch-scroll-area -->
 </div>
 
 <script>
@@ -257,10 +263,10 @@ Click **Next** to explore each InnoDB component. Connections between components 
     });
     // Scroll into view
     if(el){
-      var rect=el.getBoundingClientRect();
-      var offset=72+60;
-      if(rect.top<offset||rect.bottom>window.innerHeight){
-        window.scrollBy({top:rect.top-offset,behavior:'smooth'});
+      var area=document.getElementById('archScrollArea');
+      if(area){
+        var elTop=el.offsetTop-area.offsetTop;
+        area.scrollTo({top:elTop-20,behavior:'smooth'});
       }
     }
   }

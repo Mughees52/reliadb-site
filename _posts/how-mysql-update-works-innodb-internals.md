@@ -24,12 +24,14 @@ Understanding the internal execution path is essential for diagnosing lock conte
 
 Click **Play** to watch the full UPDATE lifecycle step by step. Each card expands with technical details when active.
 
-<div style="background:#F4F6F8;border-radius:16px;padding:32px 20px 48px;margin:24px 0;overflow:hidden;border:1px solid #DDE3E9;">
+<div class="upd-outer" style="background:#F4F6F8;border-radius:16px;margin:24px 0;border:1px solid #DDE3E9;overflow:hidden;">
 <style>
   .upd-flow * { margin: 0; padding: 0; box-sizing: border-box; }
   .upd-flow { font-family: 'Inter', sans-serif; color: #444; max-width: 720px; margin: 0 auto; }
-  .upd-progress { height: 3px; background: linear-gradient(90deg, #1A5276, #2980B9, #E67E22); transition: width 0.5s ease; width: 0%; border-radius: 2px; margin-bottom: 24px; }
-  .upd-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; position: sticky; top: 72px; z-index: 10; background: #F4F6F8; padding: 12px 0; border-bottom: 1px solid #DDE3E9; }
+  .upd-flow-header { position: sticky; top: 0; z-index: 10; background: #F4F6F8; padding: 20px 20px 0; }
+  .upd-progress { height: 3px; background: linear-gradient(90deg, #1A5276, #2980B9, #E67E22); transition: width 0.5s ease; width: 0%; border-radius: 2px; margin-bottom: 16px; }
+  .upd-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; flex-wrap: wrap; align-items: center; padding: 0 0 14px; border-bottom: 1px solid #DDE3E9; }
+  .upd-scroll-area { max-height: 70vh; overflow-y: auto; padding: 20px 20px 48px; scroll-behavior: smooth; }
   .upd-controls button { padding: 8px 20px; border: none; border-radius: 6px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
   .upd-btn-next { background: linear-gradient(135deg, #1A5276, #2980B9); color: #fff; padding: 10px 28px; font-size: 0.9rem; }
   .upd-btn-next:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,82,118,0.3); }
@@ -102,14 +104,17 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
 </style>
 
 <div class="upd-flow">
-  <div class="upd-progress" id="updProgress"></div>
-  <div class="upd-controls">
-    <button class="upd-btn-prev" id="updPrev" onclick="updPrev()" disabled>&larr; Back</button>
-    <button class="upd-btn-next" id="updNext" onclick="updNext()">Next Step &rarr;</button>
-    <span class="upd-step-counter" id="updCounter">0 / 14</span>
-    <button class="upd-btn-auto" id="updAuto" onclick="updAutoPlay()">&#9654; Auto</button>
-    <button class="upd-btn-reset" onclick="updReset()">&#8634; Reset</button>
+  <div class="upd-flow-header">
+    <div class="upd-progress" id="updProgress"></div>
+    <div class="upd-controls">
+      <button class="upd-btn-prev" id="updPrev" onclick="updPrev()" disabled>&larr; Back</button>
+      <button class="upd-btn-next" id="updNext" onclick="updNext()">Next Step &rarr;</button>
+      <span class="upd-step-counter" id="updCounter">0 / 14</span>
+      <button class="upd-btn-auto" id="updAuto" onclick="updAutoPlay()">&#9654; Auto</button>
+      <button class="upd-btn-reset" onclick="updReset()">&#8634; Reset</button>
+    </div>
   </div>
+  <div class="upd-scroll-area" id="updScrollArea">
 
   <div class="upd-steps" id="updSteps">
     <!-- 1: Client -->
@@ -254,6 +259,7 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
       </div>
     </div>
   </div>
+  </div><!-- close upd-scroll-area -->
 </div>
 
 <script>
@@ -302,12 +308,12 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
     // Repeat label after step 9
     if(s==='9')document.getElementById('updRepeat').classList.add('vis');
 
-    // Scroll active step to just below the sticky controls (nav 72px + controls ~56px)
+    // Scroll the active step into view within the scroll area
     if(el){
-      var rect=el.getBoundingClientRect();
-      var offset=72+60; // nav height + controls height
-      if(rect.top<offset||rect.bottom>window.innerHeight){
-        window.scrollBy({top:rect.top-offset,behavior:'smooth'});
+      var area=document.getElementById('updScrollArea');
+      if(area){
+        var elTop=el.offsetTop-area.offsetTop;
+        area.scrollTo({top:elTop-20,behavior:'smooth'});
       }
     }
   }
