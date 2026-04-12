@@ -27,10 +27,10 @@ Step through each phase of the UPDATE lifecycle using the diagram below. Compone
 <div class="upd-outer" style="background:#F4F6F8;border-radius:16px;margin:24px 0;border:1px solid #DDE3E9;overflow:clip;">
 <style>
   .upd-anim *{margin:0;padding:0;box-sizing:border-box}
-  .upd-anim{font-family:'Inter',sans-serif;color:#444;max-width:960px;margin:0 auto;padding:0 20px 32px}
-  .upd-anim-header{position:sticky;top:72px;z-index:10;background:#F4F6F8;padding:16px 0 0}
-  .upd-prog{height:3px;background:linear-gradient(90deg,#1A5276,#2980B9,#E67E22);transition:width .5s ease;width:0%;border-radius:2px;margin-bottom:14px}
-  .upd-ctrls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;align-items:center;padding:0 0 14px;border-bottom:1px solid #DDE3E9}
+  .upd-anim{font-family:'Inter',sans-serif;color:#444;max-width:960px;margin:0 auto;padding:0 20px 16px;display:flex;flex-direction:column;min-height:calc(100vh - 72px)}
+  .upd-anim-header{position:sticky;top:72px;z-index:10;background:#F4F6F8;padding:12px 0 0;flex-shrink:0}
+  .upd-prog{height:3px;background:linear-gradient(90deg,#1A5276,#2980B9,#E67E22);transition:width .5s ease;width:0%;border-radius:2px;margin-bottom:8px}
+  .upd-ctrls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;align-items:center;padding:0 0 8px;border-bottom:1px solid #DDE3E9}
   .upd-ctrls button{padding:8px 20px;border:none;border-radius:6px;font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s}
   .upd-ctrls .ubn{background:linear-gradient(135deg,#1A5276,#2980B9);color:#fff;padding:10px 28px;font-size:.9rem}
   .upd-ctrls .ubn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,82,118,.3)}
@@ -44,12 +44,13 @@ Step through each phase of the UPDATE lifecycle using the diagram below. Compone
   .upd-ctrls .ubr{background:#fff;color:#777;border:1px solid #DDE3E9!important}
   .upd-ctrls .ubr:hover{background:#EAF2F8;color:#444}
   .upd-sc{font-size:.82rem;color:#777;font-weight:600;min-width:70px;text-align:center}
-  .upd-narr{background:#fff;border:1px solid #DDE3E9;border-radius:10px;padding:16px 20px;margin:16px 0 8px;min-height:68px}
-  .upd-narr-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
-  .upd-narr-text{font-size:.88rem;line-height:1.7;color:#555}
+  .upd-narr{background:#fff;border:1px solid #DDE3E9;border-radius:8px;padding:12px 16px;margin:10px 0 6px;flex-shrink:0}
+  .upd-narr-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
+  .upd-narr-text{font-size:.82rem;line-height:1.6;color:#555}
   .upd-narr-text strong{color:#1a1a2e}
-  .upd-narr-text code{font-family:'JetBrains Mono',monospace;font-size:.78rem;background:#EAF2F8;padding:1px 5px;border-radius:3px;color:#1A5276}
-  .upd-dia{width:100%;height:auto;display:block;margin:8px 0}
+  .upd-narr-text code{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:#EAF2F8;padding:1px 4px;border-radius:3px;color:#1A5276}
+  .upd-dia-wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  .upd-dia{width:100%;height:100%;max-height:55vh;display:block}
   .ub{rx:10;ry:10;transition:all .5s cubic-bezier(.16,1,.3,1);cursor:pointer}
   .ub-h{opacity:0;transform:translateY(8px)}
   .ub-v{opacity:1;transform:translateY(0)}
@@ -63,11 +64,11 @@ Step through each phase of the UPDATE lifecycle using the diagram below. Compone
   .upkt-a{opacity:1}
   @keyframes updPulse{0%,100%{opacity:.6}50%{opacity:1}}
   .ub-pulse{animation:updPulse 1.5s ease-in-out infinite}
-  .upd-det{background:#F4F6F8;border:1px solid #DDE3E9;border-radius:10px;padding:0;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s,margin .3s;margin:0}
-  .upd-det.open{max-height:400px;padding:14px 18px;margin:8px 0 0}
-  .upd-det .udt{font-size:.78rem;font-weight:700;color:#1a1a2e;margin-bottom:6px}
-  .upd-det .udd{font-size:.8rem;color:#666;line-height:1.6}
-  .upd-det .udd code{font-family:'JetBrains Mono',monospace;font-size:.75rem;background:#E8EEF4;padding:1px 5px;border-radius:3px;color:#1A5276}
+  .upd-det{background:#F4F6F8;border:1px solid #DDE3E9;border-radius:8px;padding:0;max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s,margin .3s;margin:0;flex-shrink:0}
+  .upd-det.open{max-height:200px;padding:10px 14px;margin:6px 0 0}
+  .upd-det .udt{font-size:.72rem;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+  .upd-det .udd{font-size:.75rem;color:#666;line-height:1.5}
+  .upd-det .udd code{font-family:'JetBrains Mono',monospace;font-size:.7rem;background:#E8EEF4;padding:1px 4px;border-radius:3px;color:#1A5276}
 </style>
 
 <div class="upd-anim">
@@ -87,6 +88,7 @@ Step through each phase of the UPDATE lifecycle using the diagram below. Compone
     <div class="upd-narr-text" id="updNT2">Click <strong>Next Step</strong> to follow the UPDATE statement through every layer of InnoDB — from the TCP packet arriving at mysqld all the way to the dirty page being flushed to your <code>.ibd</code> file on disk.</div>
   </div>
 
+  <div class="upd-dia-wrap">
   <svg viewBox="0 0 920 720" class="upd-dia" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <filter id="updGlow"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
@@ -192,6 +194,7 @@ Step through each phase of the UPDATE lifecycle using the diagram below. Compone
     <circle id="upkt6" class="upkt" cx="370" cy="420" fill="#8E44AD"/>
     <circle id="upkt7" class="upkt" cx="370" cy="680" fill="#1E8449"/>
   </svg>
+  </div>
 
   <div class="upd-det" id="updDet2">
     <div class="udt" id="updDT2"></div>
