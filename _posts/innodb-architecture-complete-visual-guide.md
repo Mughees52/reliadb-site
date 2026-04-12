@@ -24,14 +24,13 @@ Understanding InnoDB's architecture is the foundation for everything else: query
 
 Click **Next** to explore each InnoDB component. Connections between components light up as you step through.
 
-<div style="background:#F4F6F8;border-radius:16px;margin:24px 0;overflow:hidden;border:1px solid #DDE3E9;">
+<div style="background:#F4F6F8;border-radius:16px;margin:24px 0;overflow:clip;border:1px solid #DDE3E9;">
 <style>
   .arch * { margin:0;padding:0;box-sizing:border-box; }
-  .arch { font-family:'Inter',sans-serif;color:#444;max-width:800px;margin:0 auto; }
-  .arch-header { position:sticky;top:0;z-index:10;background:#F4F6F8;padding:20px 20px 0; }
+  .arch { font-family:'Inter',sans-serif;color:#444;max-width:800px;margin:0 auto;padding:0 20px 40px; }
+  .arch-header { position:sticky;top:72px;z-index:10;background:#F4F6F8;padding:20px 0 0; }
   .arch-progress { height:3px;background:linear-gradient(90deg,#1A5276,#2980B9,#E67E22);transition:width 0.5s;width:0%;border-radius:2px;margin-bottom:16px; }
   .arch-controls { display:flex;justify-content:center;gap:10px;margin-bottom:0;flex-wrap:wrap;align-items:center;padding:0 0 14px;border-bottom:1px solid #DDE3E9; }
-  .arch-scroll-area { max-height:70vh;overflow-y:auto;padding:20px 20px 40px;scroll-behavior:smooth; }
   .arch-controls button { padding:8px 20px;border:none;border-radius:6px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s; }
   .arch-btn-next { background:linear-gradient(135deg,#1A5276,#2980B9);color:#fff;padding:10px 28px;font-size:0.9rem; }
   .arch-btn-next:hover { transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,82,118,0.3); }
@@ -103,7 +102,7 @@ Click **Next** to explore each InnoDB component. Connections between components 
       <button class="arch-btn-reset" onclick="archReset()">&#8634; Reset</button>
     </div>
   </div>
-  <div class="arch-scroll-area" id="archScrollArea">
+  <div style="padding-top:20px;">
 
   <div class="arch-diagram">
     <!-- In-Memory -->
@@ -212,7 +211,7 @@ Click **Next** to explore each InnoDB component. Connections between components 
     <div class="arch-summary-title">The Complete Picture</div>
     <p>Every query flows through these components. <strong>Reads</strong> go through the buffer pool (and hit disk only on cache miss). <strong>Writes</strong> modify the buffer pool page, record the change in the redo log for crash safety, save a before-image in the undo log for rollback/MVCC, and optionally defer secondary index updates in the change buffer. <strong>Commits</strong> flush the log buffer to the redo log on disk. <strong>Background threads</strong> flush dirty pages through the doublewrite buffer to tablespace files.</p>
   </div>
-  </div><!-- close arch-scroll-area -->
+  </div>
 </div>
 
 <script>
@@ -262,21 +261,16 @@ Click **Next** to explore each InnoDB component. Connections between components 
       if(f){f.classList.add('vis','act');}
     });
     // Scroll into view
-    var outer=document.querySelector('.arch');
-    if(outer){
-      var outerRect=outer.getBoundingClientRect();
-      if(outerRect.top<0||outerRect.top>100){
-        outer.scrollIntoView({behavior:'smooth',block:'start'});
-      }
-    }
     if(el){
-      var area=document.getElementById('archScrollArea');
-      if(area){
-        setTimeout(function(){
-          var elTop=el.offsetTop-area.offsetTop;
-          area.scrollTo({top:Math.max(0,elTop-20),behavior:'smooth'});
-        },100);
-      }
+      setTimeout(function(){
+        var header=document.querySelector('.arch-header');
+        var headerBottom=header?header.getBoundingClientRect().bottom:132;
+        var rect=el.getBoundingClientRect();
+        if(rect.top<headerBottom||rect.bottom>window.innerHeight){
+          var scrollTarget=rect.top+window.scrollY-headerBottom-10;
+          window.scrollTo({top:scrollTarget,behavior:'smooth'});
+        }
+      },50);
     }
   }
 

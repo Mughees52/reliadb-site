@@ -24,14 +24,13 @@ Understanding the internal execution path is essential for diagnosing lock conte
 
 Click **Play** to watch the full UPDATE lifecycle step by step. Each card expands with technical details when active.
 
-<div class="upd-outer" style="background:#F4F6F8;border-radius:16px;margin:24px 0;border:1px solid #DDE3E9;overflow:hidden;">
+<div class="upd-outer" style="background:#F4F6F8;border-radius:16px;margin:24px 0;border:1px solid #DDE3E9;overflow:clip;">
 <style>
   .upd-flow * { margin: 0; padding: 0; box-sizing: border-box; }
-  .upd-flow { font-family: 'Inter', sans-serif; color: #444; max-width: 720px; margin: 0 auto; }
-  .upd-flow-header { position: sticky; top: 0; z-index: 10; background: #F4F6F8; padding: 20px 20px 0; }
+  .upd-flow { font-family: 'Inter', sans-serif; color: #444; max-width: 720px; margin: 0 auto; padding: 0 20px 48px; }
+  .upd-flow-header { position: sticky; top: 72px; z-index: 10; background: #F4F6F8; padding: 20px 0 0; }
   .upd-progress { height: 3px; background: linear-gradient(90deg, #1A5276, #2980B9, #E67E22); transition: width 0.5s ease; width: 0%; border-radius: 2px; margin-bottom: 16px; }
   .upd-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 0; flex-wrap: wrap; align-items: center; padding: 0 0 14px; border-bottom: 1px solid #DDE3E9; }
-  .upd-scroll-area { max-height: 70vh; overflow-y: auto; padding: 20px 20px 48px; scroll-behavior: smooth; }
   .upd-controls button { padding: 8px 20px; border: none; border-radius: 6px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
   .upd-btn-next { background: linear-gradient(135deg, #1A5276, #2980B9); color: #fff; padding: 10px 28px; font-size: 0.9rem; }
   .upd-btn-next:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,82,118,0.3); }
@@ -114,7 +113,7 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
       <button class="upd-btn-reset" onclick="updReset()">&#8634; Reset</button>
     </div>
   </div>
-  <div class="upd-scroll-area" id="updScrollArea">
+  <div style="padding-top:20px;">
 
   <div class="upd-steps" id="updSteps">
     <!-- 1: Client -->
@@ -259,7 +258,7 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
       </div>
     </div>
   </div>
-  </div><!-- close upd-scroll-area -->
+  </div>
 </div>
 
 <script>
@@ -308,22 +307,17 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
     // Repeat label after step 9
     if(s==='9')document.getElementById('updRepeat').classList.add('vis');
 
-    // Keep the animation container in viewport and scroll active step into view
-    var outer=document.querySelector('.upd-outer');
-    if(outer){
-      var outerRect=outer.getBoundingClientRect();
-      if(outerRect.top<0||outerRect.top>100){
-        outer.scrollIntoView({behavior:'smooth',block:'start'});
-      }
-    }
+    // Scroll the page so the active step is visible below the sticky header
     if(el){
-      var area=document.getElementById('updScrollArea');
-      if(area){
-        setTimeout(function(){
-          var elTop=el.offsetTop-area.offsetTop;
-          area.scrollTo({top:Math.max(0,elTop-20),behavior:'smooth'});
-        },100);
-      }
+      setTimeout(function(){
+        var header=document.querySelector('.upd-flow-header');
+        var headerBottom=header?header.getBoundingClientRect().bottom:132;
+        var rect=el.getBoundingClientRect();
+        if(rect.top<headerBottom||rect.bottom>window.innerHeight){
+          var scrollTarget=rect.top+window.scrollY-headerBottom-10;
+          window.scrollTo({top:scrollTarget,behavior:'smooth'});
+        }
+      },50);
     }
   }
 
