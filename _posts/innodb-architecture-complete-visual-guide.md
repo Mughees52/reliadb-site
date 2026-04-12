@@ -29,7 +29,7 @@ Click **Next** to explore each InnoDB component. Connections between components 
   .arch * { margin:0;padding:0;box-sizing:border-box; }
   .arch { font-family:'Inter',sans-serif;color:#444;max-width:800px;margin:0 auto; }
   .arch-progress { height:3px;background:linear-gradient(90deg,#1A5276,#2980B9,#E67E22);transition:width 0.5s;width:0%;border-radius:2px;margin-bottom:20px; }
-  .arch-controls { display:flex;justify-content:center;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center; }
+  .arch-controls { display:flex;justify-content:center;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center;position:sticky;top:72px;z-index:10;background:#F4F6F8;padding:12px 0;border-bottom:1px solid #DDE3E9; }
   .arch-controls button { padding:8px 20px;border:none;border-radius:6px;font-family:inherit;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.2s; }
   .arch-btn-next { background:linear-gradient(135deg,#1A5276,#2980B9);color:#fff;padding:10px 28px;font-size:0.9rem; }
   .arch-btn-next:hover { transform:translateY(-1px);box-shadow:0 4px 12px rgba(26,82,118,0.3); }
