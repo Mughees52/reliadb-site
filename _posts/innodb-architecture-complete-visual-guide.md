@@ -256,7 +256,13 @@ Click **Next** to explore each InnoDB component. Connections between components 
       if(f){f.classList.add('vis','act');}
     });
     // Scroll into view
-    if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    if(el){
+      var rect=el.getBoundingClientRect();
+      var offset=72+60;
+      if(rect.top<offset||rect.bottom>window.innerHeight){
+        window.scrollBy({top:rect.top-offset,behavior:'smooth'});
+      }
+    }
   }
 
   function hideComp(idx){

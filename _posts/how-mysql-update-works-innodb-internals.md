@@ -302,8 +302,14 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
     // Repeat label after step 9
     if(s==='9')document.getElementById('updRepeat').classList.add('vis');
 
-    // Scroll the active step into view
-    if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    // Scroll active step to just below the sticky controls (nav 72px + controls ~56px)
+    if(el){
+      var rect=el.getBoundingClientRect();
+      var offset=72+60; // nav height + controls height
+      if(rect.top<offset||rect.bottom>window.innerHeight){
+        window.scrollBy({top:rect.top-offset,behavior:'smooth'});
+      }
+    }
   }
 
   function hideStep(idx){
