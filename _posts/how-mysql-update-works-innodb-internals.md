@@ -308,12 +308,21 @@ Click **Play** to watch the full UPDATE lifecycle step by step. Each card expand
     // Repeat label after step 9
     if(s==='9')document.getElementById('updRepeat').classList.add('vis');
 
-    // Scroll the active step into view within the scroll area
+    // Keep the animation container in viewport and scroll active step into view
+    var outer=document.querySelector('.upd-outer');
+    if(outer){
+      var outerRect=outer.getBoundingClientRect();
+      if(outerRect.top<0||outerRect.top>100){
+        outer.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    }
     if(el){
       var area=document.getElementById('updScrollArea');
       if(area){
-        var elTop=el.offsetTop-area.offsetTop;
-        area.scrollTo({top:elTop-20,behavior:'smooth'});
+        setTimeout(function(){
+          var elTop=el.offsetTop-area.offsetTop;
+          area.scrollTo({top:Math.max(0,elTop-20),behavior:'smooth'});
+        },100);
       }
     }
   }

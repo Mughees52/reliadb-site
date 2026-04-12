@@ -262,11 +262,20 @@ Click **Next** to explore each InnoDB component. Connections between components 
       if(f){f.classList.add('vis','act');}
     });
     // Scroll into view
+    var outer=document.querySelector('.arch');
+    if(outer){
+      var outerRect=outer.getBoundingClientRect();
+      if(outerRect.top<0||outerRect.top>100){
+        outer.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    }
     if(el){
       var area=document.getElementById('archScrollArea');
       if(area){
-        var elTop=el.offsetTop-area.offsetTop;
-        area.scrollTo({top:elTop-20,behavior:'smooth'});
+        setTimeout(function(){
+          var elTop=el.offsetTop-area.offsetTop;
+          area.scrollTo({top:Math.max(0,elTop-20),behavior:'smooth'});
+        },100);
       }
     }
   }
