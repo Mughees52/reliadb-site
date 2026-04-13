@@ -50,7 +50,7 @@ Key facts:
 - **Supports MariaDB**: ANALYZE table format (r_rows/r_filtered), ANALYZE FORMAT=JSON (r_total_time_ms, filesort.temporary_table nesting), compound access types (eq_ref|filter)
 - **Handles pasted terminal output**: auto-strips SQL prompts (`-> SELECT`, `-> GROUP BY`), MySQL/MariaDB result wrappers (`| ... |` borders), `+---+` borders, `N rows in set` lines
 - **Analysis engine (all phases complete)**:
-  - 49 detection rules (8 critical, 20 warning, 5 info, 7 good, 4 MariaDB-specific, 5 MySQL 8.0+ specific)
+  - 61 detection rules (9 critical, 28 warning, 7 info, 12 good, 4 MariaDB-specific, 5 MySQL 8.0+ specific)
   - 33 SQL query hint patterns + 3 function-based detectors
   - 7 query rewrite generators (YEAR→range, subquery→JOIN, NOT IN→LEFT JOIN, GROUP BY fix, SELECT *, OFFSET→keyset, RAND())
   - DDL parser with FK-without-index, redundant index, NOT NULL suggestions

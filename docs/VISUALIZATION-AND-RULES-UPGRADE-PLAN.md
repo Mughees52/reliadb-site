@@ -67,15 +67,15 @@
 
 ## Implementation Order
 
-### Session 1: Visualization
-1. Node background fill gradient (biggest visual impact)
-2. Zoom control buttons
-3. Minimap
+### Session 1: Visualization ✓ DONE
+1. ✓ Node background fill gradient (severity-tinted card backgrounds)
+2. ✓ Zoom control buttons (+/−/Fit in bottom-right)
+3. ✓ Minimap navigation (canvas-based, click to pan)
 
-### Session 2: Rules
-1. Critical + Warning rules (9 new)
-2. Info + Good rules (7 new)
-3. Update test suite
+### Session 2: Rules ✓ DONE
+1. ✓ Critical + Warning rules (9 new)
+2. ✓ Info + Good rules (7 new)
+3. Test suite — manual testing via dev server
 
 ## Files to Edit
 - `tools/explain/src/components/PlanTree.vue` — visualization
