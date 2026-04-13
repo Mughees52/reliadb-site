@@ -44,6 +44,16 @@ module.exports = function (eleventyConfig) {
       .sort((a, b) => b.date - a.date);
   });
 
+  eleventyConfig.addCollection("mysqlPosts", function (collectionApi) {
+    return collectionApi
+      .getFilteredByGlob("./_posts/*.md")
+      .filter((post) => {
+        const cats = getPostCategorySlugs(post.data);
+        return cats.includes("mysql") || cats.includes("mariadb");
+      })
+      .sort((a, b) => b.date - a.date);
+  });
+
   eleventyConfig.addCollection("categories", function (collectionApi) {
     const blogPosts = collectionApi
       .getFilteredByGlob("./_posts/*.md")

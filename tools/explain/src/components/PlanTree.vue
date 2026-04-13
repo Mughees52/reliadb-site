@@ -25,6 +25,8 @@ const tooltipVisible = ref(false)
 const tooltipX = ref(0)
 const tooltipY = ref(0)
 
+
+
 // HSL gradient: green (good) → yellow → orange → red (bad)
 function percentToHsl(pct: number): string {
   const hue = ((100 - Math.min(pct, 100)) * 1.2) // 120 (green) → 0 (red)
@@ -41,6 +43,19 @@ function getSeverityColor(node: PlanNode): string {
   if (node.accessType === 'const' || node.accessType === 'system' || node.accessType === 'eq_ref') return '#2ECC71'
   if (node.accessType === 'ref' || node.accessType === 'range') return '#27AE60'
   return '#3498DB'
+}
+
+// Subtle background tint based on severity — makes bottlenecks visible at a glance
+function getSeverityFill(node: PlanNode): string {
+  if (node.accessType === 'ALL' && !node.table?.startsWith('<')) {
+    const rows = node.actualRows ?? node.estimatedRows
+    return rows > 100 ? '#fef2f2' : '#fffbeb'
+  }
+  if (node.extra?.some(e => /filesort|temporary/i.test(e))) return '#fffbeb'
+  if (node.accessType === 'index') return '#fffbeb'
+  if (node.accessType === 'const' || node.accessType === 'system' || node.accessType === 'eq_ref') return '#f0fff4'
+  if (node.accessType === 'ref' || node.accessType === 'range') return '#f0fff4'
+  return '#f0f7ff'
 }
 
 // Badge checks
@@ -224,11 +239,11 @@ function renderTree() {
     .on('mousemove', (event: any, d: any) => { tooltipX.value = event.clientX + 12; tooltipY.value = event.clientY - 10 })
     .on('mouseout', () => { hideTooltip() })
 
-  // Card background
+  // Card background with severity tint
   nodeGroups.append('rect')
     .attr('width', NODE_W).attr('height', NODE_H)
     .attr('rx', 10).attr('ry', 10)
-    .attr('fill', '#ffffff')
+    .attr('fill', (d: any) => getSeverityFill(d.data))
     .attr('filter', 'url(#node-shadow)')
     .attr('stroke', (d: any) => {
       if (d.data.id === props.selectedId) return '#2980B9'
@@ -245,7 +260,7 @@ function renderTree() {
   // Top-right corner overlap fix
   nodeGroups.append('rect')
     .attr('y', 4).attr('width', NODE_W).attr('height', 2)
-    .attr('fill', '#ffffff')
+    .attr('fill', (d: any) => getSeverityFill(d.data))
 
   // Operation name (line 1)
   nodeGroups.append('text')

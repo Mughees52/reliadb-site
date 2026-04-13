@@ -42,7 +42,7 @@ function maxChildRows(node: PlanNode): number {
 }
 
 // ============================================================
-// CRITICAL RULES (7)
+// CRITICAL RULES (8)
 // ============================================================
 
 const fullTableScanLarge: RuleFn = (node) => {
@@ -215,7 +215,7 @@ const nestedLoopUnindexed: RuleFn = (node) => {
 }
 
 // ============================================================
-// WARNING RULES (17)
+// WARNING RULES (20)
 // ============================================================
 
 const rowEstimateMismatch: RuleFn = (node) => {
@@ -508,7 +508,7 @@ const missingJoinIndex: RuleFn = (node) => {
 }
 
 // ============================================================
-// INFO RULES (3)
+// INFO RULES (5)
 // ============================================================
 
 const smallTableScanOk: RuleFn = (node) => {
@@ -752,11 +752,280 @@ const mariadbHashJoin: RuleFn = (node) => {
 }
 
 // ============================================================
-// ALL RULES (44 total)
+// NEW RULES — Visualization & Rules Upgrade (16 new)
+// ============================================================
+
+// --- Critical (1) ---
+
+const largeSortBufferSpill: RuleFn = (node) => {
+  if (!node.extra?.some(e => /filesort_on_disk/i.test(e))) return null
+  const rows = node.actualRows ?? node.estimatedRows
+
+  return issue(node, 'critical', 'sort',
+    `Filesort spilling to disk`,
+    `The sort operation on ${rows.toLocaleString()} rows exceeded the sort buffer and spilled to disk. Disk-based sorts are orders of magnitude slower than in-memory sorts.`,
+    `Increase \`sort_buffer_size\` for this session, or add an index on the ORDER BY columns to avoid sorting entirely.`,
+    {
+      impact: `Disk I/O during sort — ${rows.toLocaleString()} rows written to temp files`,
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/server-system-variables.html#sysvar_sort_buffer_size',
+    },
+  )
+}
+
+// --- Warning (8) ---
+
+const implicitTypeConversion: RuleFn = (node) => {
+  if (!node.condition) return null
+  // Detect WHERE varchar_col = 123 (numeric literal compared to string column)
+  // This shows up in conditions as type conversion warnings
+  if (!node.extra?.some(e => /type conversion/i.test(e))) return null
+
+  return issue(node, 'warning', 'index',
+    `Implicit type conversion on \`${node.table ?? 'unknown'}\``,
+    `MySQL is performing an implicit type conversion in the condition. This prevents index use because every row value must be converted before comparison.`,
+    `Ensure the comparison value matches the column type. Use numeric literals for INT columns and quoted strings for VARCHAR columns.`,
+    {
+      impact: 'Index on the column cannot be used — falls back to full scan',
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/type-conversion.html',
+    },
+  )
+}
+
+const likeLeadingWildcard: RuleFn = (node) => {
+  if (!node.condition) return null
+  if (!/LIKE\s+'%/i.test(node.condition)) return null
+  if (isTempTable(node)) return null
+
+  return issue(node, 'warning', 'scan',
+    `Leading wildcard LIKE on \`${node.table ?? 'unknown'}\``,
+    `The condition uses LIKE '%...' which prevents any B-tree index from being used. MySQL must scan every row to check the pattern.`,
+    `Use a FULLTEXT index for text search, or restructure the query to avoid leading wildcards.`,
+    {
+      impact: 'Full scan required — B-tree indexes cannot search from the middle of a string',
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/fulltext-search.html',
+    },
+  )
+}
+
+const derivedTableMaterialized: RuleFn = (node) => {
+  if (node.selectType !== 'DERIVED') return null
+  const rows = node.actualRows ?? node.estimatedRows
+  if (rows <= 5000) return null
+
+  return issue(node, 'warning', 'subquery',
+    `Large derived table (${rows.toLocaleString()} rows)`,
+    `This derived table (subquery in FROM) materializes ${rows.toLocaleString()} rows into a temporary table. Large derived tables consume memory and may spill to disk.`,
+    `Consider rewriting the derived table as a JOIN, or add indexes to reduce the subquery result size.`,
+    {
+      impact: `Materializing ${rows.toLocaleString()} rows into temporary table`,
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/derived-table-optimization.html',
+    },
+  )
+}
+
+const unionInsteadOfUnionAll: RuleFn = (node) => {
+  if (node.selectType !== 'UNION RESULT') return null
+  if (!node.extra?.some(e => /temporary/i.test(e))) return null
+
+  return issue(node, 'warning', 'sort',
+    `UNION deduplication via temporary table`,
+    `UNION (without ALL) creates a temporary table to remove duplicates. If duplicates are impossible or acceptable, this is unnecessary overhead.`,
+    `Use UNION ALL if you don't need deduplication — it avoids the temporary table and sort.`,
+    {
+      impact: 'Temporary table created solely for deduplication',
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/union.html',
+    },
+  )
+}
+
+const indexSkipScanInefficient: RuleFn = (node) => {
+  if (!node.extra?.some(e => /skip scan/i.test(e))) return null
+  const rows = node.actualRows ?? node.estimatedRows
+  if (rows <= 10000) return null
+
+  return issue(node, 'warning', 'index',
+    `Skip scan reading ${rows.toLocaleString()} rows on \`${node.table ?? 'unknown'}\``,
+    `Index skip scan is reading ${rows.toLocaleString()} rows — the leading index column may have too many distinct values for skip scan to be efficient.`,
+    `Create an index with the WHERE columns as the leading prefix, or add a composite index that avoids the skip scan.`,
+    {
+      impact: `Skip scan overhead: scanning ${rows.toLocaleString()} rows across many prefix groups`,
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/range-optimization.html#range-access-skip-scan',
+    },
+  )
+}
+
+/** Calculate tree depth from this node */
+function treeDepth(node: PlanNode): number {
+  if (node.children.length === 0) return 1
+  return 1 + Math.max(...node.children.map(treeDepth))
+}
+
+const deepNestedJoin: RuleFn = (node, root) => {
+  // Only check from root to avoid duplicate firing
+  if (node !== root) return null
+  const depth = treeDepth(node)
+  if (depth <= 5) return null
+
+  // Count join nodes
+  let joinCount = 0
+  function countJoins(n: PlanNode) {
+    const op = n.operation.toLowerCase()
+    if (op.includes('join') || op.includes('loop')) joinCount++
+    n.children.forEach(countJoins)
+  }
+  countJoins(node)
+  if (joinCount < 4) return null
+
+  return issue(node, 'warning', 'join',
+    `Deep nested join tree (depth ${depth}, ${joinCount} joins)`,
+    `This query has ${joinCount} joins nested ${depth} levels deep. Deep join trees are hard to optimize and may indicate the query should be broken into smaller parts.`,
+    `Consider breaking into multiple queries, using CTEs for readability, or denormalizing frequently-joined data.`,
+    { impact: `${joinCount} nested joins — optimizer has ${joinCount}! possible join orders to evaluate` },
+  )
+}
+
+const hashJoinFallback: RuleFn = (node) => {
+  const op = node.operation.toLowerCase()
+  if (!op.includes('hash join') && !node.extra?.some(e => /hash join/i.test(e))) return null
+  // Only flag when no index is available (true fallback, not a deliberate optimization)
+  if (node.index) return null
+  if (!node.table) return null
+  const rows = node.actualRows ?? node.estimatedRows
+  if (rows <= 100) return null
+
+  return issue(node, 'warning', 'join',
+    `Hash join fallback on \`${node.table}\``,
+    `MySQL fell back to a hash join because no suitable index exists for the join condition. Hash joins use memory proportional to the smaller input (${rows.toLocaleString()} rows).`,
+    `Add an index on the join column of \`${node.table}\` to enable a nested loop join with index lookups.`,
+    {
+      impact: `Hash table built from ${rows.toLocaleString()} rows — memory-intensive for large tables`,
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/hash-joins.html',
+    },
+  )
+}
+
+const backwardIndexScanLarge: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Backward index scan/i.test(e))) return null
+  const rows = node.actualRows ?? node.estimatedRows
+  if (rows <= 1000) return null
+
+  return issue(node, 'warning', 'index',
+    `Backward index scan on ${rows.toLocaleString()} rows`,
+    `MySQL is scanning the index in reverse order for ${rows.toLocaleString()} rows. Backward scans are ~15-20% slower than forward scans due to InnoDB page structure.`,
+    `Create a descending index (MySQL 8.0+): \`ALTER TABLE ${node.table ?? '...'} ADD INDEX idx_desc (...column... DESC)\`. Or reverse the ORDER BY direction.`,
+    {
+      impact: `~15-20% slower than forward scan on ${rows.toLocaleString()} rows`,
+      docLink: 'https://dev.mysql.com/doc/refman/8.4/en/descending-indexes.html',
+    },
+  )
+}
+
+// --- Info (4) ---
+
+const orConditionMultipleColumns: RuleFn = (node) => {
+  if (!node.condition) return null
+  // Detect OR on different columns: col1 = x OR col2 = y
+  const orMatch = node.condition.match(/(\w+)\s*(?:=|>|<|>=|<=|!=|<>|LIKE)\s*\S+\s+OR\s+(\w+)\s*(?:=|>|<|>=|<=|!=|<>|LIKE)/i)
+  if (!orMatch) return null
+  if (orMatch[1].toLowerCase() === orMatch[2].toLowerCase()) return null // same column, not this rule
+
+  return issue(node, 'info', 'index',
+    `OR condition across columns on \`${node.table ?? 'unknown'}\``,
+    `The condition uses OR on different columns (${orMatch[1]}, ${orMatch[2]}). No single index can efficiently satisfy both conditions.`,
+    `Consider rewriting as UNION ALL of two queries, each using its own index. MySQL may also use an index_merge optimization.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/index-merge-optimization.html' },
+  )
+}
+
+const redundantDistinctWithGroupBy: RuleFn = (node) => {
+  // This is detected at the query level via hints, but also flag at plan level
+  // when we see DISTINCT + GROUP BY producing a UNION RESULT or temp table
+  if (!node.extra?.some(e => /distinct/i.test(e))) return null
+  if (!node.extra?.some(e => /group/i.test(e) || /temporary/i.test(e))) return null
+
+  return issue(node, 'info', 'general',
+    `Redundant DISTINCT with GROUP BY`,
+    `GROUP BY already produces unique groups. Adding DISTINCT causes unnecessary deduplication overhead.`,
+    `Remove the DISTINCT keyword — GROUP BY guarantees unique result rows.`,
+  )
+}
+
+const backwardIndexScan: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Backward index scan/i.test(e))) return null
+  const rows = node.actualRows ?? node.estimatedRows
+  if (rows > 1000) return null // handled by backwardIndexScanLarge
+
+  return issue(node, 'info', 'index',
+    `Backward index scan on \`${node.table ?? 'unknown'}\``,
+    `MySQL is scanning the index in reverse. Backward scans are slightly less efficient than forward scans. Acceptable for small result sets.`,
+    `For larger tables, consider a descending index (MySQL 8.0+) to avoid the backward scan.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/descending-indexes.html' },
+  )
+}
+
+const autoIncrementGap: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Auto.?increment.?gap/i.test(e))) return null
+
+  return issue(node, 'info', 'general',
+    `Auto-increment gap detected`,
+    `InnoDB's auto-increment locking can create gaps in the sequence. Gaps are normal after INSERT failures, rollbacks, or bulk operations.`,
+    `This is expected InnoDB behavior and usually harmless. Don't rely on auto-increment values being contiguous.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/innodb-auto-increment-handling.html' },
+  )
+}
+
+// --- Good (3) ---
+
+const selectCountStar: RuleFn = (node) => {
+  if (node.accessType !== 'index') return null
+  if (!node.extra?.some(e => /^Using index$/i.test(e.trim()))) return null
+  // Check if this is part of a COUNT(*) query (operation often shows "Count" or aggregate)
+  const op = node.operation.toLowerCase()
+  if (!op.includes('count') && !op.includes('aggregate')) {
+    // Also check parent
+    if (!node.parent?.operation.toLowerCase().includes('count') &&
+        !node.parent?.operation.toLowerCase().includes('aggregate')) return null
+  }
+
+  return issue(node, 'good', 'index',
+    `Optimized COUNT(*) via index on \`${node.table ?? 'unknown'}\``,
+    `COUNT(*) is satisfied by scanning the index only (covering index scan). No table row data is read.`,
+    `Optimal — this is the most efficient way to count rows.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/aggregate-functions.html#function_count' },
+  )
+}
+
+const looseScanOptimization: RuleFn = (node) => {
+  if (!node.extra?.some(e => /Using index for skip scan/i.test(e))) return null
+  // Don't overlap with skipScanUsed — this is specifically for the LooseScan optimization hint
+  if (node.extra?.some(e => /LooseScan/i.test(e))) return null // handled by MariaDB rule
+
+  return issue(node, 'good', 'index',
+    `Skip scan optimization on \`${node.table ?? 'unknown'}\``,
+    `MySQL uses an index skip scan to efficiently process this query, scanning only distinct prefix values and applying the range condition on later columns.`,
+    `Good — skip scan avoids a full table scan when the leading index column isn't in the WHERE.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/range-optimization.html#range-access-skip-scan' },
+  )
+}
+
+const parallelScanDetected: RuleFn = (node) => {
+  const op = node.operation.toLowerCase()
+  if (!op.includes('parallel')) return null
+
+  return issue(node, 'good', 'scan',
+    `Parallel scan detected`,
+    `MySQL is using parallel execution for this operation, leveraging multiple CPU cores to speed up the scan.`,
+    `Good — parallel execution reduces wall-clock time for large scans.`,
+    { docLink: 'https://dev.mysql.com/doc/refman/8.4/en/parallel-table-scan.html' },
+  )
+}
+
+// ============================================================
+// ALL RULES (62 total)
 // ============================================================
 
 const allRules: RuleFn[] = [
-  // Critical (8)
+  // Critical (9)
   fullTableScanLarge,
   filesortLarge,
   tempTableLarge,
@@ -765,7 +1034,8 @@ const allRules: RuleFn[] = [
   massiveRowMismatch,
   nestedLoopUnindexed,
   zeroRowJoin,
-  // Warning (20)
+  largeSortBufferSpill,
+  // Warning (28)
   rowEstimateMismatch,
   noIndexUsed,
   fullIndexScan,
@@ -784,10 +1054,22 @@ const allRules: RuleFn[] = [
   expensiveSubqueryMaterialization,
   highRowMismatchInJoin,
   missingJoinIndex,
-  // Info (3)
+  implicitTypeConversion,
+  likeLeadingWildcard,
+  derivedTableMaterialized,
+  unionInsteadOfUnionAll,
+  indexSkipScanInefficient,
+  deepNestedJoin,
+  hashJoinFallback,
+  backwardIndexScanLarge,
+  // Info (7)
   smallTableScanOk,
   coveringIndexScan,
   indexMergeUsed,
+  orConditionMultipleColumns,
+  redundantDistinctWithGroupBy,
+  backwardIndexScan,
+  autoIncrementGap,
   // MySQL 8.0+ (3)
   hashJoinDetected,
   windowFunctionDetected,
@@ -797,7 +1079,7 @@ const allRules: RuleFn[] = [
   mariadbLowRFiltered,
   mariadbDuplicateWeedout,
   mariadbHashJoin,
-  // Good (9)
+  // Good (12)
   usingCoveringIndex,
   optimalAccess,
   indexConditionPushdown,
@@ -807,6 +1089,9 @@ const allRules: RuleFn[] = [
   mariadbLooseScan,
   skipScanUsed,
   antijoinUsed,
+  selectCountStar,
+  looseScanOptimization,
+  parallelScanDetected,
 ]
 
 export function runRules(node: PlanNode, root: PlanNode, stats: PlanStats): Issue[] {

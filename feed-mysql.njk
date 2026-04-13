@@ -1,0 +1,27 @@
+---
+permalink: /feed-mysql.xml
+eleventyExcludeFromCollections: true
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ReliaDB Blog — MySQL &amp; MariaDB</title>
+    <description>Expert guides on MySQL performance, MariaDB migration, InnoDB internals, query optimization, and database best practices.</description>
+    <link>https://reliadb.com/blog/</link>
+    <atom:link href="https://reliadb.com/feed-mysql.xml" rel="self" type="application/rss+xml" />
+    <language>en</language>
+    <lastBuildDate>{{ collections.mysqlPosts[0].date.toUTCString() }}</lastBuildDate>
+    {%- for post in collections.mysqlPosts %}
+    {% if loop.index <= 20 %}
+    <item>
+      <title>{{ post.data.title | replace("&", "&amp;") | replace("<", "&lt;") }}</title>
+      <link>https://reliadb.com{{ post.url }}</link>
+      <guid>https://reliadb.com{{ post.url }}</guid>
+      <pubDate>{{ post.date.toUTCString() }}</pubDate>
+      <description>{{ post.data.description | replace("&", "&amp;") | replace("<", "&lt;") }}</description>
+      <author>support@reliadb.com ({{ post.data.author or "Mughees Ahmed" }})</author>
+    </item>
+    {% endif %}
+    {%- endfor %}
+  </channel>
+</rss>
