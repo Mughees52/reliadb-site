@@ -377,6 +377,7 @@ const highCostNode: RuleFn = (node, _root, stats) => {
   if (!node.costPercentage || node.costPercentage < 70) return null
   if (node.children.length > 0) return null // Only flag leaf-ish nodes
   if (isTempTable(node)) return null
+  if (stats.nodeCount <= 2) return null // Skip single-node plans — one node is always 100%
 
   return issue(node, 'warning', 'general',
     `High cost node: ${node.costPercentage.toFixed(0)}% of total`,
@@ -997,8 +998,9 @@ const selectCountStar: RuleFn = (node) => {
 
 const looseScanOptimization: RuleFn = (node) => {
   if (!node.extra?.some(e => /Using index for skip scan/i.test(e))) return null
-  // Don't overlap with skipScanUsed — this is specifically for the LooseScan optimization hint
-  if (node.extra?.some(e => /LooseScan/i.test(e))) return null // handled by MariaDB rule
+  // Don't overlap with skipScanUsed or MariaDB LooseScan
+  if (node.extra?.some(e => /LooseScan/i.test(e))) return null
+  if (node.extra?.some(e => /^skip scan$/i.test(e.trim()))) return null // handled by skipScanUsed
 
   return issue(node, 'good', 'index',
     `Skip scan optimization on \`${node.table ?? 'unknown'}\``,

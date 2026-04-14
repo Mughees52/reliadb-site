@@ -5,6 +5,7 @@ import { generateIndexRecommendations } from './index-advisor'
 import { analyzeQuery } from './query-hints'
 import { generateRewrites } from './query-rewriter'
 import { simulateIndexImpact } from './index-impact'
+import { generateNarrative } from './narrative'
 import { parseDDL, getForeignKeysWithoutIndex, getRedundantIndexes, isColumnNullable, type ParsedTable } from '../parsers/ddl-parser'
 
 export function analyze(
@@ -119,13 +120,25 @@ export function analyze(
   }
   score = Math.max(0, Math.min(100, Math.round(score)))
 
-  return {
+  const partialResult = {
     issues,
     indexRecommendations,
     queryHints,
     queryRewrites,
     schemaIssues,
     summary: { critical, warnings, info, good, score },
+  }
+
+  // Generate AI-quality narrative analysis
+  const narrative = generateNarrative(
+    partialResult as any,
+    root,
+    stats,
+  )
+
+  return {
+    ...partialResult,
+    narrative,
   }
 }
 

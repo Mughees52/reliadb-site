@@ -1,4 +1,5 @@
 import type { PlanNode } from '../parsers/types'
+import type { PlanNarrative } from './narrative'
 
 export type Severity = 'critical' | 'warning' | 'info' | 'good'
 export type IssueCategory = 'scan' | 'sort' | 'join' | 'subquery' | 'index' | 'estimate' | 'general'
@@ -69,6 +70,7 @@ export interface AnalysisResult {
   queryHints: QueryHint[]
   queryRewrites: QueryRewrite[]
   schemaIssues: SchemaIssue[]
+  narrative: PlanNarrative
   summary: {
     critical: number
     warnings: number

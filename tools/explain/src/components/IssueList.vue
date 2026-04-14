@@ -6,7 +6,7 @@ defineProps<{
   analysis: AnalysisResult
 }>()
 
-const activeTab = ref<'issues' | 'indexes' | 'hints' | 'rewrites' | 'schema'>('issues')
+const activeTab = ref<'summary' | 'issues' | 'indexes' | 'hints' | 'rewrites' | 'schema'>('summary')
 const copiedDDL = ref('')
 const expandedImpact = ref<Set<number>>(new Set())
 
@@ -39,6 +39,9 @@ function copyDDL(ddl: string) {
   <div class="card issue-list">
     <!-- Tabs -->
     <div class="il-tabs">
+      <button @click="activeTab = 'summary'" :class="activeTab === 'summary' ? 'tab-active' : 'tab-inactive'" class="il-tab">
+        Summary
+      </button>
       <button @click="activeTab = 'issues'" :class="activeTab === 'issues' ? 'tab-active' : 'tab-inactive'" class="il-tab">
         Issues <span class="il-count">({{ analysis.issues.length }})</span>
       </button>
@@ -54,6 +57,47 @@ function copyDDL(ddl: string) {
       <button v-if="analysis.schemaIssues.length" @click="activeTab = 'schema'" :class="activeTab === 'schema' ? 'tab-active' : 'tab-inactive'" class="il-tab">
         Schema <span class="il-count">({{ analysis.schemaIssues.length }})</span>
       </button>
+    </div>
+
+    <!-- Summary Tab -->
+    <div v-show="activeTab === 'summary'" class="il-body summary-tab">
+      <!-- Verdict -->
+      <div class="summary-verdict">{{ analysis.narrative.verdict }}</div>
+
+      <!-- Action Plan -->
+      <div v-if="analysis.narrative.actionPlan.length" class="summary-section">
+        <div class="summary-heading">Optimization Plan</div>
+        <ol class="action-plan">
+          <li v-for="step in analysis.narrative.actionPlan" :key="step.priority" class="action-step">
+            <div class="action-title">{{ step.action }}</div>
+            <div class="action-reason">{{ step.reason }}</div>
+            <div class="action-impact">Expected: {{ step.estimatedImpact }}</div>
+            <div v-if="step.ddl" class="il-ddl">
+              <code>{{ step.ddl }}</code>
+              <button class="copy-btn" @click="copyDDL(step.ddl!)" :title="copiedDDL === step.ddl ? 'Copied!' : 'Copy'">
+                {{ copiedDDL === step.ddl ? '&#10003;' : 'Copy' }}
+              </button>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <!-- Root Causes -->
+      <div v-if="analysis.narrative.rootCauses.length" class="summary-section">
+        <div class="summary-heading">Root Causes</div>
+        <div v-for="(cause, i) in analysis.narrative.rootCauses" :key="i" class="root-cause">
+          <div class="root-cause-title">{{ cause.title }}</div>
+          <div class="root-cause-explanation">{{ cause.explanation }}</div>
+        </div>
+      </div>
+
+      <!-- Plan Walkthrough -->
+      <div v-if="analysis.narrative.walkthrough.length" class="summary-section">
+        <div class="summary-heading">How MySQL Executes This Query</div>
+        <div class="walkthrough">
+          <div v-for="(step, i) in analysis.narrative.walkthrough" :key="i" class="walkthrough-step">{{ step }}</div>
+        </div>
+      </div>
     </div>
 
     <!-- Issues Tab -->
@@ -231,4 +275,81 @@ function copyDDL(ddl: string) {
 .il-impact-arrow { color: var(--text-lt); font-size: 0.7rem; }
 .il-impact-after { color: #1e8449; font-weight: 600; }
 .il-impact-explanation { font-size: 0.72rem; color: #555; margin: 4px 0 0 26px; line-height: 1.4; }
+
+/* Summary Tab */
+.summary-tab { padding: 20px; }
+.summary-verdict {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--primary, #1A5276);
+  line-height: 1.5;
+  padding: 14px 16px;
+  background: #f0f7ff;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent, #2980B9);
+  margin-bottom: 20px;
+}
+.summary-section { margin-bottom: 22px; }
+.summary-heading {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-lt, #777);
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Action Plan */
+.action-plan { margin: 0; padding-left: 0; list-style: none; counter-reset: action; }
+.action-step {
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: #fafbfc;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  counter-increment: action;
+  position: relative;
+  padding-left: 44px;
+}
+.action-step::before {
+  content: counter(action);
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary, #1A5276);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.action-title { font-size: 0.85rem; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+.action-reason { font-size: 0.78rem; color: #555; line-height: 1.5; margin-bottom: 4px; }
+.action-impact { font-size: 0.76rem; color: #1e8449; font-weight: 500; margin-bottom: 6px; }
+
+/* Root Causes */
+.root-cause {
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  background: #fff8f0;
+  border-radius: 8px;
+  border-left: 3px solid #E67E22;
+}
+.root-cause-title { font-size: 0.85rem; font-weight: 600; color: #c0392b; margin-bottom: 4px; }
+.root-cause-explanation { font-size: 0.78rem; color: #555; line-height: 1.5; }
+
+/* Walkthrough */
+.walkthrough-step {
+  font-size: 0.8rem;
+  color: #444;
+  line-height: 1.6;
+  padding: 4px 0;
+  font-family: 'JetBrains Mono', monospace;
+}
 </style>
