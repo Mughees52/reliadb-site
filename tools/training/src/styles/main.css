@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Training-specific styles */
+.training-app {
+  min-height: calc(100vh - 72px);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Lesson content prose styles */
+.prose h2 {
+  @apply text-2xl font-bold text-primary mt-8 mb-4;
+}
+
+.prose h3 {
+  @apply text-lg font-semibold text-primary mt-6 mb-3;
+}
+
+.prose p {
+  @apply text-gray-700 leading-relaxed mb-4;
+}
+
+.prose ul, .prose ol {
+  @apply mb-4 pl-6 text-gray-700;
+}
+
+.prose ul { @apply list-disc; }
+.prose ol { @apply list-decimal; }
+
+.prose li {
+  @apply mb-1 leading-relaxed;
+}
+
+.prose code {
+  @apply bg-gray-100 text-primary px-1.5 py-0.5 rounded text-sm font-mono;
+}
+
+.prose pre {
+  @apply bg-gray-900 text-green-300 p-4 rounded-lg mb-4 overflow-x-auto text-sm font-mono;
+}
+
+.prose strong {
+  @apply font-semibold text-gray-900;
+}
+
+/* Result table styles */
+.result-table {
+  @apply w-full text-sm border-collapse;
+}
+
+.result-table th {
+  @apply bg-primary text-white px-3 py-2 text-left font-medium text-xs uppercase tracking-wider;
+}
+
+.result-table td {
+  @apply px-3 py-1.5 border-b border-gray-100 font-mono text-xs;
+}
+
+.result-table tr:nth-child(even) td {
+  @apply bg-gray-50;
+}
+
+.result-table tr:hover td {
+  @apply bg-blue-50;
+}
+
+/* Callout styles */
+.callout {
+  @apply rounded-lg p-4 mb-4 border-l-4;
+}
+
+.callout-info {
+  @apply bg-blue-50 border-accent text-blue-900;
+}
+
+.callout-warning {
+  @apply bg-amber-50 border-amber-500 text-amber-900;
+}
+
+.callout-tip {
+  @apply bg-green-50 border-success text-green-900;
+}
+
+.callout-mysql {
+  @apply bg-primary/5 border-primary text-primary;
+}
+
+/* Module card hover */
+.module-card {
+  @apply transition-all duration-200;
+}
+
+.module-card:hover {
+  @apply shadow-lg -translate-y-1;
+}
+
+/* Difficulty badges */
+.badge-easy { @apply bg-green-100 text-green-800; }
+.badge-medium { @apply bg-amber-100 text-amber-800; }
+.badge-hard { @apply bg-red-100 text-red-800; }
+
+/* CodeMirror overrides */
+.cm-editor {
+  @apply rounded-lg border border-gray-200;
+}
+
+.cm-editor.cm-focused {
+  @apply border-accent ring-1 ring-accent/30;
+}
+
+/* Animation containers */
+.animation-container {
+  @apply bg-bg-alt rounded-xl border border-gray-200 overflow-clip;
+}
+
+.animation-controls {
+  @apply sticky top-[72px] z-10 bg-white/90 backdrop-blur-sm border-b border-gray-200 px-4 py-2 flex items-center gap-3;
+}
+
+/* Success animation */
+@keyframes checkmark {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.success-check {
+  animation: checkmark 0.4s ease forwards;
+}
+
+/* Progress bar fill */
+.progress-fill {
+  transition: width 0.6s ease;
+}
