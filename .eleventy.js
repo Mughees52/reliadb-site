@@ -121,6 +121,7 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("googlebff62dc8eab397a4.html");
   eleventyConfig.addPassthroughCopy("llms.txt");
   eleventyConfig.addPassthroughCopy({ "tools/explain/dist": "tools/explain" });
+  eleventyConfig.addPassthroughCopy({ "tools/training/dist": "training" });
 
   return {
     dir: {

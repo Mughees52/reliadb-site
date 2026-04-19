@@ -78,3 +78,15 @@
   from = "/tools/explain/*"
   to = "/tools/explain/index.html"
   status = 200
+
+# SPA routing for MySQL Training
+[[redirects]]
+  from = "/training/*"
+  to = "/training/index.html"
+  status = 200
+
+# Cache training assets
+[[headers]]
+  for = "/training/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
