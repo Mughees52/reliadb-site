@@ -196,6 +196,61 @@ WHERE department_id IN (
         },
       ],
     },
+    {
+      id: 6, moduleId: 5, title: 'ANY, ALL, and SELECT INTO', slug: 'any-all',
+      content: [
+        {
+          type: 'text',
+          html: `<h2>ANY and ALL Operators</h2>
+<p><code>ANY</code> and <code>ALL</code> compare a value against a set of values returned by a subquery.</p>
+<ul>
+<li><code>ANY</code> — returns true if the comparison is true for <strong>at least one</strong> value</li>
+<li><code>ALL</code> — returns true if the comparison is true for <strong>every</strong> value</li>
+</ul>`,
+        },
+        {
+          type: 'sandbox', description: 'Employees earning more than ANY Finance employee:',
+          defaultQuery: `-- salary > ANY means "salary > the minimum Finance salary"
+SELECT name, salary, department_id
+FROM employees
+WHERE salary > ALL (
+  SELECT salary FROM employees WHERE department_id = 4
+)
+ORDER BY salary
+LIMIT 10;`,
+        },
+        {
+          type: 'callout', calloutType: 'tip',
+          html: `<code>> ANY(subquery)</code> is equivalent to <code>> MIN(subquery)</code>. <code>> ALL(subquery)</code> is equivalent to <code>> MAX(subquery)</code>. Most developers prefer MIN/MAX for clarity.`,
+        },
+        {
+          type: 'text',
+          html: `<h2>INSERT INTO ... SELECT</h2>
+<p>Copy data from one table to another using a SELECT statement:</p>`,
+        },
+        {
+          type: 'code', title: 'MySQL syntax',
+          sql: `-- Copy high-earner data into a new table
+CREATE TABLE high_earners AS
+SELECT name, salary, department_id
+FROM employees
+WHERE salary > 100000;
+
+-- Or insert into an existing table:
+INSERT INTO archived_orders
+SELECT * FROM orders WHERE status = 'cancelled';`,
+        },
+        {
+          type: 'sandbox', description: 'Create a table from a query:',
+          defaultQuery: `CREATE TABLE dept_summary AS
+SELECT department_id, COUNT(*) AS headcount, ROUND(AVG(salary), 0) AS avg_salary
+FROM employees
+GROUP BY department_id;
+
+SELECT * FROM dept_summary ORDER BY avg_salary DESC;`,
+        },
+      ],
+    },
   ],
   exercises: [
     {
@@ -211,8 +266,8 @@ WHERE department_id IN (
           ['Hugo Edwards', 118000], ['Bob Smith', 115000], ['Xavier Wright', 112000], ['Kate Thomas', 110000],
           ['Sam Walker', 108000], ['Nathan Cook', 108000], ['Carol Davis', 105000], ['Brian Adams', 105000],
           ['Leo Rogers', 105000], ['Tina Hall', 102000], ['Daniel Phillips', 100000], ['Vera Richardson', 100000],
-          ['Wendy King', 98000], ['Liam Moore', 98000], ['Xena Howard', 97000], ['Henry Taylor', 95000],
-          ['Amy Baker', 95000], ['Kelly Morris', 95000],
+          ['Liam Moore', 98000], ['Wendy King', 98000], ['Xena Howard', 97000], ['Henry Taylor', 95000],
+          ['Amy Baker', 95000], ['Kelly Morris', 95000], ['Frank Brown', 92000], ['Ulrich Cooper', 92000],
         ],
       },
       hints: [

@@ -517,6 +517,12 @@ Paste your `EXPLAIN ANALYZE`, `EXPLAIN FORMAT=JSON`, or traditional `EXPLAIN` ou
 | Low `filtered` (< 20%) | Add composite index covering all WHERE columns |
 | Large `rows` estimate mismatch | Run `ANALYZE TABLE` |
 
+<div class="post-cta-inline" style="background: #f0f7ff; border-left: 4px solid #2980B9;">
+  <h4>Learn EXPLAIN Hands-On</h4>
+  <p>Practice reading EXPLAIN output with our free interactive MySQL training. Module 8 covers performance optimization, index strategies, and query analysis with a live SQL sandbox.</p>
+  <a href="/training/#/module/8" class="btn">Start Module 8: Performance & EXPLAIN &rarr;</a>
+</div>
+
 <div class="related-posts">
 <h3>Related Articles</h3>
 <div class="related-grid">

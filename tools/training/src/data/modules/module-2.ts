@@ -272,12 +272,11 @@ LIMIT 12;`,
       expectedResult: {
         columns: ['name', 'salary'],
         values: [
-          ['Alice Johnson', 120000], ['Bob Smith', 115000], ['Carol Davis', 105000],
-          ['Kate Thomas', 110000], ['Quinn Lewis', 130000], ['Rachel Robinson', 125000],
-          ['Sam Walker', 108000], ['Tina Hall', 102000], ['Xavier Wright', 112000],
-          ['Brian Adams', 105000], ['Hugo Edwards', 118000], ['Leo Rogers', 105000],
-          ['Daniel Phillips', 100000], ['Nathan Cook', 108000], ['Rosa Murphy', 120000],
-          ['Vera Richardson', 100000],
+          ['Quinn Lewis', 130000], ['Rachel Robinson', 125000], ['Alice Johnson', 120000],
+          ['Rosa Murphy', 120000], ['Hugo Edwards', 118000], ['Bob Smith', 115000],
+          ['Xavier Wright', 112000], ['Kate Thomas', 110000], ['Sam Walker', 108000],
+          ['Nathan Cook', 108000], ['Carol Davis', 105000], ['Brian Adams', 105000],
+          ['Leo Rogers', 105000], ['Tina Hall', 102000],
         ],
       },
       hints: [
