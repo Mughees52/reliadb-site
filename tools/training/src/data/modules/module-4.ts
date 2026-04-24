@@ -299,6 +299,147 @@ ORDER BY revenue DESC;`,
         },
       ],
     },
+    {
+      id: 7,
+      moduleId: 4,
+      title: 'RIGHT JOIN & FULL OUTER JOIN',
+      slug: 'right-full-join',
+      content: [
+        {
+          type: 'text',
+          html: `<h2>RIGHT JOIN</h2>
+<p><code>RIGHT JOIN</code> is the mirror of LEFT JOIN — it keeps all rows from the <strong>right table</strong> and fills NULLs for unmatched left rows. In practice, most developers rewrite RIGHT JOINs as LEFT JOINs by swapping table order (easier to read).</p>`,
+        },
+        {
+          type: 'comparison',
+          left: { title: 'LEFT JOIN', content: '<code>FROM employees e LEFT JOIN departments d</code><br>Keeps all employees, NULL if no department.' },
+          right: { title: 'RIGHT JOIN (equivalent)', content: '<code>FROM departments d RIGHT JOIN employees e</code><br>Same result, different syntax.' },
+        },
+        {
+          type: 'sandbox', description: 'RIGHT JOIN — all departments, even with no employees:',
+          defaultQuery: `SELECT d.name AS department, COUNT(e.id) AS headcount
+FROM employees e
+RIGHT JOIN departments d ON e.department_id = d.id
+GROUP BY d.name
+ORDER BY headcount;`,
+        },
+        {
+          type: 'text',
+          html: `<h2>FULL OUTER JOIN</h2>
+<p><code>FULL OUTER JOIN</code> keeps all rows from <strong>both</strong> tables. Unmatched rows on either side get NULLs. Useful for finding mismatches between two datasets.</p>`,
+        },
+        {
+          type: 'callout', calloutType: 'mysql',
+          html: `<strong>MySQL doesn't support FULL OUTER JOIN</strong> directly. You emulate it with a UNION of LEFT JOIN and RIGHT JOIN. Our SQLite sandbox does support it natively.`,
+        },
+        {
+          type: 'code', title: 'MySQL FULL OUTER JOIN emulation',
+          sql: `-- MySQL workaround:
+SELECT * FROM table_a a LEFT JOIN table_b b ON a.id = b.a_id
+UNION
+SELECT * FROM table_a a RIGHT JOIN table_b b ON a.id = b.a_id;`,
+        },
+      ],
+    },
+    {
+      id: 8,
+      moduleId: 4,
+      title: 'WHERE vs ON in JOINs',
+      slug: 'where-vs-on',
+      content: [
+        {
+          type: 'text',
+          html: `<h2>Filter Placement: ON vs WHERE</h2>
+<p>With <code>INNER JOIN</code>, putting a filter in <code>ON</code> vs <code>WHERE</code> gives the same result. But with <code>LEFT/RIGHT JOIN</code>, it makes a <strong>huge difference</strong>.</p>`,
+        },
+        {
+          type: 'comparison',
+          left: { title: 'Filter in ON clause', content: '<code>LEFT JOIN orders o ON c.id = o.customer_id AND o.status = \'delivered\'</code><br><br>Filters <strong>before</strong> joining. Unmatched rows still appear (with NULLs).' },
+          right: { title: 'Filter in WHERE clause', content: '<code>LEFT JOIN orders o ON c.id = o.customer_id WHERE o.status = \'delivered\'</code><br><br>Filters <strong>after</strong> joining. Removes NULL rows, turning LEFT JOIN into INNER JOIN!' },
+        },
+        {
+          type: 'sandbox', description: 'ON filter — keeps all customers, NULLs for non-delivered:',
+          defaultQuery: `-- Filter in ON: keeps ALL customers
+SELECT c.name, o.id AS order_id, o.status
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id AND o.status = 'delivered'
+ORDER BY c.name
+LIMIT 15;`,
+        },
+        {
+          type: 'sandbox', description: 'WHERE filter — only customers with delivered orders:',
+          defaultQuery: `-- Filter in WHERE: drops customers without delivered orders
+SELECT c.name, o.id AS order_id, o.status
+FROM customers c
+LEFT JOIN orders o ON c.id = o.customer_id
+WHERE o.status = 'delivered'
+ORDER BY c.name
+LIMIT 15;`,
+        },
+        {
+          type: 'callout', calloutType: 'warning',
+          html: `<strong>Common mistake</strong>: Adding a WHERE filter on the right table of a LEFT JOIN effectively converts it to an INNER JOIN. If you want to filter the right table while keeping all left rows, put the condition in the ON clause.`,
+        },
+      ],
+    },
+    {
+      id: 9,
+      moduleId: 4,
+      title: 'Advanced JOIN Patterns',
+      slug: 'advanced-join-patterns',
+      content: [
+        {
+          type: 'text',
+          html: `<h2>Joining on Multiple Keys</h2>
+<p>Sometimes you need to match rows on more than one column. Use <code>AND</code> in the <code>ON</code> clause:</p>`,
+        },
+        {
+          type: 'code', title: 'Multi-key JOIN',
+          sql: `-- Match on both year and department
+SELECT a.*, b.*
+FROM budget_actual a
+JOIN budget_plan b
+  ON a.year = b.year
+  AND a.department_id = b.department_id;`,
+        },
+        {
+          type: 'text',
+          html: `<h3>Non-Equi Joins (Comparison Operators)</h3>
+<p>Most JOINs use <code>=</code>, but you can also use <code>></code>, <code><</code>, <code>BETWEEN</code>, <code>!=</code>. These are called non-equi joins.</p>`,
+        },
+        {
+          type: 'sandbox', description: 'Find employees earning more than their department average using a non-equi self join:',
+          defaultQuery: `-- Employees above their department's average salary
+SELECT e.name, e.salary, e.department_id, dept_avg.avg_sal
+FROM employees e
+INNER JOIN (
+  SELECT department_id, ROUND(AVG(salary), 0) AS avg_sal
+  FROM employees
+  GROUP BY department_id
+) dept_avg ON e.department_id = dept_avg.department_id
+  AND e.salary > dept_avg.avg_sal
+ORDER BY e.department_id, e.salary DESC;`,
+        },
+        {
+          type: 'sandbox', description: 'Range join — find which price tier each product falls into:',
+          defaultQuery: `-- Create price tiers and join products to them
+WITH tiers AS (
+  SELECT 'Budget' AS tier, 0 AS min_price, 30 AS max_price
+  UNION ALL SELECT 'Mid-range', 30, 100
+  UNION ALL SELECT 'Premium', 100, 500
+  UNION ALL SELECT 'Luxury', 500, 99999
+)
+SELECT p.name, p.price, t.tier
+FROM products p
+INNER JOIN tiers t ON p.price >= t.min_price AND p.price < t.max_price
+ORDER BY p.price;`,
+        },
+        {
+          type: 'callout', calloutType: 'tip',
+          html: `Non-equi joins are common in real-world analytics: matching events to time ranges, assigning tiers/bands, finding overlapping date ranges, or comparing rows within the same table.`,
+        },
+      ],
+    },
   ],
   exercises: [
     {
@@ -348,32 +489,29 @@ ORDER BY revenue DESC;`,
     {
       id: 2,
       moduleId: 4,
-      title: 'Customers Without Orders',
-      description: '<p>Find customers who have <strong>never placed an order</strong>. Show their <code>name</code> and <code>city</code>. Use a LEFT JOIN.</p>',
+      title: 'Customers Without Delivered Orders',
+      description: '<p>Find customers who have <strong>no delivered orders</strong>. Show their <code>name</code> and <code>city</code>. Use a LEFT JOIN with the delivery status filter <strong>in the ON clause</strong> (not WHERE).</p>',
       difficulty: 'medium',
-      starterQuery: '-- Find customers with no orders\n',
-      expectedQuery: 'SELECT c.name, c.city FROM customers c LEFT JOIN orders o ON c.id = o.customer_id WHERE o.id IS NULL;',
+      starterQuery: "-- Find customers with no delivered orders\n",
+      expectedQuery: "SELECT c.name, c.city FROM customers c LEFT JOIN orders o ON c.id = o.customer_id AND o.status = 'delivered' WHERE o.id IS NULL ORDER BY c.name;",
       expectedResult: {
         columns: ['name', 'city'],
         values: [
-          ['Alpine Solutions', 'Zurich'], ['Nordic Software', 'Stockholm'],
-          ['BrightPath AI', 'Toronto'], ['Velocity Labs', 'Singapore'],
-          ['FreshMart', 'Paris'], ['SkyBridge Corp', 'Dubai'],
-          ['Pinnacle Group', 'New York'], ['Eastern Dynamics', 'Shanghai'],
-          ['Atlas Logistics', 'Berlin'], ['River Valley Inc', 'Toronto'],
-          ['Coral Systems', 'Sydney'], ['Summit Partners', 'New York'],
-          ['Cascade Data', 'Madrid'], ['Prism Analytics', 'Singapore'],
-          ['Horizon Media', 'Tokyo'], ['Quantum Edge', 'Paris'],
-          ['Blue Ocean Ltd', 'Dubai'], ['FireStorm Tech', 'Berlin'],
-          ['Maple Systems', 'Toronto'], ['Opal Networks', 'Stockholm'],
+          ['Atlas Logistics', 'Berlin'], ['Cascade Data', 'Madrid'],
+          ['Coral Systems', 'Sydney'], ['Eastern Dynamics', 'Shanghai'],
+          ['FreshMart', 'Paris'], ['GreenTech Ltd', 'London'],
+          ['Horizon Media', 'Tokyo'], ['Maple Systems', 'Toronto'],
+          ['Opal Networks', 'Stockholm'], ['Pinnacle Group', 'New York'],
+          ['Prism Analytics', 'Singapore'], ['Redwood Labs', 'London'],
+          ['River Valley Inc', 'Toronto'], ['Summit Partners', 'New York'],
         ],
       },
       hints: [
-        'Use LEFT JOIN to keep all customers, even without orders',
-        'WHERE o.id IS NULL filters to only those without matches',
-        'SELECT c.name, c.city FROM customers c LEFT JOIN orders o ON c.id = o.customer_id WHERE o.id IS NULL;',
+        "Put the status filter in the ON clause: ON c.id = o.customer_id AND o.status = 'delivered'",
+        'WHERE o.id IS NULL filters to customers with no matching delivered orders',
+        "SELECT c.name, c.city FROM customers c LEFT JOIN orders o ON c.id = o.customer_id AND o.status = 'delivered' WHERE o.id IS NULL ORDER BY c.name;",
       ],
-      validationMode: 'unordered',
+      validationMode: 'exact',
     },
     {
       id: 3,

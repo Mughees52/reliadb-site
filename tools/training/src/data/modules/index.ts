@@ -7,6 +7,7 @@ import { module6 } from './module-6'
 import { module7 } from './module-7'
 import { module8 } from './module-8'
 import { module9 } from './module-9'
+import { module10 } from './module-10'
 import type { Module } from '../../types'
 
 export const modules: Module[] = [
@@ -19,4 +20,5 @@ export const modules: Module[] = [
   module7,
   module8,
   module9,
+  module10,
 ]

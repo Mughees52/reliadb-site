@@ -405,6 +405,68 @@ SHOW GRANTS FOR 'app_user'@'%';`,
         },
       ],
     },
+    {
+      id: 9, moduleId: 9, title: 'Pivoting Data', slug: 'pivoting',
+      content: [
+        {
+          type: 'text',
+          html: `<h2>Pivoting — Rows to Columns</h2>
+<p>Pivoting transforms row-level data into a columnar summary. MySQL doesn't have a <code>PIVOT</code> keyword (SQL Server does), so you use <code>CASE</code> inside aggregate functions — a technique you already know from Module 3!</p>`,
+        },
+        {
+          type: 'sandbox', description: 'Pivot order counts by status:',
+          defaultQuery: `-- Each status becomes a column
+SELECT
+  SUBSTR(order_date, 1, 4) AS year,
+  COUNT(CASE WHEN status = 'delivered' THEN 1 END) AS delivered,
+  COUNT(CASE WHEN status = 'shipped' THEN 1 END) AS shipped,
+  COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending,
+  COUNT(CASE WHEN status = 'cancelled' THEN 1 END) AS cancelled,
+  COUNT(*) AS total
+FROM orders
+GROUP BY SUBSTR(order_date, 1, 4)
+ORDER BY year;`,
+        },
+        {
+          type: 'text',
+          html: `<h3>Revenue Pivot by Category</h3>
+<p>Pivoting is essential for creating management reports and dashboards:</p>`,
+        },
+        {
+          type: 'sandbox', description: 'Revenue by category per year:',
+          defaultQuery: `SELECT
+  SUBSTR(o.order_date, 1, 4) AS year,
+  ROUND(SUM(CASE WHEN p.category = 'Electronics' THEN oi.quantity * oi.unit_price ELSE 0 END), 0) AS electronics,
+  ROUND(SUM(CASE WHEN p.category = 'Books' THEN oi.quantity * oi.unit_price ELSE 0 END), 0) AS books,
+  ROUND(SUM(CASE WHEN p.category = 'Home' THEN oi.quantity * oi.unit_price ELSE 0 END), 0) AS home,
+  ROUND(SUM(CASE WHEN p.category = 'Sports' THEN oi.quantity * oi.unit_price ELSE 0 END), 0) AS sports,
+  ROUND(SUM(oi.quantity * oi.unit_price), 0) AS total
+FROM order_items oi
+JOIN orders o ON oi.order_id = o.id
+JOIN products p ON oi.product_id = p.id
+WHERE o.status != 'cancelled'
+GROUP BY SUBSTR(o.order_date, 1, 4)
+ORDER BY year;`,
+        },
+        {
+          type: 'text',
+          html: `<h3>Unpivoting — Columns to Rows</h3>
+<p>The reverse of pivoting. Convert columnar data back to rows using UNION ALL:</p>`,
+        },
+        {
+          type: 'code', title: 'Unpivot pattern',
+          sql: `-- Turn columns back into rows
+SELECT name, 'budget' AS metric, budget AS value FROM departments
+UNION ALL
+SELECT name, 'location', location FROM departments
+ORDER BY name;`,
+        },
+        {
+          type: 'callout', calloutType: 'mysql',
+          html: `<strong>SQL Server</strong> has native <code>PIVOT</code> and <code>UNPIVOT</code> operators. MySQL and PostgreSQL use the CASE-based approach shown here. The result is identical — MySQL's approach is just more verbose.`,
+        },
+      ],
+    },
   ],
   exercises: [
     {
@@ -564,6 +626,91 @@ SHOW GRANTS FOR 'app_user'@'%';`,
         'LAG(total, 1) OVER (ORDER BY order_date) gets the previous row value',
         "Filter with WHERE status = 'delivered'",
         "SELECT order_date, total, LAG(total, 1) OVER (ORDER BY order_date) AS prev_total FROM orders WHERE status = 'delivered' ORDER BY order_date LIMIT 10;",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 7, moduleId: 9, title: 'Pivot: Orders by Year & Status',
+      description: '<p>Create a pivot table showing <strong>order counts by year and status</strong>. Columns: <code>year</code>, <code>delivered</code>, <code>shipped</code>, <code>pending</code>, <code>cancelled</code>. Use SUBSTR(order_date, 1, 4) for year. Order by year.</p>',
+      difficulty: 'hard',
+      starterQuery: "-- Pivot order counts by year and status\nSELECT\n  SUBSTR(order_date, 1, 4) AS year,\n",
+      expectedQuery: "SELECT SUBSTR(order_date, 1, 4) AS year, COUNT(CASE WHEN status = 'delivered' THEN 1 END) AS delivered, COUNT(CASE WHEN status = 'shipped' THEN 1 END) AS shipped, COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending, COUNT(CASE WHEN status = 'cancelled' THEN 1 END) AS cancelled FROM orders GROUP BY SUBSTR(order_date, 1, 4) ORDER BY year;",
+      expectedResult: {
+        columns: ['year', 'delivered', 'shipped', 'pending', 'cancelled'],
+        values: [
+          ['2023', 17, 4, 0, 0],
+          ['2024', 4, 5, 7, 3],
+        ],
+      },
+      hints: [
+        "COUNT(CASE WHEN status = 'delivered' THEN 1 END) for each status column",
+        'GROUP BY SUBSTR(order_date, 1, 4) groups by year',
+        "SELECT SUBSTR(order_date, 1, 4) AS year, COUNT(CASE WHEN status = 'delivered' THEN 1 END) AS delivered, COUNT(CASE WHEN status = 'shipped' THEN 1 END) AS shipped, COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending, COUNT(CASE WHEN status = 'cancelled' THEN 1 END) AS cancelled FROM orders GROUP BY SUBSTR(order_date, 1, 4) ORDER BY year;",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 8, moduleId: 9, title: 'Create a High Earners View',
+      description: '<p>Create a view called <code>high_earners</code> that contains employees with salary > $100,000. Include <code>name</code>, <code>salary</code>, <code>department_id</code>. Then SELECT <code>name</code> and <code>salary</code> from the view, ordered by salary descending.</p>',
+      difficulty: 'medium',
+      starterQuery: "-- Create and query high_earners view\n",
+      expectedQuery: "CREATE VIEW high_earners AS SELECT name, salary, department_id FROM employees WHERE salary > 100000; SELECT name, salary FROM high_earners ORDER BY salary DESC;",
+      expectedResult: {
+        columns: ['name', 'salary'],
+        values: [
+          ['Quinn Lewis', 130000], ['Rachel Robinson', 125000], ['Alice Johnson', 120000],
+          ['Rosa Murphy', 120000], ['Hugo Edwards', 118000], ['Bob Smith', 115000],
+          ['Xavier Wright', 112000], ['Kate Thomas', 110000], ['Sam Walker', 108000],
+          ['Nathan Cook', 108000], ['Carol Davis', 105000], ['Brian Adams', 105000],
+          ['Leo Rogers', 105000], ['Tina Hall', 102000],
+        ],
+      },
+      hints: [
+        'CREATE VIEW high_earners AS SELECT ... FROM employees WHERE salary > 100000',
+        'Then SELECT name, salary FROM high_earners ORDER BY salary DESC',
+        "CREATE VIEW high_earners AS SELECT name, salary, department_id FROM employees WHERE salary > 100000; SELECT name, salary FROM high_earners ORDER BY salary DESC;",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 9, moduleId: 9, title: 'INTERSECT: Shared Cities',
+      description: '<p>Find cities where we have <strong>both</strong> a department office AND a customer. Use <code>INTERSECT</code>. Show the column as <code>city</code>. Order alphabetically.</p>',
+      difficulty: 'easy',
+      starterQuery: "-- Cities with both offices and customers\n",
+      expectedQuery: "SELECT location AS city FROM departments INTERSECT SELECT city FROM customers ORDER BY city;",
+      expectedResult: {
+        columns: ['city'],
+        values: [
+          ['Berlin'], ['London'], ['Madrid'], ['New York'], ['Paris'],
+          ['Singapore'], ['Sydney'], ['Tokyo'], ['Toronto'],
+        ],
+      },
+      hints: [
+        'INTERSECT returns rows that appear in both queries',
+        'First: SELECT location AS city FROM departments',
+        "SELECT location AS city FROM departments INTERSECT SELECT city FROM customers ORDER BY city;",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 10, moduleId: 9, title: 'Salary Quartiles with NTILE',
+      description: '<p>Divide all employees into <strong>4 salary quartiles</strong> (highest salary = quartile 1). Show <code>name</code>, <code>salary</code>, <code>quartile</code>. Use NTILE(4). Order by salary descending, limit to 12.</p>',
+      difficulty: 'medium',
+      starterQuery: "-- Salary quartiles\n",
+      expectedQuery: "SELECT name, salary, NTILE(4) OVER (ORDER BY salary DESC) AS quartile FROM employees ORDER BY salary DESC LIMIT 12;",
+      expectedResult: {
+        columns: ['name', 'salary', 'quartile'],
+        values: [
+          ['Quinn Lewis', 130000, 1], ['Rachel Robinson', 125000, 1], ['Alice Johnson', 120000, 1],
+          ['Rosa Murphy', 120000, 1], ['Hugo Edwards', 118000, 1], ['Bob Smith', 115000, 1],
+          ['Xavier Wright', 112000, 1], ['Kate Thomas', 110000, 1], ['Sam Walker', 108000, 1],
+          ['Nathan Cook', 108000, 1], ['Carol Davis', 105000, 1], ['Brian Adams', 105000, 1],
+        ],
+      },
+      hints: [
+        'NTILE(4) OVER (ORDER BY salary DESC) splits into 4 equal groups',
+        'The highest salaries get quartile 1',
+        "SELECT name, salary, NTILE(4) OVER (ORDER BY salary DESC) AS quartile FROM employees ORDER BY salary DESC LIMIT 12;",
       ],
       validationMode: 'exact',
     },
