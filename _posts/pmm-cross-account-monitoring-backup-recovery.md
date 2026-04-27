@@ -8,7 +8,7 @@ categories:
 read_time: 11
 featured: false
 author: "Mario"
-coverImage: "/images/blog/pmm-cross-account-monitoring.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-backup.jpg"
 ---
 
 <div class="series-nav">
@@ -93,12 +93,95 @@ AWS Backup requires a service role to create and manage EBS snapshots and perfor
    - **EC2 operations**: create/delete snapshots, create/delete volumes, create/modify tags, start/stop/reboot instances, volume operations, snapshot operations
    - **Backup operations**: full access to AWS Backup operations and backup storage
 
-<h2 id="terraform-files">Terraform File Organization</h2>
+<h2 id="terraform">Terraform Reference</h2>
 
-The backup configuration is split across two files:
+The backup vault, plan, IAM role, and selection described in this guide are fully managed as Terraform in production. The snippets below cover the key resources — adapt variable names and values to your environment.
 
-- `terraform/aws/prod/config/backup.yaml` — main configuration values (vault name, schedule, retention, resource selection)
-- `terraform/aws/prod/60-backup.tf` — Terraform resources that consume the YAML config
+<h3 id="tf-backup-vault-plan">Vault and Backup Plan</h3>
+
+```hcl
+resource "aws_backup_vault" "pmm" {
+  name = "pmm-backup-vault"
+
+  tags = {
+    environment = "prod"
+    service     = "backup"
+    component   = "ec2"
+  }
+}
+
+resource "aws_backup_plan" "pmm_weekly" {
+  name = "pmm-weekly-backup"
+
+  rule {
+    rule_name         = "weekly-sunday-5am-utc"
+    target_vault_name = aws_backup_vault.pmm.name
+    schedule          = "cron(0 5 ? * SUN *)"
+    start_window      = 60   # minutes before job is marked failed
+    completion_window = 120  # maximum allowed job duration in minutes
+
+    lifecycle {
+      delete_after = 30 # retain 4 weekly recovery points
+    }
+  }
+}
+```
+
+<h3 id="tf-backup-iam">IAM Role for AWS Backup</h3>
+
+```hcl
+resource "aws_iam_role" "backup_service" {
+  name = "AwsBackupServiceRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "backup.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "backup_service_managed" {
+  role       = aws_iam_role.backup_service.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup"
+}
+
+resource "aws_iam_role_policy" "backup_service_custom" {
+  name = "backup-service-policy"
+  role = aws_iam_role.backup_service.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "ec2:CreateSnapshot", "ec2:DeleteSnapshot",
+        "ec2:CreateVolume", "ec2:DeleteVolume",
+        "ec2:CreateTags", "ec2:ModifySnapshotAttribute",
+        "ec2:DescribeVolumes", "ec2:DescribeSnapshots",
+        "ec2:StartInstances", "ec2:StopInstances", "ec2:RebootInstances"
+      ]
+      Resource = "*"
+    }]
+  })
+}
+```
+
+<h3 id="tf-backup-selection">Backup Selection</h3>
+
+```hcl
+resource "aws_backup_selection" "pmm" {
+  name         = "pmm-backup-selection"
+  plan_id      = aws_backup_plan.pmm_weekly.id
+  iam_role_arn = aws_iam_role.backup_service.arn
+
+  resources = [var.pmm_instance_arn]
+}
+```
+
+If you'd like the complete module including the full variable definitions, <a href="/contact.html">get in touch</a> and we're happy to share it.
 
 <h2 id="recovery">Recovery Procedure</h2>
 

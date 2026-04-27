@@ -8,7 +8,7 @@ categories:
 read_time: 9
 featured: false
 author: "Mario"
-coverImage: "/images/blog/pmm-cross-account-monitoring.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-iam.jpg"
 ---
 
 <div class="series-nav">
@@ -217,12 +217,124 @@ Adding an Aurora instance as a generic MySQL service misses the OS-level metrics
 
 <h2 id="terraform">Terraform Reference</h2>
 
-The IAM role and user are managed as Terraform in production:
+The IAM roles and users described in this guide are fully managed as Terraform in production. The snippets below cover the key resources — adapt variable names and values to your environment.
 
-- IAM Role setup: `terraform/shared-terraform/20-iam_PMMAwsIntegration.tf`
-- IAM Role policy: `terraform/shared-terraform/templates/IAM/pmm_integration.json`
-- IAM User module: `terraform/shared-terraform/modules/iam_bots`
-- IAM User policy: `terraform/accounts/<account_id>/bots.yaml`
+<h3 id="tf-iam-target-role">Target Account: Monitoring Role</h3>
+
+```hcl
+resource "aws_iam_role" "pmm_rds_monitoring" {
+  name = "AmazonRDSforPMMrole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::${var.pmm_account_id}:role/${var.pmm_ec2_role_name}" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "pmm_rds_monitoring" {
+  name = "pmm-cloudwatch-rds-access"
+  role = aws_iam_role.pmm_rds_monitoring.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "DescribeAndMetricsAccess"
+        Effect = "Allow"
+        Action = [
+          "rds:DescribeDBInstances", "rds:DescribeDBClusters",
+          "rds:DescribeDBLogFiles", "rds:DownloadDBLogFilePortion",
+          "rds:ListTagsForResource", "cloudwatch:GetMetricStatistics",
+          "cloudwatch:GetMetricData", "cloudwatch:ListMetrics"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "LogAccess"
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups", "logs:DescribeLogStreams",
+          "logs:GetLogEvents", "logs:FilterLogEvents"
+        ]
+        Resource = "arn:aws:logs:*:*:log-group:RDSOSMetrics:*"
+      }
+    ]
+  })
+}
+```
+
+<h3 id="tf-iam-source-role">Source Account: Allow PMM EC2 to Assume Target Roles</h3>
+
+```hcl
+resource "aws_iam_role_policy" "pmm_assume_target_roles" {
+  name = "pmm-assume-rds-monitoring-roles"
+  role = var.pmm_ec2_role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "sts:AssumeRole"
+      Resource = [
+        for id in var.target_account_ids :
+        "arn:aws:iam::${id}:role/AmazonRDSforPMMrole"
+      ]
+    }]
+  })
+}
+```
+
+<h3 id="tf-iam-user">Aurora Accounts: IAM User for OS Metrics</h3>
+
+Only create this in accounts that host Aurora clusters.
+
+```hcl
+resource "aws_iam_user" "pmm_aws_integration" {
+  name = "PMMAWSIntegrationUser"
+}
+
+resource "aws_iam_user_policy" "pmm_aws_integration" {
+  name = "pmm-aurora-os-metrics"
+  user = aws_iam_user.pmm_aws_integration.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "RDSAndCloudWatchAccess"
+        Effect = "Allow"
+        Action = [
+          "rds:DescribeDBInstances", "rds:DescribeDBClusters",
+          "rds:DescribeDBLogFiles", "rds:DownloadDBLogFilePortion",
+          "rds:ListTagsForResource", "cloudwatch:GetMetricStatistics",
+          "cloudwatch:GetMetricData", "cloudwatch:ListMetrics",
+          "logs:DescribeLogGroups", "logs:DescribeLogStreams",
+          "logs:GetLogEvents"
+        ]
+        Resource = "*"
+      },
+      {
+        Sid    = "OSMetricsLogAccess"
+        Effect = "Allow"
+        Action = [
+          "logs:DescribeLogGroups", "logs:DescribeLogStreams",
+          "logs:GetLogEvents", "logs:FilterLogEvents"
+        ]
+        Resource = [
+          "arn:aws:logs:*:*:log-group:RDSOSMetrics:*",
+          "arn:aws:logs:*:*:log-group:RDSOSMetrics:*:log-stream:*"
+        ]
+      }
+    ]
+  })
+}
+```
+
+If you'd like the complete module including access key rotation and permissions boundary wiring, <a href="/contact.html">get in touch</a> and we're happy to share it.
 
 <div class="series-nav">
   <h4>Continue the Series</h4>

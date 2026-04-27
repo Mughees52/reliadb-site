@@ -8,7 +8,7 @@ categories:
 read_time: 12
 featured: false
 author: "Mario"
-coverImage: "/images/blog/pmm-cross-account-monitoring.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-tgw.jpg"
 ---
 
 <div class="series-nav">
@@ -150,10 +150,86 @@ A successful connection — where the terminal shows a MySQL server greeting ban
 
 <h2 id="terraform">Terraform Reference</h2>
 
-The TGW configuration described in this guide is managed as Terraform in production. The module handles TGW creation, RAM sharing, VPC attachments, and route propagation:
+The TGW configuration described in this guide is fully managed as Terraform in production. The snippets below cover the key resources — adapt variable names and values to your environment.
 
-- TGW module: `terraform/aws/modules/tgw`
-- Production use case: `terraform/aws/prod/50-tgw.tf`
+<h3 id="tf-tgw-source">Source Account: TGW and RAM Share</h3>
+
+```hcl
+resource "aws_ec2_transit_gateway" "main" {
+  description = "Central TGW for cross-account database monitoring"
+
+  tags = {
+    Name = "pmm-tgw"
+  }
+}
+
+resource "aws_ram_resource_share" "tgw" {
+  name                      = "pmm-tgw-share"
+  allow_external_principals = false
+}
+
+resource "aws_ram_resource_association" "tgw" {
+  resource_arn       = aws_ec2_transit_gateway.main.arn
+  resource_share_arn = aws_ram_resource_share.tgw.arn
+}
+
+resource "aws_ram_principal_association" "target_accounts" {
+  for_each           = toset(var.target_account_ids)
+  principal          = each.value
+  resource_share_arn = aws_ram_resource_share.tgw.arn
+}
+```
+
+<h3 id="tf-tgw-pmm-attach">Source Account: PMM VPC Attachment and Routes</h3>
+
+```hcl
+resource "aws_ec2_transit_gateway_vpc_attachment" "pmm" {
+  transit_gateway_id = aws_ec2_transit_gateway.main.id
+  vpc_id             = var.pmm_vpc_id
+  subnet_ids         = var.pmm_subnet_ids
+
+  tags = {
+    Name = "pmm-tgw-attachment"
+  }
+}
+
+# One route per target VPC CIDR pointing to the TGW
+resource "aws_route" "pmm_to_target" {
+  for_each               = toset(var.target_vpc_cidrs)
+  route_table_id         = var.pmm_route_table_id
+  destination_cidr_block = each.value
+  transit_gateway_id     = aws_ec2_transit_gateway.main.id
+}
+```
+
+<h3 id="tf-tgw-target-attach">Target Account: VPC Attachment and Return Routes</h3>
+
+```hcl
+# Accept the RAM share from the source account
+resource "aws_ram_resource_share_accepter" "tgw" {
+  share_arn = var.tgw_share_arn
+}
+
+resource "aws_ec2_transit_gateway_vpc_attachment" "rds" {
+  transit_gateway_id = var.tgw_id
+  vpc_id             = var.rds_vpc_id
+  subnet_ids         = var.rds_subnet_ids
+
+  tags = {
+    Name = "rds-tgw-attachment"
+  }
+}
+
+# Return routes on every RDS subnet route table back to the PMM CIDR
+resource "aws_route" "rds_to_pmm" {
+  for_each               = toset(var.rds_route_table_ids)
+  route_table_id         = each.value
+  destination_cidr_block = var.pmm_vpc_cidr
+  transit_gateway_id     = var.tgw_id
+}
+```
+
+If you'd like the complete module including variable definitions and subnet deduplication logic, <a href="/contact.html">get in touch</a> and we're happy to share it.
 
 <h2 id="notes">Key Notes</h2>
 

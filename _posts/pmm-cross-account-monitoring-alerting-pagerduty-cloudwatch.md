@@ -8,7 +8,7 @@ categories:
 read_time: 13
 featured: false
 author: "Mario"
-coverImage: "/images/blog/pmm-cross-account-monitoring.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-alerting.jpg"
 ---
 
 <div class="series-nav">
@@ -52,6 +52,7 @@ Every custom template requires the following fields:
 <h3 id="template-example">Template Example: High CPU Load</h3>
 
 ```yaml
+{% raw %}
 templates:
     - name: NodeCpuUtilization
       version: 1
@@ -75,6 +76,7 @@ templates:
       annotations:
         description: Check if a process is not using too much CPU
         summary: "CRITICAL - CPU Usage - {{ $labels.node_name }}"
+{% endraw %}
 ```
 
 The `[[ .threshold ]]` placeholder is replaced with the configured parameter value at rule creation time. This lets you reuse the same template for a 90% critical threshold and an 80% warning threshold without duplicating the expression.
@@ -111,9 +113,11 @@ PMM uses Grafana's notification templating. Create a template named `pagerduty` 
 3. Paste the following in the template body:
 
 ```
+{% raw %}
 {{ define "pagerduty" }}
   {{ index .CommonLabels "alertname"}} - {{ index .CommonAnnotations "summary"}}
 {{ end }}
+{% endraw %}
 ```
 
 This template surfaces the alert name and summary annotation as the PagerDuty incident title, making incidents immediately readable in the PagerDuty timeline.
@@ -126,7 +130,7 @@ This template surfaces the alert name and summary annotation as the PagerDuty in
    - **Type**: PagerDuty
    - **Integration Key**: paste the key from Step 1
    - **Severity**: leave at default or set as appropriate
-3. In the **Summary** field, enter: `{{ template "pagerduty" . }}`
+3. In the **Summary** field, enter: `{% raw %}{{ template "pagerduty" . }}{% endraw %}`
 4. Click **Save contact point**
 
 <h2 id="notification-policy">Notification Policy</h2>

@@ -8,7 +8,7 @@ categories:
 read_time: 15
 featured: false
 author: "Mario"
-coverImage: "/images/blog/pmm-cross-account-monitoring.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-install.jpg"
 ---
 
 <div class="series-nav">

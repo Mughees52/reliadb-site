@@ -223,7 +223,7 @@
     {% elif coverImage.path %}{% set coverSrc = coverImage.path %}{% endif %}
     <div class="post-cover-banner">
       <div class="post-cover-card">
-        <img src="{{ coverSrc }}" alt="{{ coverImageAlt or title }}" />
+        <img src="{{ coverSrc }}" alt="{{ coverImageAlt or title }}" onerror="this.onerror=null;this.src='/images/blog-fallback.svg';" />
         <div class="post-cover-overlay"></div>
         <div class="post-cover-content">
           <span class="post-cover-title">{{ title }}</span>
