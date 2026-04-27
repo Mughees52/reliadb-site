@@ -373,6 +373,12 @@ No. The analysis engine uses 49 hand-written detection rules, a query-aware inde
 
 Yes. Click the **Embed** button in the Actions section after analyzing a plan. It generates an `<iframe>` code snippet with your analysis pre-loaded. The embedded view shows a clean, focused analysis with a "Powered by ReliaDB" footer.
 
+<div class="post-cta-inline" style="background: #f0f7ff; border-left: 4px solid #2980B9;">
+  <h4>New to EXPLAIN? Start with the Fundamentals</h4>
+  <p>Our free interactive MySQL training covers everything from basic SELECT queries to reading EXPLAIN output and optimizing indexes — with a live SQL sandbox and auto-graded exercises.</p>
+  <a href="/training/" class="btn">Start MySQL Training (Free) &rarr;</a>
+</div>
+
 <div class="related-posts">
 <h3>Related Articles</h3>
 <div class="related-grid">

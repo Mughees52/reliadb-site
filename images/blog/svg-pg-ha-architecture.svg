@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 680">
+  <defs>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+    <marker id="arrowDown" markerWidth="10" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2980B9"/>
+    </marker>
+    <marker id="arrowDownOrange" markerWidth="10" markerHeight="7" refX="5" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#E67E22"/>
+    </marker>
+    <marker id="arrowMonitor" markerWidth="8" markerHeight="6" refX="4" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#E67E22" opacity="0.7"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="680" rx="12" fill="#1a1a2e"/>
+
+  <!-- Title -->
+  <text x="450" y="40" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="22" font-weight="700">PostgreSQL HA Architecture</text>
+  <line x1="300" y1="52" x2="600" y2="52" stroke="#E67E22" stroke-width="2"/>
+
+  <!-- Layer Labels -->
+  <text x="30" y="105" fill="#2980B9" font-family="Inter, sans-serif" font-size="11" font-weight="600" opacity="0.7">APPLICATION</text>
+  <text x="30" y="235" fill="#2980B9" font-family="Inter, sans-serif" font-size="11" font-weight="600" opacity="0.7">PROXY</text>
+  <text x="30" y="405" fill="#2980B9" font-family="Inter, sans-serif" font-size="11" font-weight="600" opacity="0.7">ORCHESTRATION</text>
+  <text x="30" y="560" fill="#2980B9" font-family="Inter, sans-serif" font-size="11" font-weight="600" opacity="0.7">DATABASE</text>
+
+  <!-- Layer 1: Application -->
+  <rect x="310" y="70" width="280" height="60" rx="10" fill="#16213e" stroke="#2980B9" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="97" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="16" font-weight="600">Application</text>
+  <text x="450" y="118" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="12">Connects via port 6133</text>
+
+  <!-- Arrow: App -> ProxySQL -->
+  <line x1="450" y1="130" x2="450" y2="180" stroke="#2980B9" stroke-width="2" marker-end="url(#arrowDown)"/>
+  <rect x="370" y="147" width="160" height="20" rx="4" fill="#1a1a2e"/>
+  <text x="450" y="161" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="11" font-weight="600">Single endpoint</text>
+
+  <!-- Layer 2: ProxySQL -->
+  <rect x="180" y="185" width="540" height="100" rx="10" fill="#16213e" stroke="#2980B9" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="212" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="16" font-weight="700">ProxySQL 3.x</text>
+  <text x="270" y="240" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="12" font-weight="600">Port 6132 Admin</text>
+  <text x="450" y="240" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="12" font-weight="600">Port 6133 App</text>
+  <text x="630" y="240" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="12" font-weight="600">Health Monitoring</text>
+  <text x="450" y="268" text-anchor="middle" fill="#aaaacc" font-family="Inter, sans-serif" font-size="12">Read/Write Splitting</text>
+
+  <!-- Layer 3: Orchestrator -->
+  <rect x="230" y="370" width="440" height="80" rx="10" fill="#16213e" stroke="#E67E22" stroke-width="2" filter="url(#shadow)"/>
+  <text x="450" y="400" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="16" font-weight="700">Orchestrator 4.30</text>
+  <text x="310" y="428" text-anchor="middle" fill="#aaaacc" font-family="Inter, sans-serif" font-size="12">Topology Discovery</text>
+  <text x="450" y="428" text-anchor="middle" fill="#aaaacc" font-family="Inter, sans-serif" font-size="12">Failure Detection</text>
+  <text x="590" y="428" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="12" font-weight="600">pg_promote()</text>
+
+  <!-- Arrows: ProxySQL -> Databases -->
+  <!-- Write arrow to primary -->
+  <line x1="350" y1="285" x2="200" y2="520" stroke="#E67E22" stroke-width="2.5" marker-end="url(#arrowDownOrange)"/>
+  <rect x="210" y="380" width="50" height="18" rx="4" fill="#1a1a2e"/>
+  <text x="235" y="393" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="10" font-weight="600">WRITE</text>
+
+  <!-- Read arrow to replica1 -->
+  <line x1="500" y1="285" x2="500" y2="520" stroke="#2980B9" stroke-width="2" marker-end="url(#arrowDown)"/>
+  <rect x="505" y="390" width="45" height="18" rx="4" fill="#1a1a2e"/>
+  <text x="527" y="403" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="10" font-weight="600">READ</text>
+
+  <!-- Read arrow to replica2 -->
+  <line x1="550" y1="285" x2="760" y2="520" stroke="#2980B9" stroke-width="2" marker-end="url(#arrowDown)"/>
+  <rect x="680" y="390" width="45" height="18" rx="4" fill="#1a1a2e"/>
+  <text x="702" y="403" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="10" font-weight="600">READ</text>
+
+  <!-- Layer 4: Databases -->
+  <!-- Primary -->
+  <rect x="100" y="525" width="210" height="90" rx="10" fill="#16213e" stroke="#E67E22" stroke-width="2.5" filter="url(#shadow)"/>
+  <circle cx="130" cy="550" r="8" fill="#E67E22"/>
+  <text x="205" y="555" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="14" font-weight="700">pg-primary</text>
+  <text x="205" y="575" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="12" font-weight="600">Writer</text>
+  <rect x="130" y="585" width="60" height="20" rx="6" fill="#E67E22" opacity="0.2" stroke="#E67E22" stroke-width="1"/>
+  <text x="160" y="599" text-anchor="middle" fill="#E67E22" font-family="Inter, sans-serif" font-size="11" font-weight="700">HG 10</text>
+
+  <!-- Replica 1 -->
+  <rect x="370" y="525" width="210" height="90" rx="10" fill="#16213e" stroke="#2980B9" stroke-width="2" filter="url(#shadow)"/>
+  <circle cx="400" cy="550" r="8" fill="#2980B9"/>
+  <text x="475" y="555" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="14" font-weight="700">pg-replica1</text>
+  <text x="475" y="575" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="12" font-weight="600">Reader</text>
+  <rect x="400" y="585" width="60" height="20" rx="6" fill="#2980B9" opacity="0.2" stroke="#2980B9" stroke-width="1"/>
+  <text x="430" y="599" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="11" font-weight="700">HG 20</text>
+
+  <!-- Replica 2 -->
+  <rect x="640" y="525" width="210" height="90" rx="10" fill="#16213e" stroke="#2980B9" stroke-width="2" filter="url(#shadow)"/>
+  <circle cx="670" cy="550" r="8" fill="#2980B9"/>
+  <text x="745" y="555" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="14" font-weight="700">pg-replica2</text>
+  <text x="745" y="575" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="12" font-weight="600">Reader</text>
+  <rect x="670" y="585" width="60" height="20" rx="6" fill="#2980B9" opacity="0.2" stroke="#2980B9" stroke-width="1"/>
+  <text x="700" y="599" text-anchor="middle" fill="#2980B9" font-family="Inter, sans-serif" font-size="11" font-weight="700">HG 20</text>
+
+  <!-- Orchestrator monitoring arrows (dashed) -->
+  <line x1="350" y1="450" x2="205" y2="522" stroke="#E67E22" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.6" marker-end="url(#arrowMonitor)"/>
+  <line x1="450" y1="450" x2="475" y2="522" stroke="#E67E22" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.6" marker-end="url(#arrowMonitor)"/>
+  <line x1="550" y1="450" x2="745" y2="522" stroke="#E67E22" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.6" marker-end="url(#arrowMonitor)"/>
+
+  <!-- Legend -->
+  <rect x="100" y="640" width="700" height="30" rx="6" fill="#16213e" opacity="0.5"/>
+  <line x1="130" y1="655" x2="170" y2="655" stroke="#E67E22" stroke-width="2.5"/>
+  <text x="178" y="659" fill="#aaaacc" font-family="Inter, sans-serif" font-size="11">Write path</text>
+  <line x1="280" y1="655" x2="320" y2="655" stroke="#2980B9" stroke-width="2"/>
+  <text x="328" y="659" fill="#aaaacc" font-family="Inter, sans-serif" font-size="11">Read path</text>
+  <line x1="420" y1="655" x2="460" y2="655" stroke="#E67E22" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.6"/>
+  <text x="468" y="659" fill="#aaaacc" font-family="Inter, sans-serif" font-size="11">Monitoring</text>
+</svg>

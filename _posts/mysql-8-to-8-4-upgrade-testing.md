@@ -170,6 +170,12 @@ This approach catches subtle issues under real production load patterns that syn
   <li>Canary test with partial traffic (optional)</li>
 </ul>
 
+<div class="post-cta-inline" style="background: #f0f7ff; border-left: 4px solid #2980B9;">
+  <h4>Sharpen Your MySQL Skills</h4>
+  <p>Our free interactive training covers MySQL performance, EXPLAIN analysis, indexing strategies, and security best practices — all with hands-on exercises.</p>
+  <a href="/training/#/module/8" class="btn">Module 8: Performance & EXPLAIN &rarr;</a>
+</div>
+
 <!-- Series Nav Bottom -->
 <div class="series-nav">
   <h4>Continue the Series</h4>

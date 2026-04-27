@@ -447,6 +447,12 @@ Use this checklist to verify you've completed all pre-upgrade preparation steps 
   <li>Verify all tool versions are 8.4-compatible (PMM, XtraBackup, etc.)</li>
 </ul>
 
+<div class="post-cta-inline" style="background: #f0f7ff; border-left: 4px solid #2980B9;">
+  <h4>New to MySQL? Start with the Basics</h4>
+  <p>Our free interactive MySQL training covers SQL fundamentals through performance optimization — 10 modules with a live SQL sandbox, exercises, and animated visualizations.</p>
+  <a href="/training/" class="btn">Start MySQL Training (Free) &rarr;</a>
+</div>
+
 <!-- Series Nav Bottom -->
 <div class="series-nav">
   <h4>Continue the Series</h4>

@@ -133,3 +133,52 @@
 .progress-fill {
   transition: width 0.6s ease;
 }
+
+/* Training sidebar */
+.training-sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #DDE3E9 transparent;
+}
+
+.training-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.training-sidebar::-webkit-scrollbar-thumb {
+  background: #DDE3E9;
+  border-radius: 4px;
+}
+
+/* Mobile: stacked layout for sandboxes and results */
+@media (max-width: 640px) {
+  .sql-editor .cm-editor {
+    font-size: 12px;
+  }
+
+  .result-table th,
+  .result-table td {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+
+  .animation-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .prose h2 {
+    font-size: 1.25rem;
+  }
+
+  .prose h3 {
+    font-size: 1rem;
+  }
+}
+
+/* Ensure sidebar doesn't affect mobile scroll */
+@media (max-width: 1023px) {
+  .training-sidebar.fixed {
+    top: 72px;
+    padding-top: 72px;
+  }
+}

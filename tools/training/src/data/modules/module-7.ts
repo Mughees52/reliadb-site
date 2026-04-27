@@ -145,6 +145,67 @@ CREATE UNIQUE INDEX idx_email_unique ON employees(email);` },
         { type: 'callout', calloutType: 'tip', html: `<strong>In practice</strong>: Aim for 3NF as your starting point. Denormalize strategically only when performance requires it (e.g., adding a redundant column to avoid a costly JOIN in a hot query path).` },
       ],
     },
+    {
+      id: 6, moduleId: 7, title: 'ALTER TABLE & DROP TABLE', slug: 'alter-table',
+      content: [
+        { type: 'text', html: `<h2>Modifying Existing Tables</h2>
+<p><code>ALTER TABLE</code> changes an existing table's structure without dropping it. You can add columns, remove columns, modify data types, and rename things.</p>` },
+        { type: 'code', title: 'MySQL ALTER TABLE commands', sql: `-- Add a column
+ALTER TABLE employees ADD COLUMN phone VARCHAR(20);
+
+-- Remove a column
+ALTER TABLE employees DROP COLUMN phone;
+
+-- Rename a column (MySQL 8.0+)
+ALTER TABLE employees RENAME COLUMN name TO full_name;
+
+-- Change column type
+ALTER TABLE employees MODIFY COLUMN salary DECIMAL(12,2);
+
+-- Add an index
+ALTER TABLE employees ADD INDEX idx_dept (department_id);
+
+-- Rename a table
+ALTER TABLE old_name RENAME TO new_name;` },
+        { type: 'sandbox', description: 'Try ALTER TABLE in the sandbox:',
+          defaultQuery: `-- Add a column to departments
+ALTER TABLE departments ADD COLUMN country TEXT DEFAULT 'Unknown';
+
+-- Check the result
+SELECT * FROM departments LIMIT 5;` },
+        { type: 'text', html: `<h3>DROP TABLE</h3>
+<p><code>DROP TABLE</code> permanently deletes a table and all its data. Use <code>IF EXISTS</code> to avoid errors.</p>` },
+        { type: 'code', title: 'Drop safely', sql: `DROP TABLE IF EXISTS temp_results;` },
+        { type: 'callout', calloutType: 'warning', html: `<strong>ALTER TABLE in production</strong>: On large tables (millions of rows), ALTER TABLE can lock the table for minutes or hours. MySQL 8.0 supports <code>INSTANT</code> algorithm for some changes (adding columns). For large migrations, use tools like <code>pt-online-schema-change</code> or <code>gh-ost</code>.` },
+      ],
+    },
+    {
+      id: 7, moduleId: 7, title: 'SQL Comments', slug: 'sql-comments',
+      content: [
+        { type: 'text', html: `<h2>Commenting SQL Code</h2>
+<p>Comments make SQL readable and are ignored by the database engine.</p>` },
+        { type: 'code', title: 'Comment types', sql: `-- Single line comment (most common)
+SELECT name FROM employees; -- inline comment
+
+# Hash comment (MySQL only, not standard SQL)
+SELECT name FROM employees;
+
+/* Multi-line comment
+   Useful for temporarily disabling
+   parts of a query */
+SELECT name /* , salary, department_id */
+FROM employees;` },
+        { type: 'sandbox', description: 'Try commenting out parts of a query:',
+          defaultQuery: `SELECT
+  name,
+  salary
+  -- , department_id  -- uncomment to include
+  -- , hire_date
+FROM employees
+LIMIT 5;` },
+        { type: 'callout', calloutType: 'tip', html: `<strong>Pro tip</strong>: Comments are great for debugging. Comment out parts of a complex query to isolate which part is causing issues.` },
+      ],
+    },
   ],
   exercises: [
     {
@@ -215,6 +276,65 @@ CREATE UNIQUE INDEX idx_email_unique ON employees(email);` },
         'Create tables in order: authors first (no FKs), then posts (FK to authors), then comments (FK to posts)',
         'INSERT data into each table, then JOIN comments to posts',
         "See solution for full SQL",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 5, moduleId: 7, title: 'ALTER TABLE: Add Column',
+      description: `<p>Add a <code>country</code> column (TEXT, default 'Unknown') to the <code>departments</code> table using ALTER TABLE. Then show <code>name</code> and <code>country</code> for all departments.</p>`,
+      difficulty: 'medium',
+      starterQuery: "-- Add a country column to departments\n",
+      expectedQuery: "ALTER TABLE departments ADD COLUMN country TEXT DEFAULT 'Unknown'; SELECT name, country FROM departments;",
+      expectedResult: {
+        columns: ['name', 'country'],
+        values: [
+          ['Engineering', 'Unknown'], ['Marketing', 'Unknown'], ['Sales', 'Unknown'],
+          ['HR', 'Unknown'], ['Finance', 'Unknown'], ['Operations', 'Unknown'],
+          ['Support', 'Unknown'], ['Legal', 'Unknown'], ['Product', 'Unknown'],
+          ['Design', 'Unknown'],
+        ],
+      },
+      hints: [
+        "ALTER TABLE departments ADD COLUMN country TEXT DEFAULT 'Unknown'",
+        'Follow with SELECT name, country FROM departments',
+        "ALTER TABLE departments ADD COLUMN country TEXT DEFAULT 'Unknown'; SELECT name, country FROM departments;",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 6, moduleId: 7, title: 'CREATE and DROP Table',
+      description: `<p>Create a table <code>temp_log</code> with columns <code>id</code> (integer primary key) and <code>message</code> (text). Insert 2 rows. Then DROP the table. Finally, verify it's gone by counting tables named 'temp_log' in <code>sqlite_master</code>. The final SELECT should return <code>0</code>.</p>`,
+      difficulty: 'medium',
+      starterQuery: "-- Create, populate, drop, verify\n",
+      expectedQuery: "CREATE TABLE temp_log (id INTEGER PRIMARY KEY, message TEXT); INSERT INTO temp_log VALUES (1, 'start'), (2, 'end'); DROP TABLE temp_log; SELECT COUNT(*) AS tables_exist FROM sqlite_master WHERE type='table' AND name='temp_log';",
+      expectedResult: {
+        columns: ['tables_exist'],
+        values: [[0]],
+      },
+      hints: [
+        'CREATE TABLE temp_log (id INTEGER PRIMARY KEY, message TEXT)',
+        'After inserting and dropping, query sqlite_master to verify',
+        "CREATE TABLE temp_log (id INTEGER PRIMARY KEY, message TEXT); INSERT INTO temp_log VALUES (1, 'start'), (2, 'end'); DROP TABLE temp_log; SELECT COUNT(*) AS tables_exist FROM sqlite_master WHERE type='table' AND name='temp_log';",
+      ],
+      validationMode: 'exact',
+    },
+    {
+      id: 7, moduleId: 7, title: 'Schema with Constraints',
+      description: `<p>Create a table <code>reviews</code> with: <code>id</code> (integer PK), <code>product_id</code> (integer, not null, FK to products), <code>rating</code> (integer, CHECK between 1-5), <code>comment</code> (text). Insert 2 reviews for product 1 (ratings 5 and 3). SELECT all from reviews.</p>`,
+      difficulty: 'hard',
+      starterQuery: "-- Create reviews table with constraints\n",
+      expectedQuery: "CREATE TABLE reviews (id INTEGER PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id), rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5), comment TEXT); INSERT INTO reviews VALUES (1, 1, 5, 'Excellent laptop'), (2, 1, 3, 'Decent but pricey'); SELECT * FROM reviews;",
+      expectedResult: {
+        columns: ['id', 'product_id', 'rating', 'comment'],
+        values: [
+          [1, 1, 5, 'Excellent laptop'],
+          [2, 1, 3, 'Decent but pricey'],
+        ],
+      },
+      hints: [
+        'CHECK(rating >= 1 AND rating <= 5) constrains valid ratings',
+        'REFERENCES products(id) creates the foreign key',
+        "See solution for the full CREATE TABLE + INSERT + SELECT",
       ],
       validationMode: 'exact',
     },

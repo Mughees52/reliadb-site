@@ -31,6 +31,12 @@ Click **Next Step** to follow the UPDATE statement through every layer of InnoDB
   <a href="/contact.html" class="btn">Book Free Assessment &rarr;</a>
 </div>
 
+<div class="post-cta-inline" style="background: #f0f7ff; border-left: 4px solid #2980B9;">
+  <h4>Learn MySQL from the Ground Up</h4>
+  <p>Our free interactive training covers MySQL internals, transactions, indexing, and performance optimization — with animated visualizations and hands-on exercises.</p>
+  <a href="/training/#/module/8" class="btn">Start Performance & EXPLAIN Module &rarr;</a>
+</div>
+
 <div class="related-posts">
 <h3>Related Articles</h3>
 <div class="related-grid">
