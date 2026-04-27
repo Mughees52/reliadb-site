@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "clean:site": "rm -rf _site",
     "build:explain": "cd tools/explain && npm install && npm run build",
     "build:training": "cd tools/training && npm install && npm run build",
-    "build": "npm run build:explain && npm run build:training && eleventy && pagefind --site _site --exclude-selectors \"nav,footer,#navbar,.site-footer\"",
+    "build": "npm run clean:site && npm run build:explain && npm run build:training && eleventy && pagefind --site _site --exclude-selectors \"nav,footer,#navbar,.site-footer\"",
     "dev": "eleventy --serve",
     "dev:explain": "cd tools/explain && npm run dev",
     "dev:training": "cd tools/training && npm run dev"

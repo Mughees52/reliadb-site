@@ -457,7 +457,7 @@ permalink: /blog/index.html
       </div>
       <div class="featured-visual">
         {% if latest.data.coverImage %}
-          <img src="{{ latest.data.coverImage }}" alt="{{ latest.data.title }}" />
+          <img src="{{ latest.data.coverImage }}" alt="{{ latest.data.title }}" onerror="this.onerror=null;this.src='/images/blog-fallback.svg';" />
         {% endif %}
       </div>
     </a>
@@ -479,7 +479,7 @@ permalink: /blog/index.html
           <a href="{{ post.url }}" class="post-card">
             <div class="pc-thumb">
               {% if post.data.coverImage %}
-                <img src="{{ post.data.coverImage }}" alt="{{ post.data.title }}" loading="lazy" decoding="async" />
+                <img src="{{ post.data.coverImage }}" alt="{{ post.data.title }}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/images/blog-fallback.svg';" />
               {% else %}
                 <div class="pc-thumb-fallback {{ thumbClass }}">
                   <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5">
