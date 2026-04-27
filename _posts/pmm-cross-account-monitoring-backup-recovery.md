@@ -81,8 +81,8 @@ The plan `aws-pmm01-weekly-backup` runs on a weekly schedule with the following 
 
 AWS Backup requires a service role to create and manage EBS snapshots and perform EC2 restores. The role uses the following configuration:
 
-- **Path**: `/developer/`
-- **Permissions boundary**: `arn:aws:iam::<account_id>:policy/iam-maddeveloper-boundary`
+- **Path**: `/ops/`
+- **Permissions boundary**: `arn:aws:iam::<account_id>:policy/<your-permissions-boundary>`
 
 <h3 id="role-policies">Policies Attached</h3>
 
@@ -216,7 +216,7 @@ Monitor the job in **AWS Backup → Jobs → Restore jobs** until the job status
 Once the instance is running:
 
 1. Go to **EC2 → Instances → Actions → Security → Modify IAM role**
-2. Select the IAM role: `EC2-Allow-SSM-and-S3`
+2. Select the IAM role: `pmm-ec2-instance-role`
 3. Apply the change
 4. Reboot the instance to ensure the instance metadata reflects the updated role
 
@@ -226,14 +226,7 @@ Log into the PMM UI on the restored instance and remove the existing PagerDuty c
 
 **Step 7: Update the PMM Instance ID in Terraform**
 
-The restored instance has a new EC2 instance ID. Update the TGW configuration in the Terraform repository to reference the new ID:
-
-```
-# terraform/aws/prod/50-tgw.tf
-# Update the pmm instance ID on line 19 with the new instance ID
-```
-
-Run a Terraform plan, create a PR, and merge the changes. This is required to allow the new instance to route traffic through the Transit Gateways.
+The restored instance has a new EC2 instance ID. If your Terraform configuration references the PMM instance ID directly — for example, in the TGW attachment module or in any resource that targets the instance by ID — update it to the new value, run a plan, and merge the change. This is required to keep your infrastructure-as-code in sync and to ensure future Terraform applies don't attempt to recreate resources against a stale instance ID.
 
 **Step 8: Reconfigure PMM Client Agents on EC2 Nodes**
 
@@ -319,7 +312,7 @@ pmm-admin add proxysql \
   <li>PagerDuty PMM service disabled before restore</li>
   <li>Recovery point selected from <code>aws-pmm01-backup-vault</code></li>
   <li>Restore subnet matches original PMM instance subnet</li>
-  <li>IAM role <code>EC2-Allow-SSM-and-S3</code> attached post-restore</li>
+  <li>IAM role <code>pmm-ec2-instance-role</code> attached post-restore</li>
   <li>Instance rebooted after IAM role attachment</li>
   <li>PMM UI accessible and healthy</li>
   <li>Stale PagerDuty configuration removed from PMM UI</li>

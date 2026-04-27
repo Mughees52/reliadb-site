@@ -86,7 +86,7 @@ The `[[ .threshold ]]` placeholder is replaced with the configured parameter val
 1. Go to **Alerting → Alert Rules → New alert rule**
 2. Select the **Percona templated alert** option
 3. In **Template details**, choose your template — the Name, Duration, and Severity fields populate automatically
-4. Add **Filters** to scope the rule (e.g., `service_name=prod-billing-hub-db`). Multiple filters use AND logic.
+4. Add **Filters** to scope the rule (e.g., `service_name=prod-orders-db`). Multiple filters use AND logic.
 5. Select a **Folder** for the rule
 6. Click **Save and Exit**
 
@@ -95,6 +95,10 @@ The `[[ .threshold ]]` placeholder is replaced with the configured parameter val
 </div>
 
 <h2 id="pagerduty">PagerDuty Integration</h2>
+
+<div class="callout">
+  <p><strong>Not using PagerDuty?</strong> Grafana Alerting supports many other contact point types out of the box — Grafana IRM, OpsGenie, Slack, Microsoft Teams, webhooks, and more. The alert template format and notification policy concepts covered in this section apply to all of them. Only the contact point configuration (Steps 1–3 below) differs per platform.</p>
+</div>
 
 <h3 id="pd-key">Step 1: Get the PagerDuty Integration Key</h3>
 
@@ -168,8 +172,8 @@ sso_account_id = <pmm-account-id>
 sso_region = us-east-1
 sso_role_name = <your-sso-role>
 
-[profile cmp-dwh]
-role_arn = arn:aws:iam::<account-id>:role/MadAdministrator
+[profile account-a]
+role_arn = arn:aws:iam::<account-id>:role/<admin-role>
 source_profile = default
 ```
 
@@ -199,31 +203,17 @@ ROLE_NAME="AmazonRDSforPMMrole"
 REGION="us-east-1"
 
 account_names=(
-  "oct-ss-components"
-  "cmp-jucy"
-  "wh-prod"
-  "bdvr-prod"
-  "bdvr-components"
-  "cmp-mailer"
-  "cmp-manycomponents"
-  "rd-ketobody"
-  "shared-hosting"
-  "wh-components"
-  "cmp-dwh"
+  "account-a"
+  "account-b"
+  "account-c"
+  "account-d"
 )
 
 account_ids=(
-  153281781315
-  966746064837
-  210683788275
-  796844153911
-  961248379432
-  861516613539
-  346209794437
-  195104288847
-  380566252609
-  800906568488
-  738135556174
+  111111111111
+  222222222222
+  333333333333
+  444444444444
 )
 
 existing_data=$(curl -k -s -H "Authorization: Bearer $API_KEY" "$PMM_URL/graph/api/datasources")
@@ -330,7 +320,7 @@ Example output:
 
 ```
 Alertname                           Starts At                Summary                                                     State
-MySQLPrimaryReadOnly Alerting Rule  2025-05-01 11:49:00 UTC  CRITICAL - MySQL Primary ReadOnly - prod-rr-billing-hub-db  active
+MySQLPrimaryReadOnly Alerting Rule  2025-05-01 11:49:00 UTC  CRITICAL - MySQL Primary ReadOnly - prod-orders-replica-db  active
 ```
 
 **Silence an alert for a specific service:**

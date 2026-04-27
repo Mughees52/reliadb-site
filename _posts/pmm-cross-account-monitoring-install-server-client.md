@@ -357,9 +357,7 @@ def main():
     existing_services = get_existing_services()
 
     profiles = [
-        "cmp-dwh", "jucy", "bdvr-components", "biz-hub-test", "cmp-mailer",
-        "wh-components", "bdvr-prod", "oct-ss-legacy", "shared-hosting",
-        "cmp-manycomponents", "wh-prod", "rd-ketobody", "bdvr-dev", "oct-ss-components"
+        "account-a", "account-b", "account-c", "account-d"
     ]
 
     for profile in profiles:
@@ -407,9 +405,9 @@ python Scripts/add_mariadb_to_pmm.py
 Expected output per account:
 
 ```
-Processing AWS profile: oct-ss-components
-Added to PMM: prod-billing-hub-db
-Added to PMM: prod-rr-billing-hub-db
+Processing AWS profile: account-a
+Added to PMM: prod-orders-db
+Added to PMM: prod-orders-replica-db
 ```
 
 The script skips instances that already exist in the PMM inventory, so it's safe to re-run after adding new accounts to the `profiles` list.

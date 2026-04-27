@@ -100,7 +100,7 @@ A TGW attachment alone doesn't route traffic — route table entries on both sid
 
 In the route table associated with the PMM EC2 subnet, add one route per target VPC CIDR:
 
-- **Destination**: `<target-vpc-cidr>` (e.g., `10.20.0.0/16`)
+- **Destination**: `<target-vpc-cidr>` (e.g., `192.168.1.0/16`)
 - **Target**: the TGW ID
 
 Repeat for every target account VPC that hosts RDS instances.
@@ -109,7 +109,7 @@ Repeat for every target account VPC that hosts RDS instances.
 
 In each target account, update the route tables for every RDS subnet:
 
-- **Destination**: `<pmm-vpc-cidr>` (e.g., `10.5.0.0/16`)
+- **Destination**: `<pmm-vpc-cidr>` (e.g., `172.16.0.0/16`)
 - **Target**: the shared TGW ID
 
 This return route is often missed. Without it, the PMM EC2 can reach the RDS endpoint, but the RDS response packets have no path back — resulting in connections that hang rather than refuse.
@@ -121,7 +121,7 @@ This return route is often missed. Without it, the PMM EC2 can reach the RDS end
 Add an inbound rule to the security group attached to each RDS instance:
 
 - **Type**: MySQL/Aurora (TCP 3306)
-- **Source**: the CIDR of the PMM EC2 subnet in the source account (e.g., `10.5.32.0/24`)
+- **Source**: the CIDR of the PMM EC2 subnet in the source account (e.g., `10.0.1.0/24`)
 
 Using the CIDR rather than a security group ID is necessary here because cross-account security group references aren't supported for inbound rules referencing groups in different accounts.
 
@@ -136,21 +136,115 @@ NACLs are stateless, so both directions must be explicitly permitted.
 
 <h2 id="verify">Step 5: Test Network Connectivity</h2>
 
-Before proceeding to IAM setup, confirm the TGW routing is working. SSH into the PMM EC2 instance and run:
+Before proceeding to IAM setup, confirm the TGW routing is working end-to-end from the PMM EC2 instance. Run the three checks below in order — each one isolates a different layer of the stack.
+
+<h3 id="verify-dns">Check 1: DNS Resolution</h3>
+
+RDS endpoints are DNS names. If DNS doesn't resolve from the PMM VPC, TCP never gets attempted and the error looks identical to a routing failure.
 
 ```
-telnet <rds-endpoint> 3306
+nslookup <rds-endpoint>
 ```
 
-A successful connection — where the terminal shows a MySQL server greeting banner — confirms that the TGW, VPC attachments, route tables, and security groups are all correctly configured. If the connection times out, the most common causes are a missing return route in the RDS subnet route table or a NACL blocking the ephemeral port range.
+A successful response returns the private IP of the RDS instance within the target VPC. If it returns `NXDOMAIN` or times out, the PMM VPC's DNS resolver can't reach the target — check that DNS resolution and DNS hostnames are enabled on both VPCs (`enableDnsSupport` and `enableDnsHostnames` in the VPC settings).
+
+<h3 id="verify-tcp">Check 2: TCP Port Reachability</h3>
+
+`telnet` is not installed by default on Amazon Linux 2 / AL2023. Use `nc` instead:
+
+```
+nc -zv <rds-endpoint> 3306
+```
+
+A successful result prints `Connection to <rds-endpoint> 3306 port [tcp/mysql] succeeded!`. This confirms that the TGW, VPC attachments, route tables, and security groups are all correctly configured in both directions.
+
+<h3 id="verify-repeat">Check 3: Repeat for One RDS per Target Account</h3>
+
+Don't stop at the first success. Test connectivity to at least one RDS instance in each target account — routing issues are often account-specific (a missing RAM share acceptance, a missing TGW attachment, or a missing return route in that account's subnet route table).
+
+<h3 id="verify-troubleshoot">Troubleshooting</h3>
+
+If `nc` times out rather than refusing the connection, the packet is being dropped in transit rather than rejected by the database. Work through the following in order:
+
+<table>
+  <thead>
+    <tr><th>Symptom</th><th>Most likely cause</th><th>Where to check</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>DNS resolves, <code>nc</code> times out</td><td>Missing return route in the RDS subnet route table</td><td>Target account → VPC → Route tables → RDS subnet route table. Look for a route to the PMM VPC CIDR via the TGW.</td></tr>
+    <tr><td>DNS resolves, <code>nc</code> times out after adding return route</td><td>NACL blocking ephemeral ports</td><td>Target account → VPC → Network ACLs → outbound rules. Ensure TCP 1024–65535 is allowed outbound to the PMM subnet CIDR.</td></tr>
+    <tr><td>DNS does not resolve</td><td>VPC DNS settings or RAM share not accepted</td><td>Confirm the target account accepted the RAM resource share. Confirm <code>enableDnsSupport</code> is enabled on the target VPC.</td></tr>
+    <tr><td><code>nc</code> refused (not timed out)</td><td>RDS security group rejecting the source</td><td>Target account → EC2 → Security groups → RDS security group inbound rules. Confirm TCP 3306 is allowed from the PMM subnet CIDR.</td></tr>
+  </tbody>
+</table>
 
 <div class="callout">
-  <p><strong>Test before continuing:</strong> IAM configuration and PMM client installation depend on network connectivity. Confirming the telnet test passes now prevents hours of debugging later when the failure mode shifts from network errors to authentication errors.</p>
+  <p><strong>Test before continuing:</strong> IAM configuration and PMM client installation depend on network connectivity. Confirming all checks pass now prevents hours of debugging later when the failure mode shifts from network errors to authentication errors.</p>
 </div>
 
 <h2 id="terraform">Terraform Reference</h2>
 
 The TGW configuration described in this guide is fully managed as Terraform in production. The snippets below cover the key resources — adapt variable names and values to your environment.
+
+<h3 id="tf-providers">Multi-Account Provider Setup</h3>
+
+Rather than maintaining a separate Terraform repo per account, you can centralize the entire setup in the source account's repo using one AWS provider per target account. Each provider uses `assume_role` to act in the target account — no separate state backend or repo required.
+
+```hcl
+# Default provider — source account (where the PMM EC2 and TGW live)
+provider "aws" {
+  region = "us-east-1"
+}
+
+# One provider per target account, assuming a role with sufficient permissions
+provider "aws" {
+  alias  = "target_account_a"
+  region = "us-east-1"
+
+  assume_role {
+    role_arn = "arn:aws:iam::<target-account-a-id>:role/<admin-role>"
+  }
+}
+
+provider "aws" {
+  alias  = "target_account_b"
+  region = "us-east-1"
+
+  assume_role {
+    role_arn = "arn:aws:iam::<target-account-b-id>:role/<admin-role>"
+  }
+}
+```
+
+Target account resources reference their provider with the `provider` argument. To avoid repeating the resource blocks for every account, wrap the target resources in a module and pass the provider via `providers`:
+
+```hcl
+module "tgw_attachment_account_a" {
+  source    = "./modules/tgw-target-attachment"
+  providers = { aws = aws.target_account_a }
+
+  tgw_id            = aws_ec2_transit_gateway.main.id
+  tgw_share_arn     = aws_ram_resource_share.tgw.arn
+  rds_vpc_id        = "<vpc-id-account-a>"
+  rds_subnet_ids    = ["<subnet-1>", "<subnet-2>"]
+  rds_route_table_ids = ["<rtb-1>", "<rtb-2>"]
+  pmm_vpc_cidr      = "<pmm-vpc-cidr>"
+}
+
+module "tgw_attachment_account_b" {
+  source    = "./modules/tgw-target-attachment"
+  providers = { aws = aws.target_account_b }
+
+  tgw_id            = aws_ec2_transit_gateway.main.id
+  tgw_share_arn     = aws_ram_resource_share.tgw.arn
+  rds_vpc_id        = "<vpc-id-account-b>"
+  rds_subnet_ids    = ["<subnet-1>", "<subnet-2>"]
+  rds_route_table_ids = ["<rtb-1>", "<rtb-2>"]
+  pmm_vpc_cidr      = "<pmm-vpc-cidr>"
+}
+```
+
+Adding a new target account is then just a new provider block and a new module call — no structural changes to existing code.
 
 <h3 id="tf-tgw-source">Source Account: TGW and RAM Share</h3>
 

@@ -108,16 +108,39 @@ The instance profile attached to the PMM EC2 must have permission to call `sts:A
 
 Add one ARN per target account. The role name must match exactly what was created in each target account.
 
-<h2 id="validate-role">Validate the IAM Role in PMM</h2>
+<h2 id="validate-role">Validate the IAM Role</h2>
 
-Once the roles are in place:
+PMM isn't installed yet at this stage — that's covered in Part 3. You can validate the trust policy and permissions now from the PMM EC2 instance using the AWS CLI, without needing PMM running.
 
-1. Open the PMM UI and navigate to **Configuration → Data Sources**
-2. Add a new **CloudWatch** data source
-3. Select **Use IAM Role** as the authentication method
-4. Enter the full role ARN from the target account
+**Step 1: Verify the role can be assumed**
 
-If the configuration is correct, the data source test passes and you can build dashboards and alert rules sourced from that account's CloudWatch metrics.
+SSH into the PMM EC2 instance and run:
+
+```
+aws sts assume-role \
+  --role-arn "arn:aws:iam::<target-account-id>:role/AmazonRDSforPMMrole" \
+  --role-session-name pmm-validation-test
+```
+
+A successful response returns a JSON block with temporary `AccessKeyId`, `SecretAccessKey`, and `SessionToken` credentials. If it returns an access denied error, the trust policy in the target account doesn't allow the PMM EC2 instance role to assume it — double-check the principal ARN in the trust policy matches the EC2 instance role exactly.
+
+**Step 2: Verify the permissions policy**
+
+Export the temporary credentials from Step 1 and test a CloudWatch call against the target account:
+
+```
+export AWS_ACCESS_KEY_ID=<AccessKeyId from Step 1>
+export AWS_SECRET_ACCESS_KEY=<SecretAccessKey from Step 1>
+export AWS_SESSION_TOKEN=<SessionToken from Step 1>
+
+aws cloudwatch list-metrics --namespace AWS/RDS --region us-east-1
+```
+
+A successful response lists RDS CloudWatch metrics from the target account. Unset the environment variables after testing to restore the default instance profile credentials.
+
+<div class="callout">
+  <p><strong>CloudWatch data sources in PMM:</strong> Adding the CloudWatch data sources in the PMM UI — one per target account — is covered in <a href="/blog/pmm-cross-account-monitoring-alerting-pagerduty-cloudwatch.html">Part 4</a>, once PMM is installed and running.</p>
+</div>
 
 <h2 id="iam-user">IAM User for Aurora OS Metrics</h2>
 
@@ -176,18 +199,46 @@ Attach the following policy to the user. It mirrors the role permissions but als
 }
 ```
 
-<h3 id="add-aurora-pmm">Add the Aurora Instance to PMM</h3>
+<h3 id="validate-iam-user">Validate the IAM User Credentials</h3>
 
-With the user credentials in hand:
+PMM isn't installed yet at this stage. Validate the credentials now from the CLI before continuing to Part 3.
 
-1. Go to **PMM → Inventory → Add Service → Amazon RDS**
-2. Enter the **Access Key ID** and **Secret Access Key**
-3. PMM will discover the Aurora cluster in that account
+**Step 1: Verify the credentials are active**
 
-If Enhanced Monitoring is enabled on the Aurora cluster, the instance will appear in the PMM inventory with `rds_exporter` under Metrics Sources and the OS tab will show CPU, disk I/O, and context switches.
+```
+aws sts get-caller-identity \
+  --profile pmm-aurora-test
+```
+
+Configure the profile first with `aws configure --profile pmm-aurora-test` using the Access Key ID and Secret Access Key generated above. A successful response returns the user ARN — confirming the credentials are valid and the access key is active.
+
+**Step 2: Verify RDS discovery permissions**
+
+```
+aws rds describe-db-instances \
+  --profile pmm-aurora-test \
+  --region us-east-1
+```
+
+This should return the list of RDS instances in the account. An access denied error means the permissions policy wasn't attached correctly.
+
+**Step 3: Verify OS metrics log access**
+
+```
+aws logs describe-log-groups \
+  --log-group-name-prefix RDSOSMetrics \
+  --profile pmm-aurora-test \
+  --region us-east-1
+```
+
+A successful response confirms the user can read from the `RDSOSMetrics` log group where Enhanced Monitoring publishes OS-level data. An empty result (no log groups returned) means Enhanced Monitoring isn't enabled on any Aurora cluster in this account — the OS tab in PMM will be empty even with correct credentials.
 
 <div class="callout">
   <p><strong>Enhanced Monitoring required for OS tab:</strong> OS-level metrics for Aurora are published to CloudWatch Logs only when Enhanced Monitoring is enabled on the RDS cluster (set at 1s, 5s, 10s, 15s, 30s, or 60s granularity). Without it, the OS tab appears empty even when the IAM credentials are correct.</p>
+</div>
+
+<div class="callout">
+  <p><strong>Adding Aurora to the PMM inventory:</strong> The PMM UI steps to register an Aurora instance — going to <strong>PMM → Inventory → Add Service → Amazon RDS</strong> and entering these credentials — are covered in <a href="/blog/pmm-cross-account-monitoring-install-server-client.html">Part 3</a>, once PMM is installed and running.</p>
 </div>
 
 <h2 id="service-type-note">Which PMM Service Type to Use</h2>
@@ -218,6 +269,58 @@ Adding an Aurora instance as a generic MySQL service misses the OS-level metrics
 <h2 id="terraform">Terraform Reference</h2>
 
 The IAM roles and users described in this guide are fully managed as Terraform in production. The snippets below cover the key resources — adapt variable names and values to your environment.
+
+<h3 id="tf-iam-providers">Multi-Account Provider Setup</h3>
+
+As with the TGW configuration in Part 1, all IAM resources across every target account are managed from the same source repo using one aliased provider per account. This avoids duplicating state backends and keeps IAM changes reviewable in a single pull request.
+
+```hcl
+# Default provider — source account (where the PMM EC2 lives)
+provider "aws" {
+  region = "us-east-1"
+}
+
+# One provider per target account
+provider "aws" {
+  alias  = "target_account_a"
+  region = "us-east-1"
+
+  assume_role {
+    role_arn = "arn:aws:iam::<target-account-a-id>:role/<admin-role>"
+  }
+}
+
+provider "aws" {
+  alias  = "target_account_b"
+  region = "us-east-1"
+
+  assume_role {
+    role_arn = "arn:aws:iam::<target-account-b-id>:role/<admin-role>"
+  }
+}
+```
+
+Wrap the target account IAM resources in a module and pass the provider via `providers`, so adding a new account requires only a new provider block and module call:
+
+```hcl
+module "pmm_iam_account_a" {
+  source    = "./modules/pmm-iam-target"
+  providers = { aws = aws.target_account_a }
+
+  pmm_account_id     = var.pmm_account_id
+  pmm_ec2_role_name  = var.pmm_ec2_role_name
+}
+
+module "pmm_iam_account_b" {
+  source    = "./modules/pmm-iam-target"
+  providers = { aws = aws.target_account_b }
+
+  pmm_account_id     = var.pmm_account_id
+  pmm_ec2_role_name  = var.pmm_ec2_role_name
+}
+```
+
+The module contains the `aws_iam_role` and `aws_iam_role_policy` blocks shown below. The source account policy that grants `sts:AssumeRole` is managed separately outside the module, since it lives in the source account.
 
 <h3 id="tf-iam-target-role">Target Account: Monitoring Role</h3>
 
