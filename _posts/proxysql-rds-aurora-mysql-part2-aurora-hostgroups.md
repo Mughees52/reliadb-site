@@ -4,7 +4,7 @@ date: 2026-05-12T10:00:00.000Z
 author: "Mario"
 # TODO: cover image needed before publish — asset path below is a placeholder
 coverImage: "/images/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.jpg"
-description: "2 errors in 1,485 queries across a live Aurora failover — a 0.1s app-visible window, versus the 60s baseline from cluster endpoints alone. Here's the exact configuration that produces that result."
+description: "2 errors in 1,485 queries across a live Aurora failover — a 0.1s window vs. Part 1's 60s baseline. Here's the exact ProxySQL config that produced it."
 categories:
   - mysql
   - aws-rds
@@ -33,7 +33,7 @@ Two errors in 1,485 queries. Both within a 0.1-second window. Then clean traffic
 
 Standard replication hostgroups poll `read_only` to determine which backend is the writer. Aurora readers do have `read_only=ON`, so you might expect that mechanism to just work. It mostly does — until it doesn't, and the ways it fails are specific to Aurora's promotion model.
 
-The first failure mode is a race condition during failover. When Aurora promotes a reader to writer, there's a brief window where the promoted instance has `read_only=OFF` (it's the new writer) but the old writer's `read_only=ON` update hasn't fully propagated yet. If ProxySQL polls in that window, it can see two `read_only=OFF` instances simultaneously and flip both into the writer hostgroup — or flip and immediately flip back when the old writer's state catches up. This "flapping" is a documented race condition that `mysql_aws_aurora_hostgroups` avoids by reading `SESSION_ID` rather than `read_only`. We didn't trigger this specific race in the lab, but it has been observed in real Aurora failover scenarios where a monitoring poll happens to land in that brief overlap window.
+The first failure mode is a race condition during failover. When Aurora promotes a reader to writer, there's a brief window where the promoted instance has `read_only=OFF` (it's the new writer) but the old writer's `read_only=ON` update hasn't fully propagated yet. If ProxySQL polls in that window, it can see two `read_only=OFF` instances simultaneously and flip both into the writer hostgroup — or flip and immediately flip back when the old writer's state catches up. This "flapping" is a documented race condition that `mysql_aws_aurora_hostgroups` avoids by reading `SESSION_ID` rather than `read_only`. We didn't trigger this race in the lab, but avoiding it is precisely why `mysql_aws_aurora_hostgroups` exists in the first place — the table was added to ProxySQL specifically because `read_only` polling can't be made reliable on Aurora's failover model.
 
 The second failure mode is replica lag visibility. Aurora tracks replica lag in `INFORMATION_SCHEMA.REPLICA_HOST_STATUS` as `replica_lag_in_milliseconds`. Standard replication hostgroups read lag from `SHOW SLAVE STATUS` (or `SHOW REPLICA STATUS` on 8.0+), which on Aurora returns data that doesn't reflect Aurora's actual internal replication lag. `mysql_aws_aurora_hostgroups` reads directly from `REPLICA_HOST_STATUS`, so lag values are accurate and can drive the `max_lag_ms` threshold that excludes lagging replicas from the reader hostgroup.
 
@@ -191,7 +191,7 @@ After `LOAD MYSQL SERVERS TO RUNTIME`, the monitor thread begins polling immedia
 
 <h2 id="auto-discovery">Auto-Discovery in Action</h2>
 
-We inserted one `mysql_servers` row. About 2 seconds after loading to RUNTIME, `runtime_mysql_servers` showed three:
+We inserted one `mysql_servers` row. About 2 seconds after LOAD TO RUNTIME, ProxySQL had finished its first poll cycle and discovered the writer and reader. By the time we captured the snapshot below — about 60 seconds in — the picture had stabilized:
 
 ```
 -- runtime_mysql_servers on proxysql-1 (~60s after LOAD TO RUNTIME)
