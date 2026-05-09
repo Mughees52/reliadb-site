@@ -30,7 +30,7 @@ The 4× gap between 15 seconds and 64 seconds isn't a sizing difference or an ar
 
 Parts 1–3 built to this point: the placement decision, the Aurora wiring, and the query routing layer. This part is where the HA system is tested under pressure. ProxySQL Cluster sync timing and footguns, NLB health check reality versus the theoretical window, Aurora dual-node failover, RDS Multi-AZ as the baseline comparison, backend TLS with a footgun hiding in auto-discovery, and query mirroring's measured latency impact. Everything here comes from a live AWS lab session.
 
-> **Lab provenance:** Tested live on Aurora MySQL 3.12.0 / MySQL 8.0.44 and RDS MySQL 8.0.x (Multi-AZ), ProxySQL 2.7.3 in us-east-1 on 2026-05-09. All AWS resources destroyed post-capture. Estimated cost: ~$0.65.
+> **Lab provenance:** Tested live on Aurora MySQL 3.12.0 / MySQL 8.0.44 and RDS MySQL 8.0.40 (Multi-AZ), ProxySQL 2.7.3 in us-east-1 on 2026-05-09. All AWS resources destroyed post-capture. Estimated cost: ~$0.65.
 
 <h2 id="cluster-sync">ProxySQL Cluster Sync: Timings, Footguns, and Limits</h2>
 
@@ -164,9 +164,9 @@ After `LOAD MYSQL SERVERS TO RUNTIME`, the monitor thread polls the seed endpoin
 ```
 -- runtime_mysql_servers on proxysql-1 (~10s after LOAD TO RUNTIME)
 hostgroup_id  hostname                                              port  status
-200           reliadb-blog-part4-aurora-writer.CLUSTER-EXAMPLE...  3306  ONLINE
-200           reliadb-blog-part4-aurora.cluster-CLUSTER-EXAMPLE... 3306  ONLINE  ← seed
-201           reliadb-blog-part4-aurora-reader.CLUSTER-EXAMPLE...  3306  ONLINE
+200           mysql-ha-test-aurora-writer.CLUSTER-EXAMPLE...  3306  ONLINE
+200           mysql-ha-test-aurora.cluster-CLUSTER-EXAMPLE... 3306  ONLINE  ← seed
+201           mysql-ha-test-aurora-reader.CLUSTER-EXAMPLE...  3306  ONLINE
 ```
 
 Both proxysql-1 and proxysql-2 show identical topology within seconds of configuration. The reason isn't what you might expect.
@@ -182,7 +182,7 @@ Triggered with a single AWS CLI command. T0 is the moment the API accepted the r
 
 ```bash
 # -- Trigger Aurora cross-AZ failover -- T0 = API accepted (15:32:07 CEST)
-aws rds failover-db-cluster --db-cluster-identifier reliadb-blog-part4-aurora
+aws rds failover-db-cluster --db-cluster-identifier mysql-ha-test-aurora
 ```
 
 ```
@@ -216,7 +216,7 @@ The RDS Multi-AZ configuration in ProxySQL is simpler than Aurora's: one hostgro
 INSERT INTO mysql_servers (hostgroup_id, hostname, port, comment)
 VALUES (
   300,
-  'reliadb-blog-part4-rds-multiaz.CLUSTER-EXAMPLE.us-east-1.rds.amazonaws.com',
+  'mysql-ha-test-rds-multiaz.CLUSTER-EXAMPLE.us-east-1.rds.amazonaws.com',
   3306,
   'rds-multiaz'
 );
