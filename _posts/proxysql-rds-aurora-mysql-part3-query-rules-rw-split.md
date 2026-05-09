@@ -4,7 +4,7 @@ date: 2026-05-12T10:00:00.000Z
 author: "Mario"
 # TODO: cover image needed before publish — asset path below is a placeholder
 coverImage: "/images/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.jpg"
-description: "How ProxySQL's query rules route by pattern, user, schema, and digest — and why SET @user_var, not HikariCP's defaults, is what breaks multiplexing."
+description: "How ProxySQL's query rules route by pattern, user, schema, and digest — and why SET @user_var, not HikariCP's defaults, is what actually breaks multiplexing."
 categories:
   - mysql
   - aws-rds
