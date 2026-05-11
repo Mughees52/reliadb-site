@@ -2,8 +2,7 @@
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 1: Why and Where to Place It"
 date: 2026-05-11T10:00:00.000Z
 author: "Mario"
-# TODO: cover image needed before publish — asset path below is a placeholder
-coverImage: "/images/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.jpg"
+coverImage: "/images/blog/proxysql-postgresql-ha-architecture.jpg"
 description: "Why put ProxySQL in front of RDS or Aurora MySQL? Placement trade-offs, alternatives comparison, and the lab topology that carries through this 5-part series."
 categories:
   - mysql
@@ -18,10 +17,10 @@ featured: true
   <h4>ProxySQL in Front of AWS RDS &amp; Aurora MySQL &mdash; 5-Part Series</h4>
   <ol>
     <li><span class="current">Part 1: Why and Where to Place It (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>
 
@@ -367,16 +366,16 @@ If you answered yes to any of the first four, ProxySQL is worth the investment. 
 
 <h2 id="whats-next">What's Next: Wiring ProxySQL to Aurora MySQL</h2>
 
-In <a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2</a>, we move from architecture to configuration. We'll connect ProxySQL to a real Aurora MySQL cluster using <code>mysql_aws_aurora_hostgroups</code> — the Aurora-native table that directs ProxySQL to query <code>INFORMATION_SCHEMA.REPLICA_HOST_STATUS</code> for topology discovery, rather than relying on the <code>read_only</code> polling used for standard MySQL replication. With this configuration, ProxySQL auto-discovers the writer and all reader instances, adapts when Aurora promotes a reader during a failover event, and routes traffic correctly through the cluster-level changes that would trip up a replication hostgroup configured for vanilla MySQL. The lab and production configurations live side by side throughout so you can follow both paths.
+In <a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2</a>, we move from architecture to configuration. We'll connect ProxySQL to a real Aurora MySQL cluster using <code>mysql_aws_aurora_hostgroups</code> — the Aurora-native table that directs ProxySQL to query <code>INFORMATION_SCHEMA.REPLICA_HOST_STATUS</code> for topology discovery, rather than relying on the <code>read_only</code> polling used for standard MySQL replication. With this configuration, ProxySQL auto-discovers the writer and all reader instances, adapts when Aurora promotes a reader during a failover event, and routes traffic correctly through the cluster-level changes that would trip up a replication hostgroup configured for vanilla MySQL. The lab and production configurations live side by side throughout so you can follow both paths.
 
 <!-- Series Nav Bottom -->
 <div class="series-nav">
   <h4>Continue the Series</h4>
   <ol>
     <li><span class="current">Part 1: Why and Where to Place It (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL &rarr;</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL &rarr;</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>

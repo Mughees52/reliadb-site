@@ -2,8 +2,7 @@
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 2: Wiring ProxySQL to Aurora MySQL"
 date: 2026-05-11T10:00:00.000Z
 author: "Mario"
-# TODO: cover image needed before publish — asset path below is a placeholder
-coverImage: "/images/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-install.jpg"
 description: "2 errors in 1,485 queries across a live Aurora failover — a 0.1s window vs. Part 1's 60s baseline. Here's the exact ProxySQL config that produced it."
 categories:
   - mysql
@@ -17,17 +16,17 @@ featured: true
 <div class="series-nav">
   <h4>ProxySQL in Front of AWS RDS &amp; Aurora MySQL &mdash; 5-Part Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
     <li><span class="current">Part 2: Wiring ProxySQL to Aurora MySQL (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>
 
 Two errors in 1,485 queries. Both within a 0.1-second window. Then clean traffic again — and the topology had silently changed underneath. That's the result we recorded running a live failover against a real Aurora MySQL cluster with ProxySQL in front of it. The baseline without ProxySQL, using the Aurora reader endpoint alone: roughly 60 seconds of mixed timeouts, stale reads, and connection pool churn.
 
-[Part 1](/blog/proxysql-rds-aurora-mysql-part1-why-and-placement) was architecture — where to place ProxySQL, why you'd bother, how the dedicated cluster pair pattern works. Part 2 is the first set of commands. Everything from Part 1 stays the same: the two-node ProxySQL Cluster on Lima VMs, ProxySQL 2.7.3, the same lab infrastructure. What changes is the backends. We swap the three-node MySQL sandbox for a real Aurora MySQL 3.x cluster, and we configure `mysql_aws_aurora_hostgroups` — the table that replaces `mysql_replication_hostgroups` for Aurora-native topology discovery.
+[Part 1](/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html) was architecture — where to place ProxySQL, why you'd bother, how the dedicated cluster pair pattern works. Part 2 is the first set of commands. Everything from Part 1 stays the same: the two-node ProxySQL Cluster on Lima VMs, ProxySQL 2.7.3, the same lab infrastructure. What changes is the backends. We swap the three-node MySQL sandbox for a real Aurora MySQL 3.x cluster, and we configure `mysql_aws_aurora_hostgroups` — the table that replaces `mysql_replication_hostgroups` for Aurora-native topology discovery.
 
 <h2 id="why-aurora-hostgroups">Why mysql_aws_aurora_hostgroups, Not mysql_replication_hostgroups</h2>
 
@@ -395,22 +394,22 @@ What ProxySQL changed: instead of waiting for DNS propagation, ProxySQL polls `R
 
 This part covers one thing: wiring ProxySQL to Aurora and verifying the configuration survives a live failover. Three topics are deferred by design:
 
-- **Query routing depth** — regex anatomy, rule priority ordering, per-user and per-schema routing, `transaction_persistent` behavior under mixed read/write workloads → [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split)
-- **ProxySQL Cluster sync** — how the two-node pair propagates Aurora hostgroup rules, what syncs automatically at runtime versus what requires manual intervention on new nodes → [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls)
-- **Monitoring and tuning** — querying `mysql_server_aws_aurora_log` in production, sizing `check_interval_ms` based on observed promotion time, alerting on detection gaps → [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting)
+- **Query routing depth** — regex anatomy, rule priority ordering, per-user and per-schema routing, `transaction_persistent` behavior under mixed read/write workloads → [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html)
+- **ProxySQL Cluster sync** — how the two-node pair propagates Aurora hostgroup rules, what syncs automatically at runtime versus what requires manual intervention on new nodes → [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html)
+- **Monitoring and tuning** — querying `mysql_server_aws_aurora_log` in production, sizing `check_interval_ms` based on observed promotion time, alerting on detection gaps → [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html)
 
 <h2 id="whats-next">What's Next</h2>
 
-In [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split), we wire the query routing layer. The cluster is connected and survives a failover — now we make the routing configuration production-grade. That means `mysql_query_rules` in depth: regex ordering, per-user routing, per-schema routing, and `transaction_persistent` behavior under sessions that mix reads and writes. If your ORM doesn't always mark transactions explicitly, Part 3 is where the routing gets genuinely interesting.
+In [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html), we wire the query routing layer. The cluster is connected and survives a failover — now we make the routing configuration production-grade. That means `mysql_query_rules` in depth: regex ordering, per-user routing, per-schema routing, and `transaction_persistent` behavior under sessions that mix reads and writes. If your ORM doesn't always mark transactions explicitly, Part 3 is where the routing gets genuinely interesting.
 
 <!-- Series Nav Bottom -->
 <div class="series-nav">
   <h4>Continue the Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
     <li><span class="current">Part 2: Wiring ProxySQL to Aurora MySQL (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing &rarr;</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing &rarr;</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>

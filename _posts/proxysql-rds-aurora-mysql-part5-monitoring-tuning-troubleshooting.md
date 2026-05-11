@@ -2,7 +2,7 @@
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 5: Monitoring, Tuning, and Troubleshooting"
 date: 2026-05-11T10:00:00.000Z
 author: "Mario"
-coverImage: "/images/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.jpg"
+coverImage: "/images/blog/pmm-cross-account-monitoring-alerting.jpg"
 description: "ProxySQL + Aurora stack in production: query digest baselines, lag threshold sizing, zero-error rolling upgrade, and monitor-user revocation failure pattern."
 categories:
   - mysql
@@ -16,10 +16,10 @@ featured: true
 <div class="series-nav">
   <h4>ProxySQL in Front of AWS RDS &amp; Aurora MySQL &mdash; 5-Part Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
     <li><span class="current">Part 5: Monitoring, Tuning, and Troubleshooting (You Are Here)</span></li>
   </ol>
 </div>
@@ -30,7 +30,7 @@ This part covers the operational layer. The same Lima lab topology from Parts 1�
 
 <h2 id="recap">The System from Parts 1–4 — and What Part 5 Adds</h2>
 
-[Part 1](/blog/proxysql-rds-aurora-mysql-part1-why-and-placement) made the placement decision. [Part 2](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups) wired ProxySQL to Aurora's native topology discovery — `mysql_aws_aurora_hostgroups`, `REPLICA_HOST_STATUS`, 2 errors across 1,485 queries through a live failover. [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split) built the query routing layer: `mysql_query_rules`, the ordering rule for `SELECT ... FOR UPDATE`, `transaction_persistent`, and the exact conditions that break multiplexing. [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls) tested the full HA stack under pressure — Aurora at T0+15s, RDS Multi-AZ at T0+64s, TLS footguns in auto-discovery, and NLB health check timing that says 90 seconds in the docs but measured 110 in the lab.
+[Part 1](/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html) made the placement decision. [Part 2](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html) wired ProxySQL to Aurora's native topology discovery — `mysql_aws_aurora_hostgroups`, `REPLICA_HOST_STATUS`, 2 errors across 1,485 queries through a live failover. [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html) built the query routing layer: `mysql_query_rules`, the ordering rule for `SELECT ... FOR UPDATE`, `transaction_persistent`, and the exact conditions that break multiplexing. [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html) tested the full HA stack under pressure — Aurora at T0+15s, RDS Multi-AZ at T0+64s, TLS footguns in auto-discovery, and NLB health check timing that says 90 seconds in the docs but measured 110 in the lab.
 
 Part 5 adds three things those parts explicitly deferred: the monitoring layer you query to know the system is healthy, the tuning decisions now grounded in observed behavior, and the recovery path for the most common non-obvious production failure mode.
 
@@ -138,7 +138,7 @@ A healthy pattern: rows appear at roughly `check_interval_ms` intervals, `writer
 **Detection gap alerting rule:** alert when no successful poll row appears for more than 2&times;`check_interval_ms`. At `check_interval_ms=2000`, that's a 4-second silence. Any gap longer than that means ProxySQL either can't reach the backend or Aurora's control plane is mid-promotion. This is the right threshold to wire into your monitoring system — not a static time value, but a function of your configured polling interval.
 
 <div class="callout">
-  <p><strong>SCHEMA NOTE:</strong> <code>mysql_server_aws_aurora_log</code> lives in the <code>monitor</code> schema, not in <code>main</code> or <code>stats</code>. Use <code>SELECT ... FROM monitor.mysql_server_aws_aurora_log</code>. The table <code>main.mysql_server_aurora_log</code> does not exist in ProxySQL 2.7.3. This footgun was documented in <a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2</a> during the auto-discovery setup.</p>
+  <p><strong>SCHEMA NOTE:</strong> <code>mysql_server_aws_aurora_log</code> lives in the <code>monitor</code> schema, not in <code>main</code> or <code>stats</code>. Use <code>SELECT ... FROM monitor.mysql_server_aws_aurora_log</code>. The table <code>main.mysql_server_aurora_log</code> does not exist in ProxySQL 2.7.3. This footgun was documented in <a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2</a> during the auto-discovery setup.</p>
 </div>
 
 <h3 id="connection-pool"><code>stats_mysql_connection_pool</code> and <code>stats_mysql_processlist</code>: Pool Headroom</h3>
@@ -178,7 +178,7 @@ The right values for these variables don't come from the ProxySQL docs. They com
 
 <h3 id="check-interval"><code>check_interval_ms</code>: Sizing Against the Promotion Floor</h3>
 
-The detection latency formula from [Part 2's detection math section](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups#detection-math):
+The detection latency formula from [Part 2's detection math section](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html#detection-math):
 
 ```
 detection latency = Aurora internal promotion time (~6s, opaque to ProxySQL)
@@ -200,7 +200,7 @@ Aurora's internal promotion time is the floor — ProxySQL was polling on schedu
   </tbody>
 </table>
 
-The Part 2 lab used `check_interval_ms=2000`; Part 4 used `5000`. Both labs produced identical detection floors because the constraint was Aurora's ~6-second internal promotion, not polling frequency. Choose based on the detection window your application's connection pool and retry logic can tolerate — not on the assumption that faster polling reduces the floor. `check_timeout_ms` must also remain below `check_interval_ms` and at or below 3000ms (ProxySQL 2.7.3 enforces this with a CHECK constraint; a silent INSERT failure is the symptom if you exceed it, as documented in [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls)).
+The Part 2 lab used `check_interval_ms=2000`; Part 4 used `5000`. Both labs produced identical detection floors because the constraint was Aurora's ~6-second internal promotion, not polling frequency. Choose based on the detection window your application's connection pool and retry logic can tolerate — not on the assumption that faster polling reduces the floor. `check_timeout_ms` must also remain below `check_interval_ms` and at or below 3000ms (ProxySQL 2.7.3 enforces this with a CHECK constraint; a silent INSERT failure is the symptom if you exceed it, as documented in [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html)).
 
 <h3 id="lag-thresholds">Lag Thresholds: <code>max_replication_lag</code> vs <code>max_lag_ms</code></h3>
 
@@ -228,7 +228,7 @@ These are two different columns in two different tables with different units. Co
   </tbody>
 </table>
 
-The footgun: `max_lag_ms=600000` in `mysql_aws_aurora_hostgroups` is 600 seconds — a generous lab default from Part 2. Copying that value into `mysql_servers.max_replication_lag` would set a 600,000-**second** threshold (about 7 days) on your replicas. They'd have to lag a week before ProxySQL excluded them from routing.
+The footgun: `max_lag_ms=600000` in `mysql_aws_aurora_hostgroups` means <strong>600000 milliseconds</strong> (= 600&nbsp;s = 10&nbsp;minutes of acceptable Aurora replica lag) — a generous lab default from Part 2; the column name carries the <code>_ms</code> unit. The sibling knob `mysql_servers.max_replication_lag` is in <strong>whole seconds</strong> for standard replication lag. Copying the <em>numeric literal</em> <code>600000</code> from <code>max_lag_ms</code> into <code>max_replication_lag</code> does <em>not</em> mean &ldquo;10 minutes&rdquo;; it means <strong>600000 seconds</strong> (about 7&nbsp;days). Your replicas would have to lag roughly a week before ProxySQL excluded them from routing.
 
 **Lab result for `max_replication_lag`:** with `max_replication_lag=2` set on replica2 (port 25003) and the replica's SQL thread stopped, `Seconds_Behind_Source` returns NULL. ProxySQL treats NULL as 60 seconds of lag by default — so a stopped SQL thread suddenly looks like a 60-second-lagging replica even though the underlying data is fine. The variable `mysql-monitor_slave_lag_when_null=60` controls this; size it based on how tolerant your application is of reads from a replica whose SQL thread is stopped.
 
@@ -240,7 +240,7 @@ Recovery after `START REPLICA SQL_THREAD`: replica2 returned to ONLINE in approx
 
 The Part 5 sysbench capture (all traffic in HG&nbsp;10) makes the `transaction_persistent` tradeoff concrete. With `transaction_persistent=1`, queries inside an open transaction stay on the writer. This is correct for application accounts that hold real transactions — the alternative, allowing in-transaction reads to jump to a replica, would route a `SELECT` to a server that doesn't yet have the transaction's uncommitted writes visible, which produces inconsistent reads without any error. Don't set `transaction_persistent=0` for application accounts that use explicit transactions or that issue DML.
 
-Set `transaction_persistent=0` for analytics or reporting accounts that connect, run a read, and disconnect — no open transactions, no consistency hazard. This is the same `analytics` user pattern from [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split#per-user).
+Set `transaction_persistent=0` for analytics or reporting accounts that connect, run a read, and disconnect — no open transactions, no consistency hazard. This is the same `analytics` user pattern from [Part 3](/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html#per-user).
 
 Two monitor variables worth knowing for the lag and health check rhythm:
 
@@ -280,7 +280,7 @@ ORDER BY hostgroup, srv_port;
 sudo systemctl stop proxysql
 ```
 
-Verify proxysql-1 is unreachable on port 6033 and proxysql-2 is serving normally before proceeding. [Part 4's NLB section](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls#nlb-health-checks) covers the 110-second real-world detection window versus the theoretical 90-second threshold — size your drain window accordingly.
+Verify proxysql-1 is unreachable on port 6033 and proxysql-2 is serving normally before proceeding. [Part 4's NLB section](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html#nlb-health-checks) covers the 110-second real-world detection window versus the theoretical 90-second threshold — size your drain window accordingly.
 
 **Step 4 — Upgrade the binary.**
 
@@ -289,7 +289,7 @@ Verify proxysql-1 is unreachable on port 6033 and proxysql-2 is serving normally
 sudo apt-get install proxysql=2.7.X
 ```
 
-**Step 5 — Start the service and verify cluster sync.** After `systemctl start proxysql`, the restarted node bootstraps from its peer automatically — given a populated `proxysql_servers` table and matching cluster credentials, it fetches the current runtime config from `proxysql-2` within the cluster's `check_interval_ms` window (~600ms in our lab from [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls#sync-timings)).
+**Step 5 — Start the service and verify cluster sync.** After `systemctl start proxysql`, the restarted node bootstraps from its peer automatically — given a populated `proxysql_servers` table and matching cluster credentials, it fetches the current runtime config from `proxysql-2` within the cluster's `check_interval_ms` window (~600ms in our lab from [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html#sync-timings)).
 
 ```bash
 # Start ProxySQL after upgrade; cluster sync bootstraps from peer automatically
@@ -305,7 +305,7 @@ ORDER BY hostgroup_id, port;
 
 If `runtime_mysql_servers` shows the master (port 25001) in both HG&nbsp;10 and HG&nbsp;20 after restart, that's expected: `mysql-monitor_writer_is_also_reader=true` places the master in both the writer and reader hostgroups. It's not a routing anomaly — it reflects the ProxySQL default that allows reads to land on the writer when both replicas are lagging or SHUNNED.
 
-If `mysql_servers` doesn't arrive on the restarted node, check whether `admin-cluster_mysql_servers_sync_algorithm=1` (delta mode) is set and the node has no sync baseline — the bootstrap footgun from [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls#bootstrap-footgun). Set it to `0` temporarily to force a full pull, then restore `1`.
+If `mysql_servers` doesn't arrive on the restarted node, check whether `admin-cluster_mysql_servers_sync_algorithm=1` (delta mode) is set and the node has no sync baseline — the bootstrap footgun from [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html#bootstrap-footgun). Set it to `0` temporarily to force a full pull, then restore `1`.
 
 **Step 6 — Re-register with NLB** (production step) and spot-check traffic through the upgraded node.
 
@@ -451,10 +451,10 @@ If you're standing up ProxySQL in front of RDS or Aurora MySQL and want a second
 <div class="series-nav">
   <h4>Series Complete</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
     <li><span class="current">Part 5: Monitoring, Tuning, and Troubleshooting (You Are Here)</span></li>
   </ol>
 </div>

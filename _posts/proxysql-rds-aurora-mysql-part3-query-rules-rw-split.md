@@ -2,8 +2,7 @@
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 3: Query Routing, Read/Write Split, and Multiplexing"
 date: 2026-05-11T10:00:00.000Z
 author: "Mario"
-# TODO: cover image needed before publish — asset path below is a placeholder
-coverImage: "/images/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.jpg"
+coverImage: "/images/blog/proxysql-postgresql-read-write-splitting.jpg"
 description: "How ProxySQL's query rules route by pattern, user, schema, and digest — and why SET @user_var, not HikariCP's defaults, is what actually breaks multiplexing."
 categories:
   - mysql
@@ -17,11 +16,11 @@ featured: true
 <div class="series-nav">
   <h4>ProxySQL in Front of AWS RDS &amp; Aurora MySQL &mdash; 5-Part Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
     <li><span class="current">Part 3: Query Routing, Read/Write Split, and Multiplexing (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>
 
@@ -264,6 +263,8 @@ hostgroup  srv_host       srv_port  ConnUsed  ConnFree
 20         192.168.105.6  25003     0          61
 ```
 
+<p><strong><code>ConnFree</code> vs client count:</strong> In <code>stats_mysql_connection_pool</code>, <code>ConnFree</code> is how many <em>idle</em> connections ProxySQL holds in its pool toward that backend row (bounded by <code>max_connections</code> and how many connections the proxy has opened). It is <em>not</em> the number of frontend sessions. <code>ConnUsed</code> is how many pooled backend connections are in use or pinned for session state. With strong multiplexing you expect <code>ConnUsed=0</code> under idle clients while <code>ConnFree</code> can still read high &mdash; that is spare capacity on the proxy&ndash;MySQL leg, not a 1:1 mapping to application threads.</p>
+
 `ConnUsed` is zero across all three backends. One hundred frontend sessions are open. Zero backend connections are pinned to any of them. After `SELECT 1` completed, ProxySQL returned all 100 backend connections to the free pool. The frontends are still connected — they just don't hold a reserved MySQL thread on the other side.
 
 <div class="callout">
@@ -328,6 +329,8 @@ In the lab, 50 Python threads each issue exactly this sequence, run three `SELEC
 hostgroup  srv_host       srv_port  ConnUsed  ConnFree
 10         192.168.105.6  25001     0         100
 ```
+
+Fifty frontend connections are open, yet <code>ConnFree</code> on HG&nbsp;10 can read <strong>100</strong>: same meaning as above &mdash; <code>ConnFree</code> reflects idle slots in ProxySQL&rsquo;s writer pool, not &ldquo;twice the client count.&rdquo; The signal that multiplexing is healthy here is <code>ConnUsed=0</code> with traffic not pinned.
 
 `ConnUsed` is zero. Fifty frontend connections are open. Zero backend connections are pinned. The standard HikariCP initialization sequence does not break multiplexing in ProxySQL 2.7.3.
 
@@ -409,16 +412,16 @@ Three topics are deferred intentionally.
 
 <h2 id="whats-next">What's Next</h2>
 
-In [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls), we wire the ProxySQL Cluster sync layer. Every query rule, user definition, and hostgroup configuration in this part lives on `proxysql-1`. Part 4 demonstrates how the cluster propagates them to `proxysql-2` automatically — and what failure modes exist when it doesn't. We also add TLS on the backend connections, test the full two-node HA stack under a live Aurora promotion, and work through the NLB health-check configuration that determines which ProxySQL node receives traffic after a cluster event. Everything built in Part 3 becomes the baseline that Part 4 puts under pressure.
+In [Part 4](/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html), we wire the ProxySQL Cluster sync layer. Every query rule, user definition, and hostgroup configuration in this part lives on `proxysql-1`. Part 4 demonstrates how the cluster propagates them to `proxysql-2` automatically — and what failure modes exist when it doesn't. We also add TLS on the backend connections, test the full two-node HA stack under a live Aurora promotion, and work through the NLB health-check configuration that determines which ProxySQL node receives traffic after a cluster event. Everything built in Part 3 becomes the baseline that Part 4 puts under pressure.
 
 <!-- Series Nav Bottom -->
 <div class="series-nav">
   <h4>Continue the Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
     <li><span class="current">Part 3: Query Routing, Read/Write Split, and Multiplexing (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls">Part 4: HA, Failover Patterns, and TLS &rarr;</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.html">Part 4: HA, Failover Patterns, and TLS &rarr;</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>

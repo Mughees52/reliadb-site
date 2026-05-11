@@ -2,7 +2,7 @@
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 4: HA, Failover Patterns, and TLS"
 date: 2026-05-11T10:00:00.000Z
 author: "Mario"
-coverImage: "/images/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.jpg"
+coverImage: "/images/blog/proxysql-postgresql-failover-scenarios.jpg"
 description: "Aurora topology flip: 15s. RDS Multi-AZ failover: 64s. Dual-node ProxySQL cluster sync timings, NLB detection gaps, backend TLS — all measured live on AWS."
 categories:
   - mysql
@@ -16,15 +16,15 @@ featured: true
 <div class="series-nav">
   <h4>ProxySQL in Front of AWS RDS &amp; Aurora MySQL &mdash; 5-Part Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
     <li><span class="current">Part 4: HA, Failover Patterns, and TLS (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting</a></li>
   </ol>
 </div>
 
-Two API calls, same region, same lab session. Aurora writer failover: ProxySQL marked the writer SHUNNED at T0+8.7 seconds. Topology fully inverted at T0+15 seconds. Three errors across 2,020 queries through two ProxySQL nodes — the same order of magnitude as [Part 2](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups)'s 2-in-1,485 result from a single node. RDS Multi-AZ failover: 64 seconds from the same API trigger to AWS "completed." No ProxySQL topology change required, because there's no topology to change — the standby isn't readable, and the endpoint is DNS-based.
+Two API calls, same region, same lab session. Aurora writer failover: ProxySQL marked the writer SHUNNED at T0+8.7 seconds. Topology fully inverted at T0+15 seconds. Three errors across 2,020 queries through two ProxySQL nodes — the same order of magnitude as [Part 2](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html)'s 2-in-1,485 result from a single node. RDS Multi-AZ failover: 64 seconds from the same API trigger to AWS "completed." No ProxySQL topology change required, because there's no topology to change — the standby isn't readable, and the endpoint is DNS-based.
 
 The 4× gap between 15 seconds and 64 seconds isn't a sizing difference or an artifact of how the failover was triggered. It's structural. Aurora's ProxySQL integration reads `INFORMATION_SCHEMA.REPLICA_HOST_STATUS` directly, on its own polling schedule, independent of the AWS control plane. RDS Multi-AZ failover goes through DNS — and DNS propagation through resolver caches takes as long as it takes, regardless of what ProxySQL is doing.
 
@@ -195,7 +195,7 @@ T0       +0.0s     failover-db-cluster API accepted
          +22.2s    Aurora: "Completed customer initiated failover to aurora-reader"
 ```
 
-Two milestones, not one. ProxySQL marked the old writer SHUNNED at T0+8.7s — it knew the writer was unreachable. The full topology flip — old writer demoted to HG 201, new writer promoted to HG 200 — landed at T0+15s, on the next successful poll of `REPLICA_HOST_STATUS` after Aurora completed the internal promotion. SHUNNED means "I can't reach this backend right now." The topology flip means "I've confirmed, from Aurora's own metadata, who the new writer is." The gap between them is Aurora's internal promotion time — the same floor discussed in [Part 2's detection math section](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups#detection-math). ProxySQL was polling on schedule throughout; the backends were simply unreachable while Aurora was mid-promotion.
+Two milestones, not one. ProxySQL marked the old writer SHUNNED at T0+8.7s — it knew the writer was unreachable. The full topology flip — old writer demoted to HG 201, new writer promoted to HG 200 — landed at T0+15s, on the next successful poll of `REPLICA_HOST_STATUS` after Aurora completed the internal promotion. SHUNNED means "I can't reach this backend right now." The topology flip means "I've confirmed, from Aurora's own metadata, who the new writer is." The gap between them is Aurora's internal promotion time — the same floor discussed in [Part 2's detection math section](/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html#detection-math). ProxySQL was polling on schedule throughout; the backends were simply unreachable while Aurora was mid-promotion.
 
 The SHUNNED state explains why errors appeared at ~T0+6s, before SHUNNED was recorded at T0+8.7s. ProxySQL routes a query to a backend before detecting its failure — the SHUNNED state is set after a health check fails, not preemptively. Queries that attempted new handshakes in the window between when the writer became unreachable and when ProxySQL formally recorded it got the handshake failure directly.
 
@@ -334,22 +334,22 @@ ProxySQL sends mirrored queries from a separate goroutine. The primary query's r
 
 Three topics are deferred to Part 5 by design:
 
-- **Production monitoring** — querying `stats_mysql_query_digest` for latency baselines, alerting on Aurora detection gaps via `mysql_server_aws_aurora_log`, and dashboards for connection pool headroom &rarr; [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting)
-- **`check_interval_ms` production sizing** — this part used `check_interval_ms=5000`; Part 5 covers sizing it based on observed Aurora promotion time from your own event history &rarr; [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting)
-- **Rolling upgrade runbook** — how to upgrade the ProxySQL binary on one node without taking the proxy layer offline, including NLB drain sequencing &rarr; [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting)
+- **Production monitoring** — querying `stats_mysql_query_digest` for latency baselines, alerting on Aurora detection gaps via `mysql_server_aws_aurora_log`, and dashboards for connection pool headroom &rarr; [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html)
+- **`check_interval_ms` production sizing** — this part used `check_interval_ms=5000`; Part 5 covers sizing it based on observed Aurora promotion time from your own event history &rarr; [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html)
+- **Rolling upgrade runbook** — how to upgrade the ProxySQL binary on one node without taking the proxy layer offline, including NLB drain sequencing &rarr; [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html)
 
 <h2 id="whats-next">What's Next</h2>
 
-In [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting), the system from Parts 1–4 is running and has been through a failover. Part 5 is about knowing it's healthy: `stats_mysql_query_digest` for query latency baselining, `mysql_server_aws_aurora_log` for Aurora detection gap alerting, `max_lag_ms` tuning for excluding lagging readers under replication pressure, the rolling ProxySQL upgrade sequence, and the production-sizing decisions for `check_interval_ms` and multiplexing variables that weren't worth making until the system had been under load.
+In [Part 5](/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html), the system from Parts 1–4 is running and has been through a failover. Part 5 is about knowing it's healthy: `stats_mysql_query_digest` for query latency baselining, `mysql_server_aws_aurora_log` for Aurora detection gap alerting, `max_lag_ms` tuning for excluding lagging readers under replication pressure, the rolling ProxySQL upgrade sequence, and the production-sizing decisions for `check_interval_ms` and multiplexing variables that weren't worth making until the system had been under load.
 
 <!-- Series Nav Bottom -->
 <div class="series-nav">
   <h4>Continue the Series</h4>
   <ol>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement">Part 1: Why and Where to Place It</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part1-why-and-placement.html">Part 1: Why and Where to Place It</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part2-aurora-hostgroups.html">Part 2: Wiring ProxySQL to Aurora MySQL</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.html">Part 3: Query Routing, Read/Write Split, Multiplexing</a></li>
     <li><span class="current">Part 4: HA, Failover Patterns, and TLS (You Are Here)</span></li>
-    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting">Part 5: Monitoring, Tuning, and Troubleshooting &rarr;</a></li>
+    <li><a href="/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.html">Part 5: Monitoring, Tuning, and Troubleshooting &rarr;</a></li>
   </ol>
 </div>

@@ -98,6 +98,14 @@ module.exports = function (eleventyConfig) {
     }));
   });
 
+  /** Paths like /images/foo resolve at site root; from /blog/*.html use ../images/foo (local server + file://). */
+  eleventyConfig.addFilter("rootToBlogRelative", function (url) {
+    if (typeof url !== "string" || !url.startsWith("/")) {
+      return url;
+    }
+    return ".." + url;
+  });
+
   // Date filter for sitemap and schema
   eleventyConfig.addFilter("date", function(dateObj, format) {
     if (!dateObj) return "";
