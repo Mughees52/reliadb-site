@@ -1,6 +1,6 @@
 ---
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 5: Monitoring, Tuning, and Troubleshooting"
-date: 2026-05-12T10:00:00.000Z
+date: 2026-05-11T10:00:00.000Z
 author: "Mario"
 coverImage: "/images/blog/proxysql-rds-aurora-mysql-part5-monitoring-tuning-troubleshooting.jpg"
 description: "ProxySQL + Aurora stack in production: query digest baselines, lag threshold sizing, zero-error rolling upgrade, and monitor-user revocation failure pattern."

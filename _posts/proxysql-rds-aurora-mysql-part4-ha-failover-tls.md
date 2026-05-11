@@ -1,6 +1,6 @@
 ---
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 4: HA, Failover Patterns, and TLS"
-date: 2026-05-12T10:00:00.000Z
+date: 2026-05-11T10:00:00.000Z
 author: "Mario"
 coverImage: "/images/blog/proxysql-rds-aurora-mysql-part4-ha-failover-tls.jpg"
 description: "Aurora topology flip: 15s. RDS Multi-AZ failover: 64s. Dual-node ProxySQL cluster sync timings, NLB detection gaps, backend TLS — all measured live on AWS."

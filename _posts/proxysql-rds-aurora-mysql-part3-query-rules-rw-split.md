@@ -1,6 +1,6 @@
 ---
 title: "ProxySQL in Front of AWS RDS & Aurora MySQL — Part 3: Query Routing, Read/Write Split, and Multiplexing"
-date: 2026-05-12T10:00:00.000Z
+date: 2026-05-11T10:00:00.000Z
 author: "Mario"
 # TODO: cover image needed before publish — asset path below is a placeholder
 coverImage: "/images/blog/proxysql-rds-aurora-mysql-part3-query-rules-rw-split.jpg"
