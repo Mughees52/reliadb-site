@@ -224,14 +224,15 @@
     {% if coverImage.publicURL %}{% set coverSrc = coverImage.publicURL %}
     {% elif coverImage.url %}{% set coverSrc = coverImage.url %}
     {% elif coverImage.path %}{% set coverSrc = coverImage.path %}{% endif %}
+    {% set coverFallback = "/images/blog-fallback.svg" | rootToBlogRelative %}
     <div class="post-cover-banner">
       <div class="post-cover-card">
-        <img src="{{ coverSrc }}" alt="{{ coverImageAlt or title }}" onerror="this.onerror=null;this.src='/images/blog-fallback.svg';" />
+        <img src="{{ coverSrc | rootToBlogRelative }}" alt="{{ coverImageAlt or title }}" width="1200" height="630" onerror="this.onerror=null;this.src='{{ coverFallback }}';" />
         <div class="post-cover-overlay"></div>
         <div class="post-cover-content">
           <span class="post-cover-title">{{ title }}</span>
           <div class="post-cover-brand">
-            <img src="/images/ReliaDB-Logo.png" alt="ReliaDB" />
+            <img src="{{ '/images/ReliaDB-Logo.png' | rootToBlogRelative }}" alt="ReliaDB" width="28" height="28" />
             <span>ReliaDB</span>
           </div>
         </div>
